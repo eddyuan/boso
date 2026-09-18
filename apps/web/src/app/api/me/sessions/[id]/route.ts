@@ -6,7 +6,7 @@ import { revokeSessions } from "@/lib/revoke-sessions";
 
 // Sign out one specific device. Scoped to the caller's own sessions.
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const { session: current, response } = await requireSession({ allowUnverifiedContact: true });
+  const { session: current, response } = await requireSession({ allowUnverifiedContact: true, allowIncompleteOnboarding: true });
   if (response) return response;
 
   const { id } = await params;

@@ -4,7 +4,7 @@ import { getAccountOverview } from "@/lib/sign-in-methods";
 
 // Contact status and linked sign-in methods for the account settings screen.
 export async function GET() {
-  const { session, response } = await requireSession({ allowUnverifiedContact: true });
+  const { session, response } = await requireSession({ allowUnverifiedContact: true, allowIncompleteOnboarding: true });
   if (response) return response;
 
   const overview = await getAccountOverview(session.user.id);

@@ -5,7 +5,7 @@ import { requireSession } from "@/lib/session";
 
 // Login history for the current user (most recent first).
 export async function GET(req: Request) {
-  const { session: current, response } = await requireSession({ allowUnverifiedContact: true });
+  const { session: current, response } = await requireSession({ allowUnverifiedContact: true, allowIncompleteOnboarding: true });
   if (response) return response;
 
   const limit = Math.min(Number(new URL(req.url).searchParams.get("limit")) || 50, 200);

@@ -10,7 +10,7 @@ const UNLINKABLE = new Set(["google", "apple"]);
 // Unlink Google or Apple. Replaces Better Auth's /unlink-account, which
 // requires a session created in the last 24h — unusable with 1-year sessions.
 export async function DELETE(req: Request, { params }: { params: Promise<{ providerId: string }> }) {
-  const { session, response } = await requireSession({ allowUnverifiedContact: true });
+  const { session, response } = await requireSession({ allowUnverifiedContact: true, allowIncompleteOnboarding: true });
   if (response) return response;
 
   const { providerId } = await params;

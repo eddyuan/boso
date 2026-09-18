@@ -31,6 +31,7 @@ export function proxy(request: NextRequest) {
   return response;
 }
 
+// /models/* is the 3D companion files, fetched by the web app and the Expo web build.
 export const config = {
-  matcher: "/api/:path*",
+  matcher: ["/api/:path*", "/models/:path*"],
 };

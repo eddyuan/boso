@@ -1,0 +1,165 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&amp;family=Nunito:wght@500;600;700;800&amp;display=swap">
+  <style>
+:root, .light {
+  --bg: #FFF6EC; --surface: #FFFFFF; --el: #F7EADA; --line: #EEDDC9;
+  --text: #2B1F16; --muted: #7D6B5B;
+  --primary: #FFC53D; --primary-press: #E09E00; --primary-soft: #FFF0C2; --primary-ink: #8A5A00; --on-primary: #2B1F16;
+  --cheek: #FF8A4C;
+  --green: #2F9E5E; --green-soft: #DDF2E4; --red: #D9453F; --red-soft: #FCE3E1; --sun: #FFC247;
+}
+.dark {
+  --bg: #1A1410; --surface: #251D17; --el: #30261E; --line: #3D3128;
+  --text: #FAF1E7; --muted: #B6A594;
+  --primary: #FFCB4D; --primary-press: #B88312; --primary-soft: #3A2E12; --primary-ink: #FFD36B; --on-primary: #1A1410;
+  --cheek: #FF9A5E;
+  --green: #5BC98A; --green-soft: #1E3A2A; --red: #FF7A73; --red-soft: #41211E; --sun: #FFCB5C;
+}
+body { margin: 0; background: #E9E2DA; }
+a { color: var(--primary-ink); text-decoration: none; font-weight: 800; }
+a:hover { color: var(--primary-press); }
+.screen { box-sizing: border-box; width: 390px; background: var(--bg); color: var(--text);
+  font-family: 'Nunito', ui-rounded, 'SF Pro Rounded', system-ui, sans-serif; font-weight: 600;
+  display: flex; flex-direction: column; padding: 54px 16px 34px; }
+.display { font-family: 'Fredoka', ui-rounded, 'SF Pro Rounded', system-ui, sans-serif; font-weight: 600; letter-spacing: -0.2px; }
+.h1 { font-family: 'Fredoka', ui-rounded, system-ui, sans-serif; font-weight: 600; font-size: 30px; line-height: 36px; margin: 0; text-wrap: balance; }
+.sub { font-size: 16px; line-height: 24px; color: var(--muted); margin: 0; text-wrap: pretty; }
+.label { font-size: 14px; line-height: 20px; font-weight: 800; color: var(--text); }
+.small { font-size: 14px; line-height: 20px; color: var(--muted); }
+.btn { box-sizing: border-box; height: 56px; border-radius: 18px; display: flex; align-items: center; justify-content: center; gap: 10px;
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif; font-weight: 600; font-size: 18px; }
+.btn-primary { background: var(--primary); color: var(--on-primary); box-shadow: 0 4px 0 var(--primary-press); }
+.btn-secondary { background: var(--surface); color: var(--text); box-shadow: 0 3px 0 var(--line); }
+.btn-apple { background: var(--text); color: var(--bg); box-shadow: 0 3px 0 #00000033; }
+.btn-disabled { background: var(--el); color: var(--muted); }
+.btn-danger { background: var(--surface); color: var(--red); box-shadow: 0 3px 0 var(--line); }
+.link { text-align: center; font-weight: 800; color: var(--primary-ink); font-size: 16px; padding: 12px 0; }
+.field { box-sizing: border-box; height: 56px; border-radius: 16px; background: var(--el); border: 2px solid transparent;
+  display: flex; align-items: center; gap: 10px; padding: 0 16px; font-size: 17px; color: var(--muted); }
+.field-focus { border-color: var(--primary-press); background: var(--surface); color: var(--text); box-shadow: 0 0 0 4px var(--primary-soft); }
+.field-filled { color: var(--text); }
+.chip { box-sizing: border-box; height: 42px; border-radius: 999px; background: var(--el); border: 2px solid transparent;
+  display: flex; align-items: center; gap: 6px; padding: 0 14px; font-size: 15px; font-weight: 700; color: var(--text); }
+.chip-on { background: var(--primary-soft); color: var(--primary-ink); }
+.card { background: var(--surface); border-radius: 20px; box-shadow: 0 1px 3px rgba(43,31,22,.05); }
+.option { box-sizing: border-box; background: var(--el); border: 2px solid transparent; border-radius: 18px; padding: 16px;
+  display: flex; align-items: center; gap: 14px; }
+.option-on { border-color: var(--primary-press); background: var(--primary-soft); }
+.radio { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--line); box-sizing: border-box; flex-shrink: 0; }
+.radio-on { border: 7px solid var(--primary-press); }
+.top { display: flex; align-items: center; gap: 14px; height: 44px; }
+.back { width: 44px; height: 44px; border-radius: 14px; background: var(--el); border: 2px solid transparent; box-sizing: border-box;
+  display: flex; align-items: center; justify-content: center; color: var(--text); flex-shrink: 0; }
+.track { flex: 1; height: 12px; border-radius: 999px; background: var(--el); overflow: hidden; }
+.fill { height: 12px; border-radius: 999px; background: var(--primary-press); }
+.badge { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 10px; border-radius: 999px; font-size: 12px; font-weight: 800; }
+.badge-green { background: var(--green-soft); color: var(--green); }
+.badge-muted { background: var(--el); color: var(--muted); }
+.badge-orange { background: var(--primary-soft); color: var(--primary-ink); }
+.row { display: flex; align-items: center; gap: 14px; padding: 14px 16px; }
+.divider { height: 1px; background: var(--line); margin: 0 16px; }
+.iconbox { width: 44px; height: 44px; border-radius: 14px; background: var(--el); display: flex; align-items: center; justify-content: center; color: var(--text); flex-shrink: 0; }
+.section { font-size: 13px; line-height: 16px; font-weight: 800; letter-spacing: 0.8px; color: var(--muted); text-transform: uppercase; padding: 0 4px; }
+.otp { width: 48px; height: 60px; border-radius: 14px; background: var(--el); border: 2px solid transparent; box-sizing: border-box;
+  display: flex; align-items: center; justify-content: center; font-family: 'Fredoka', ui-rounded, system-ui, sans-serif; font-size: 26px; font-weight: 600; color: var(--text); }
+.otp-on { border-color: var(--primary-press); box-shadow: 0 0 0 4px var(--primary-soft); }
+.avatar { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif; font-weight: 600; font-size: 18px; flex-shrink: 0; }
+
+/* ---- App tabs ---- */
+.tabbar { position: absolute; left: 50%; transform: translateX(-50%); bottom: 24px; display: flex; align-items: center; gap: 4px;
+  padding: 6px 8px; background: var(--surface); border-radius: 999px; box-sizing: border-box;
+  box-shadow: 0 10px 30px rgba(43,31,22,.20); }
+.tab { width: 72px; height: 52px; border-radius: 999px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .2px; }
+.tab-on { background: var(--primary-soft); color: var(--primary-ink); }
+.post { background: var(--surface); border-radius: 20px; box-shadow: 0 1px 3px rgba(43,31,22,.05); padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.halo { border-radius: 50%; background: var(--primary-soft); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.photo { border-radius: 14px; height: 148px; background: linear-gradient(140deg, #FFE1A8, #FFC07A 45%, #9FD4B0); }
+.metrow { display: flex; align-items: center; gap: 18px; color: var(--muted); font-size: 14px; font-weight: 800; }
+.met { display: flex; align-items: center; gap: 6px; }
+.stat { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 14px 0; }
+.stat b { font-family: 'Fredoka', ui-rounded, system-ui, sans-serif; font-weight: 600; font-size: 20px; }
+.vline { width: 1px; align-self: stretch; background: var(--line); }
+/* map */
+.map { position: absolute; inset: 0; background: #EFE7DC; overflow: hidden; }
+.blk { position: absolute; background: #E4DACC; border-radius: 5px; }
+.park { position: absolute; background: #D6E8CB; border-radius: 26px; }
+.road { position: absolute; background: #FAF6EF; }
+.water { position: absolute; background: #CFE3EC; border-radius: 30px; }
+.marker { position: absolute; width: 52px; height: 52px; border-radius: 50%; border: 3px solid var(--surface); box-sizing: border-box;
+  box-shadow: 0 4px 10px rgba(43,31,22,.25); }
+.glass { background: var(--surface); box-sizing: border-box; border-radius: 999px;
+  box-shadow: 0 8px 20px rgba(43,31,22,.16); }
+.seg { display: flex; gap: 4px; background: var(--el); border-radius: 999px; padding: 4px; }
+.seg-item { flex: 1; height: 36px; border-radius: 999px; display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 800; color: var(--muted); }
+.seg-on { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(43,31,22,.10); }
+.rbtn { width: 44px; height: 44px; border-radius: 999px; background: var(--el); display: flex; align-items: center;
+  justify-content: center; color: var(--text); flex-shrink: 0; }
+.rbtn-brand { background: var(--primary); color: var(--on-primary); box-shadow: 0 3px 0 var(--primary-press); }
+.searchbar { height: 48px; border-radius: 999px; background: var(--el); display: flex; align-items: center; gap: 10px;
+  padding: 0 16px; color: var(--muted); font-size: 16px; }
+.textarea { border-radius: 16px; background: var(--el); padding: 16px; font-size: 17px; line-height: 25px; }
+.tile { width: 76px; height: 76px; border-radius: 16px; background: var(--el); display: flex; align-items: center;
+  justify-content: center; color: var(--muted); }
+/* spec sheet */
+.sheet { box-sizing: border-box; background: var(--bg); color: var(--text); font-family: 'Nunito', ui-rounded, system-ui, sans-serif;
+  font-weight: 600; padding: 32px; display: flex; flex-direction: column; gap: 24px; }
+.panel { background: var(--surface); border-radius: 20px; padding: 20px; box-shadow: 0 1px 3px rgba(43,31,22,.05); }
+.bar { background: var(--primary); height: 16px; border-radius: 4px; }
+.spec-h { font-family: 'Fredoka', ui-rounded, system-ui, sans-serif; font-weight: 600; font-size: 20px; }
+.mono { font-family: ui-monospace, Menlo, monospace; font-size: 13px; font-weight: 600; color: var(--primary-ink); }
+.rule { display: flex; gap: 10px; font-size: 14px; line-height: 21px; }
+.tick { color: var(--green); font-weight: 800; }
+.cross { color: var(--red); font-weight: 800; }
+
+</style>
+</helmet>
+<div class="screen light" style="height: 844px; padding: 54px 16px 24px; position: relative; overflow: hidden;">
+<div style="display:flex; align-items:center; gap:12px;">
+  <div class="back"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg></div>
+  <div class="display" style="font-size:20px; flex:1;">New post</div>
+  <div class="btn btn-primary" style="height:44px; padding:0 20px; font-size:16px;">Post</div>
+</div>
+
+<div style="display:flex; align-items:center; gap:12px; margin-top:24px;">
+  <div class="avatar" style="width:44px; height:44px; background: var(--primary); color: var(--on-primary); font-size:18px;">A</div>
+  <div><div class="label">Alex Rivera</div><div class="small" style="font-size:13px;">Posting as you, not Mochi</div></div>
+</div>
+
+<div class="textarea" style="margin-top:16px; min-height:150px; color: var(--muted);">What's happening?</div>
+
+<div style="display:flex; gap:12px; margin-top:16px;">
+  <div class="tile"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5h3l1.8-2.5h6.4L17 8.5h3v10.5H4z"/><circle cx="12" cy="13.5" r="3.3"/></svg></div>
+  <div class="tile"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4.5L3.5 7v12.5L9 17l6 2.5 5.5-2.5V4.5L15 7 9 4.5z"/><path d="M9 4.5V17M15 7v12.5"/></svg></div>
+</div>
+
+<div class="card" style="margin-top:24px; padding:14px 16px; display:flex; align-items:center; gap:12px; background: var(--primary-soft);">
+  <div class="halo" style="width:40px; height:40px; background: var(--surface);"><svg width="30" height="30" viewBox="0 0 64 64">
+<path d="M27 17c-1-6 0-11 2.5-11S33 10 32.5 15" stroke="#FFD86B" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+<path d="M33 16c0-5.5 1.5-9 3.5-8.4S38 13 36.5 16.5" stroke="#FFCB4D" stroke-width="4" fill="none" stroke-linecap="round"/>
+<circle cx="32" cy="38" r="20" fill="#FFD05B"/>
+<ellipse cx="32" cy="39" rx="13.5" ry="12.5" fill="#FFF6E2"/>
+<circle cx="22.5" cy="44" r="3.6" fill="#FF8A4C" opacity=".85"/>
+<circle cx="41.5" cy="44" r="3.6" fill="#FF8A4C" opacity=".85"/>
+<circle cx="27" cy="36" r="3.1" fill="#2B1F16"/><circle cx="37" cy="36" r="3.1" fill="#2B1F16"/>
+<circle cx="28" cy="35" r="1" fill="#fff"/><circle cx="38" cy="35" r="1" fill="#fff"/>
+<path d="M32 40.5l-2.6 2.4a3.4 3.4 0 005.2 0z" fill="#FFAE4D"/>
+<path d="M27 58.5l-1.5 2.5M31 58.5l0 2.5M37 58.5l1.5 2.5" stroke="#FF9A5E" stroke-width="2.2" stroke-linecap="round"/>
+</svg></div>
+  <div style="flex:1; font-size:14px; line-height:20px;">Want Mochi to write it instead? <a>Ask your pet</a></div>
+</div>
+
+</div>
+</x-dc>
+</body>
+</html>

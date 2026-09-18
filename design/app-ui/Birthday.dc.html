@@ -1,0 +1,105 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&amp;family=Nunito:wght@500;600;700;800&amp;display=swap">
+  <style>
+:root, .light {
+  --bg: #FFF6EC; --surface: #FFFFFF; --el: #F7EADA; --line: #EEDDC9;
+  --text: #2B1F16; --muted: #7D6B5B;
+  --primary: #FFC53D; --primary-press: #E09E00; --primary-soft: #FFF0C2; --primary-ink: #8A5A00; --on-primary: #2B1F16;
+  --cheek: #FF8A4C;
+  --green: #2F9E5E; --green-soft: #DDF2E4; --red: #D9453F; --red-soft: #FCE3E1; --sun: #FFC247;
+}
+.dark {
+  --bg: #1A1410; --surface: #251D17; --el: #30261E; --line: #3D3128;
+  --text: #FAF1E7; --muted: #B6A594;
+  --primary: #FFCB4D; --primary-press: #B88312; --primary-soft: #3A2E12; --primary-ink: #FFD36B; --on-primary: #1A1410;
+  --cheek: #FF9A5E;
+  --green: #5BC98A; --green-soft: #1E3A2A; --red: #FF7A73; --red-soft: #41211E; --sun: #FFCB5C;
+}
+body { margin: 0; background: #E9E2DA; }
+a { color: var(--primary-ink); text-decoration: none; font-weight: 800; }
+a:hover { color: var(--primary-press); }
+.screen { box-sizing: border-box; width: 390px; background: var(--bg); color: var(--text);
+  font-family: 'Nunito', ui-rounded, 'SF Pro Rounded', system-ui, sans-serif; font-weight: 600;
+  display: flex; flex-direction: column; padding: 54px 16px 34px; }
+.display { font-family: 'Fredoka', ui-rounded, 'SF Pro Rounded', system-ui, sans-serif; font-weight: 600; letter-spacing: -0.2px; }
+.h1 { font-family: 'Fredoka', ui-rounded, system-ui, sans-serif; font-weight: 600; font-size: 30px; line-height: 36px; margin: 0; text-wrap: balance; }
+.sub { font-size: 16px; line-height: 24px; color: var(--muted); margin: 0; text-wrap: pretty; }
+.label { font-size: 14px; line-height: 20px; font-weight: 800; color: var(--text); }
+.small { font-size: 14px; line-height: 20px; color: var(--muted); }
+.btn { box-sizing: border-box; height: 56px; border-radius: 18px; display: flex; align-items: center; justify-content: center; gap: 10px;
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif; font-weight: 600; font-size: 18px; }
+.btn-primary { background: var(--primary); color: var(--on-primary); box-shadow: 0 4px 0 var(--primary-press); }
+.btn-secondary { background: var(--surface); color: var(--text); box-shadow: 0 3px 0 var(--line); }
+.btn-apple { background: var(--text); color: var(--bg); box-shadow: 0 3px 0 #00000033; }
+.btn-disabled { background: var(--el); color: var(--muted); }
+.btn-danger { background: var(--surface); color: var(--red); box-shadow: 0 3px 0 var(--line); }
+.link { text-align: center; font-weight: 800; color: var(--primary-ink); font-size: 16px; padding: 12px 0; }
+.field { box-sizing: border-box; height: 56px; border-radius: 16px; background: var(--el); border: 2px solid transparent;
+  display: flex; align-items: center; gap: 10px; padding: 0 16px; font-size: 17px; color: var(--muted); }
+.field-focus { border-color: var(--primary-press); background: var(--surface); color: var(--text); box-shadow: 0 0 0 4px var(--primary-soft); }
+.field-filled { color: var(--text); }
+.chip { box-sizing: border-box; height: 42px; border-radius: 999px; background: var(--el); border: 2px solid transparent;
+  display: flex; align-items: center; gap: 6px; padding: 0 14px; font-size: 15px; font-weight: 700; color: var(--text); }
+.chip-on { background: var(--primary-soft); color: var(--primary-ink); }
+.card { background: var(--surface); border-radius: 20px; box-shadow: 0 1px 3px rgba(43,31,22,.05); }
+.option { box-sizing: border-box; background: var(--el); border: 2px solid transparent; border-radius: 18px; padding: 16px;
+  display: flex; align-items: center; gap: 14px; }
+.option-on { border-color: var(--primary-press); background: var(--primary-soft); }
+.radio { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--line); box-sizing: border-box; flex-shrink: 0; }
+.radio-on { border: 7px solid var(--primary-press); }
+.top { display: flex; align-items: center; gap: 14px; height: 44px; }
+.back { width: 44px; height: 44px; border-radius: 14px; background: var(--el); border: 2px solid transparent; box-sizing: border-box;
+  display: flex; align-items: center; justify-content: center; color: var(--text); flex-shrink: 0; }
+.track { flex: 1; height: 12px; border-radius: 999px; background: var(--el); overflow: hidden; }
+.fill { height: 12px; border-radius: 999px; background: var(--primary-press); }
+.badge { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 10px; border-radius: 999px; font-size: 12px; font-weight: 800; }
+.badge-green { background: var(--green-soft); color: var(--green); }
+.badge-muted { background: var(--el); color: var(--muted); }
+.badge-orange { background: var(--primary-soft); color: var(--primary-ink); }
+.row { display: flex; align-items: center; gap: 14px; padding: 14px 16px; }
+.divider { height: 1px; background: var(--line); margin: 0 16px; }
+.iconbox { width: 44px; height: 44px; border-radius: 14px; background: var(--el); display: flex; align-items: center; justify-content: center; color: var(--text); flex-shrink: 0; }
+.section { font-size: 13px; line-height: 16px; font-weight: 800; letter-spacing: 0.8px; color: var(--muted); text-transform: uppercase; padding: 0 4px; }
+.otp { width: 48px; height: 60px; border-radius: 14px; background: var(--el); border: 2px solid transparent; box-sizing: border-box;
+  display: flex; align-items: center; justify-content: center; font-family: 'Fredoka', ui-rounded, system-ui, sans-serif; font-size: 26px; font-weight: 600; color: var(--text); }
+.otp-on { border-color: var(--primary-press); box-shadow: 0 0 0 4px var(--primary-soft); }
+.avatar { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif; font-weight: 600; font-size: 18px; flex-shrink: 0; }
+</style>
+</helmet>
+<div class="screen light" style="height: 844px; padding: 54px 16px 34px;">
+
+<div class="top">
+  <div class="back"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></div>
+  <div class="track"><div class="fill" style="width: 22%;"></div></div>
+  <div class="small" style="font-weight: 800; width: 44px; text-align: right;">2/9</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px; margin-top: 28px;"><h1 class="h1">When's your birthday?</h1><p class="sub">You must be 18 or older to use Tielo. This won't be shown on your profile.</p></div>
+<div class="card" style="margin-top: 28px; padding: 14px 8px; position: relative;">
+  <div style="position: absolute; left: 12px; right: 12px; top: 86px; height: 36px; border-radius: 10px; background: var(--el);"></div>
+  <div style="position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0;">
+    <div><div style="height: 36px; display: flex; align-items: center; justify-content: center; font-size: 19px; font-weight: 600; color: var(--muted); opacity: 0.28;">March</div><div style="height: 36px; display: flex; align-items: center; justify-content: center; font-size: 19px; font-weight: 600; color: var(--muted); opacity: 0.28;">April</div><div style="height: 36px; display: flex; align-items: center; justify-content: center; font-size: 19px; font-weight: 600; color: var(--muted); opacity: 0.55;">May</div><div style="height: 36px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800; color: var(--text); opacity: 1;">June</div><div style="height: 36px; display: flex; align-items: center; justify-content: center; font-size: 19px; font-weight: 600; color: var(--muted); opacity: 0.55;">July</div><div style="height: 36px; display: flex; align-items: center; justify-content: center; font-size: 19px; font-weight: 600; color: var(--muted); opacity: 0.28;">August</div><div style="height: 36px; display: flex; align-items: center; justify-content: center; font-size: 19px; font-weight: 600; color: var(--muted); opacity: 0.28;">Sept.</div></div>
+    <div><div style="height: 36px; display: flex; align-items: center; justify-content: center; font-size: 19px; font-weight: 600; color: var(--muted); opacity: 0.28;">28</div><div style="height: 36px; display: flex; align-items: center; justify-content: center; font-size: 19px; font-weight: 600; color: var(--muted); opacity: 0.28;">29</div><div style="height: 36px; display: flex; align-items: center; justify-content: center; font-size: 19px; font-weight: 600; color: var(--muted); opacity: 0.55;">30</div><div style="height: 36px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800; color: var(--text); opacity: 1;">1</div><div style="height: 36px; display: flex; align-items: center; justify-content: center; font-size: 19px; font-weight: 600; color: var(--muted); opacity: 0.55;">2</div><div style="height: 36px; display: flex; align-items: center; justify-content: center; font-size: 19px; font-weight: 600; color: var(--muted); opacity: 0.28;">3</div><div style="height: 36px; display: flex; align-items: center; justify-content: center; font-size: 19px; font-weight: 600; color: var(--muted); opacity: 0.28;">4</div></div>
+    <div><div style="height: 36px; display: flex; align-items: center; justify-content: center; font-size: 19px; font-weight: 600; color: var(--muted); opacity: 0.28;">1992</div><div style="height: 36px; display: flex; align-items: center; justify-content: center; font-size: 19px; font-weight: 600; color: var(--muted); opacity: 0.28;">1993</div><div style="height: 36px; display: flex; align-items: center; justify-content: center; font-size: 19px; font-weight: 600; color: var(--muted); opacity: 0.55;">1994</div><div style="height: 36px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800; color: var(--text); opacity: 1;">1995</div><div style="height: 36px; display: flex; align-items: center; justify-content: center; font-size: 19px; font-weight: 600; color: var(--muted); opacity: 0.55;">1996</div><div style="height: 36px; display: flex; align-items: center; justify-content: center; font-size: 19px; font-weight: 600; color: var(--muted); opacity: 0.28;">1997</div><div style="height: 36px; display: flex; align-items: center; justify-content: center; font-size: 19px; font-weight: 600; color: var(--muted); opacity: 0.28;">1998</div></div>
+  </div>
+</div>
+<div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 16px;">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary-ink)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="3"></rect><path d="M3.5 10h17M8 3v4M16 3v4"></path></svg><div style="font-weight: 800; color: var(--primary-ink);">June 1, 1995</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px; margin-top: auto; padding-top: 16px;">
+  
+  <div class="btn btn-primary">Continue</div>
+  
+</div>
+</div>
+</x-dc>
+</body>
+</html>

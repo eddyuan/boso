@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { createAuthMiddleware } from "better-auth/api";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { emailOTP, phoneNumber, username } from "better-auth/plugins";
@@ -12,8 +13,16 @@ import {
   rateLimits,
   authEvents,
 } from "@bsocial/db";
-import { E164_REGEX, placeholderEmailForPhone } from "@bsocial/shared";
-import { getDeviceName } from "@/lib/request-meta";
+import {
+  E164_REGEX,
+  USERNAME_MAX,
+  USERNAME_MIN,
+  normalizeUsername,
+  placeholderEmailForPhone,
+  validateUsername,
+} from "@bsocial/shared";
+import { getClientIp, getDeviceName } from "@/lib/request-meta";
+import { recordActivity } from "@/lib/activity";
 import { createAppleClientSecret } from "@/lib/apple-client-secret";
 import { sendEmail } from "@/lib/mailer";
 import { sendSms } from "@/lib/sms";
@@ -118,6 +127,14 @@ export const auth = betterAuth({
   user: {
     additionalFields: {
       lastActiveAt: { type: "date", required: false, input: false },
+      // Exposed on the session so the apps can route to onboarding / the
+      // age-restricted screen without an extra request. Written by
+      // /api/me/onboarding only.
+      onboardingCompletedAt: { type: "date", required: false, input: false },
+      isAdmin: { type: "boolean", required: false, defaultValue: false, input: false },
+      // Read-only on the session so the apps can show what the pet is into.
+      interests: { type: "string[]", required: false, input: false },
+      ageGateFailedAt: { type: "date", required: false, input: false },
     },
   },
 
@@ -136,6 +153,25 @@ export const auth = betterAuth({
       "/sign-in/*": { window: 60, max: 10 },
       "/sign-up/*": { window: 60, max: 5 },
     },
+  },
+
+  hooks: {
+    // Opening the app calls /get-session; count that as the owner being active
+    // (our own API routes record it via lib/session.ts).
+    after: createAuthMiddleware(async (ctx) => {
+      if (ctx.path !== "/get-session") return;
+      const returned = ctx.context.returned as
+        | { session?: { id: string; lastActiveAt?: Date | string | null }; user?: { id: string } }
+        | null
+        | undefined;
+      if (!returned?.session || !returned.user || returned instanceof Response) return;
+      await recordActivity({
+        sessionId: returned.session.id,
+        sessionLastActiveAt: returned.session.lastActiveAt,
+        userId: returned.user.id,
+        ip: getClientIp(ctx.headers ?? ctx.request?.headers),
+      });
+    }),
   },
 
   databaseHooks: {
@@ -208,10 +244,17 @@ export const auth = betterAuth({
   // exp:// origins automatically in development. appleid.apple.com posts the
   // web OAuth callback (form_post) cross-origin.
   // Other web frontends (Expo web) are trusted too — see lib/web-origins.ts.
-  trustedOrigins: ["bsocial://", "https://appleid.apple.com", ...webAppOrigins],
+  trustedOrigins: ["tielo://", "https://appleid.apple.com", ...webAppOrigins],
 
   plugins: [
-    username(),
+    // Nicknames are set during onboarding (/api/me/onboarding/username); the
+    // same rules apply here in case a client sets one via Better Auth.
+    username({
+      minUsernameLength: USERNAME_MIN,
+      maxUsernameLength: USERNAME_MAX,
+      usernameNormalization: normalizeUsername,
+      usernameValidator: (u) => validateUsername(u) === null,
+    }),
 
     // Email codes: verify the sign-up email, and add/replace an email
     // (Apple relay and phone-only users) via request-email-change → change-email.
@@ -227,7 +270,7 @@ export const auth = betterAuth({
         await sendEmail({
           to: email,
           subject: OTP_EMAIL_SUBJECTS[type],
-          text: `Your bsocial code is ${otp}. It expires in 5 minutes.\n\nIf you didn't request this, you can ignore this email.`,
+          text: `Your Tielo code is ${otp}. It expires in 5 minutes.\n\nIf you didn't request this, you can ignore this email.`,
         });
       },
     }),
@@ -240,7 +283,7 @@ export const auth = betterAuth({
       allowedAttempts: 5,
       phoneNumberValidator: (phone) => E164_REGEX.test(phone),
       async sendOTP({ phoneNumber, code }) {
-        await sendSms({ to: phoneNumber, body: `Your bsocial code is ${code}` });
+        await sendSms({ to: phoneNumber, body: `Your Tielo code is ${code}` });
       },
       signUpOnVerification: {
         // Better Auth requires a unique email; phone users get a placeholder

@@ -9,6 +9,6 @@ type Events = {
 };
 
 export const inngest = new Inngest({
-  id: "bsocial",
+  id: "tielo",
   schemas: new EventSchemas().fromRecord<Events>(),
 });

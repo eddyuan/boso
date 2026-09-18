@@ -1,15 +1,15 @@
 {
   "expo": {
-    "name": "mobile",
-    "slug": "mobile",
+    "name": "Tielo",
+    "slug": "tielo",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "bsocial",
+    "scheme": "tielo",
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.bsocial.app",
+      "bundleIdentifier": "com.tielo.app",
       "usesAppleSignIn": true
     },
     "android": {
@@ -20,7 +20,7 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.bsocial.app"
+      "package": "com.tielo.app"
     },
     "web": {
       "output": "static",
@@ -36,7 +36,40 @@
           "imageWidth": 76
         }
       ],
-      "expo-apple-authentication"
+      "expo-apple-authentication",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Tielo uses your photos so you can choose a profile picture.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "Tielo checks your contacts to find friends who are already here. Contact details are hashed on your device and never stored."
+        }
+      ],
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Your pet uses your calendar to know when you're busy or away, so it can act at the right times.",
+          "remindersPermission": false
+        }
+      ],
+      [
+        "expo-notifications",
+        {}
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Tielo shows your pet on the map at your location, and can attach where a post was made.",
+          "locationWhenInUsePermission": "Tielo shows your pet on the map at your location, and can attach where a post was made.",
+          "isAndroidBackgroundLocationEnabled": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

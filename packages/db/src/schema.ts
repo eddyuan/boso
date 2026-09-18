@@ -10,13 +10,18 @@ import {
   index,
   integer,
   bigint,
+  date,
+  doublePrecision,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 export const actionTypeEnum = pgEnum("action_type", [
   "post",
   "follow",
   "like",
   "comment",
+  "visit", // pet viewed another pet's profile
+  "none", // the pet did nothing this tick; logged, never counts toward limits
 ]);
 
 export const actionStatusEnum = pgEnum("action_status", [
@@ -26,6 +31,8 @@ export const actionStatusEnum = pgEnum("action_status", [
   "executed",
   "failed",
 ]);
+
+export const genderEnum = pgEnum("gender", ["male", "female", "other", "prefer_not_to_say"]);
 
 // ---------------------------------------------------------------------------
 // Auth tables (Better Auth). Field keys must match Better Auth's model fields;
@@ -44,8 +51,34 @@ export const users = pgTable("users", {
   // phoneNumber plugin (E.164)
   phoneNumber: text("phone_number").unique(),
   phoneNumberVerified: boolean("phone_number_verified"),
+  // Staff access to admin features. Only settable directly in the database —
+  // never through the API (input: false in apps/web/src/lib/auth.ts).
+  isAdmin: boolean("is_admin").notNull().default(false),
+  /**
+   * A seeded account we created, not a person who signed up. Its pet is a
+   * "stray" and the apps badge it as such — users are never shown a seeded
+   * account as though it were someone real. Also what makes seed data
+   * purgeable and keeps it out of real-user counts and contact matching.
+   */
+  isMock: boolean("is_mock").notNull().default(false),
   // Last authenticated API request from any device (throttled, see apps/web/src/lib/session.ts)
   lastActiveAt: timestamp("last_active_at"),
+
+  // --- Onboarding (rules in @bsocial/shared/onboarding) ---
+  termsVersion: text("terms_version"),
+  termsAcceptedAt: timestamp("terms_accepted_at"),
+  // Set once; not editable in-app so the age gate can't be retried.
+  birthday: date("birthday", { mode: "string" }),
+  // Set when the birthday was under MIN_AGE. Blocks the account.
+  ageGateFailedAt: timestamp("age_gate_failed_at"),
+  gender: genderEnum("gender"),
+  interests: text("interests").array().notNull().default(sql`'{}'::text[]`),
+  // Optional prompts: set when shown, whether the user allowed or skipped.
+  notificationsPromptedAt: timestamp("notifications_prompted_at"),
+  contactsPromptedAt: timestamp("contacts_prompted_at"),
+  calendarPromptedAt: timestamp("calendar_prompted_at"),
+  onboardingCompletedAt: timestamp("onboarding_completed_at"),
+
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at")
     .notNull()
@@ -155,30 +188,121 @@ export const rateLimits = pgTable("rate_limits", {
 
 export const pets = pgTable("pets", {
   id: uuid("id").primaryKey().defaultRandom(),
+  // One pet per user.
   userId: text("user_id")
     .notNull()
+    .unique()
     .references(() => users.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
+  // PET_SPECIES value from @bsocial/shared
+  species: text("species").notNull(),
+  // PET_TRAITS values from @bsocial/shared
+  traits: text("traits").array().notNull().default(sql`'{}'::text[]`),
   avatarUrl: text("avatar_url"),
-  // Free-text description of voice/interests fed into the agent's system prompt.
+  // Optional free-text description of voice/interests, written by the user.
+  // Combined with species + traits for the agent's system prompt.
   personality: text("personality").notNull().default(""),
   // If true, pet actions post immediately; if false, they queue as "pending" for user review.
-  autoApprove: boolean("auto_approve").notNull().default(false),
-  maxActionsPerDay: text("max_actions_per_day").notNull().default("2"),
+  autoApprove: boolean("auto_approve").notNull().default(true),
+  // When the user consented to the pet acting on their behalf, and on what terms.
+  autonomyConsentedAt: timestamp("autonomy_consented_at"),
+  // Rolling 24h cap (see PET_DEFAULT_MAX_ACTIONS_PER_DAY in @bsocial/shared).
+  maxActionsPerDay: integer("max_actions_per_day").notNull().default(5),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at")
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
 });
+
+// Expo push tokens, one per device/app install.
+export const pushTokens = pgTable(
+  "push_tokens",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    token: text("token").notNull().unique(),
+    platform: text("platform").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at")
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [index("push_tokens_user_idx").on(t.userId)],
+);
+
+/**
+ * Somewhere real: a venue, park or landmark. Imported from OpenStreetMap by
+ * bounding box (ODbL — attribution required wherever places are shown), keyed
+ * by source + sourceId so re-imports update rather than duplicate.
+ */
+export const places = pgTable(
+  "places",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    source: text("source").notNull().default("osm"),
+    sourceId: text("source_id").notNull(),
+    name: text("name").notNull(),
+    /** Free-form for now: "cafe", "park", "restaurant"… from the OSM tag. */
+    category: text("category"),
+    latitude: doublePrecision("latitude").notNull(),
+    longitude: doublePrecision("longitude").notNull(),
+    address: text("address"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("places_source_idx").on(t.source, t.sourceId),
+    index("places_latlng_idx").on(t.latitude, t.longitude),
+  ],
+);
 
 export const posts = pgTable("posts", {
   id: uuid("id").primaryKey().defaultRandom(),
   petId: uuid("pet_id")
     .notNull()
     .references(() => pets.id, { onDelete: "cascade" }),
+  /**
+   * The place this post is about, when one was picked. The post then takes the
+   * place's coordinates, which is both tidier on the map (posts cluster on real
+   * venues) and more private than the poster's own position.
+   */
+  placeId: uuid("place_id").references(() => places.id, { onDelete: "set null" }),
   content: text("content").notNull(),
-  imageUrl: text("image_url"),
+  // Where the post was made, for the map tab. Coarse (~100 m) for privacy.
+  latitude: doublePrecision("latitude"),
+  longitude: doublePrecision("longitude"),
   // Whether a human wrote this or the agent generated it (for transparency in the UI).
   authoredByAgent: boolean("authored_by_agent").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
+
+export const postMediaKindEnum = pgEnum("post_media_kind", ["image", "video"]);
+
+/**
+ * A post's photos/videos — a separate table rather than columns on `posts`,
+ * since a post can carry up to `MAX_POST_MEDIA` (see src/lib/post-media in the
+ * web app) rather than exactly one. `position` is display order, not upload
+ * order, so an admin (or eventually a person) can reorder a gallery.
+ */
+export const postMedia = pgTable(
+  "post_media",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    postId: uuid("post_id")
+      .notNull()
+      .references(() => posts.id, { onDelete: "cascade" }),
+    kind: postMediaKindEnum("kind").notNull().default("image"),
+    url: text("url").notNull(),
+    /** Small WebP for markers and list rows; a video's poster frame for `video`. */
+    thumbUrl: text("thumb_url"),
+    position: integer("position").notNull().default(0),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("post_media_post_idx").on(t.postId, t.position)],
+);
 
 export const follows = pgTable(
   "follows",
@@ -239,3 +363,49 @@ export const petActions = pgTable("pet_actions", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
   executedAt: timestamp("executed_at"),
 });
+
+// ---------------------------------------------------------------------------
+// Mock user profiles — personality & behavior config for bot accounts
+// ---------------------------------------------------------------------------
+
+export const mockProfiles = pgTable(
+  "mock_profiles",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    // One profile per mock user.
+    userId: text("user_id")
+      .notNull()
+      .unique()
+      .references(() => users.id, { onDelete: "cascade" }),
+    gender: genderEnum("gender"),
+    age: integer("age"),
+    // Human-readable location (city/neighborhood).
+    location: text("location"),
+    // Coordinates for proximity matching.
+    latitude: doublePrecision("latitude"),
+    longitude: doublePrecision("longitude"),
+    // Life story, occupation, interests — used in AI prompts.
+    background: text("background"),
+    // Personality traits for matching and content generation.
+    personalityTraits: text("personality_traits")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    // Writing style: "casual", "poetic", "humorous", "formal", etc.
+    tone: text("tone"),
+    // Posting schedule configuration.
+    // Example: { frequency: "daily", times: ["09:00", "14:00", "20:00"], timezone: "America/Toronto" }
+    postingSchedule: jsonb("posting_schedule"),
+    // Topics/interests for content generation and engagement matching.
+    interests: text("interests")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at")
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [index("mock_profiles_user_idx").on(t.userId)],
+);

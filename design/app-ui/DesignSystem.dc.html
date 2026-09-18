@@ -1,0 +1,132 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&amp;family=Nunito:wght@500;600;700;800&amp;display=swap">
+  <style>
+:root, .light {
+  --bg: #FFF6EC; --surface: #FFFFFF; --el: #F7EADA; --line: #EEDDC9;
+  --text: #2B1F16; --muted: #7D6B5B;
+  --primary: #FFC53D; --primary-press: #E09E00; --primary-soft: #FFF0C2; --primary-ink: #8A5A00; --on-primary: #2B1F16;
+  --cheek: #FF8A4C;
+  --green: #2F9E5E; --green-soft: #DDF2E4; --red: #D9453F; --red-soft: #FCE3E1; --sun: #FFC247;
+}
+.dark {
+  --bg: #1A1410; --surface: #251D17; --el: #30261E; --line: #3D3128;
+  --text: #FAF1E7; --muted: #B6A594;
+  --primary: #FFCB4D; --primary-press: #B88312; --primary-soft: #3A2E12; --primary-ink: #FFD36B; --on-primary: #1A1410;
+  --cheek: #FF9A5E;
+  --green: #5BC98A; --green-soft: #1E3A2A; --red: #FF7A73; --red-soft: #41211E; --sun: #FFCB5C;
+}
+body { margin: 0; background: #E9E2DA; }
+a { color: var(--primary-ink); text-decoration: none; font-weight: 800; }
+a:hover { color: var(--primary-press); }
+.screen { box-sizing: border-box; width: 390px; background: var(--bg); color: var(--text);
+  font-family: 'Nunito', ui-rounded, 'SF Pro Rounded', system-ui, sans-serif; font-weight: 600;
+  display: flex; flex-direction: column; padding: 54px 16px 34px; }
+.display { font-family: 'Fredoka', ui-rounded, 'SF Pro Rounded', system-ui, sans-serif; font-weight: 600; letter-spacing: -0.2px; }
+.h1 { font-family: 'Fredoka', ui-rounded, system-ui, sans-serif; font-weight: 600; font-size: 30px; line-height: 36px; margin: 0; text-wrap: balance; }
+.sub { font-size: 16px; line-height: 24px; color: var(--muted); margin: 0; text-wrap: pretty; }
+.label { font-size: 14px; line-height: 20px; font-weight: 800; color: var(--text); }
+.small { font-size: 14px; line-height: 20px; color: var(--muted); }
+.btn { box-sizing: border-box; height: 56px; border-radius: 18px; display: flex; align-items: center; justify-content: center; gap: 10px;
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif; font-weight: 600; font-size: 18px; }
+.btn-primary { background: var(--primary); color: var(--on-primary); box-shadow: 0 4px 0 var(--primary-press); }
+.btn-secondary { background: var(--surface); color: var(--text); box-shadow: 0 3px 0 var(--line); }
+.btn-apple { background: var(--text); color: var(--bg); box-shadow: 0 3px 0 #00000033; }
+.btn-disabled { background: var(--el); color: var(--muted); }
+.btn-danger { background: var(--surface); color: var(--red); box-shadow: 0 3px 0 var(--line); }
+.link { text-align: center; font-weight: 800; color: var(--primary-ink); font-size: 16px; padding: 12px 0; }
+.field { box-sizing: border-box; height: 56px; border-radius: 16px; background: var(--el); border: 2px solid transparent;
+  display: flex; align-items: center; gap: 10px; padding: 0 16px; font-size: 17px; color: var(--muted); }
+.field-focus { border-color: var(--primary-press); background: var(--surface); color: var(--text); box-shadow: 0 0 0 4px var(--primary-soft); }
+.field-filled { color: var(--text); }
+.chip { box-sizing: border-box; height: 42px; border-radius: 999px; background: var(--el); border: 2px solid transparent;
+  display: flex; align-items: center; gap: 6px; padding: 0 14px; font-size: 15px; font-weight: 700; color: var(--text); }
+.chip-on { background: var(--primary-soft); color: var(--primary-ink); }
+.card { background: var(--surface); border-radius: 20px; box-shadow: 0 1px 3px rgba(43,31,22,.05); }
+.option { box-sizing: border-box; background: var(--el); border: 2px solid transparent; border-radius: 18px; padding: 16px;
+  display: flex; align-items: center; gap: 14px; }
+.option-on { border-color: var(--primary-press); background: var(--primary-soft); }
+.radio { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--line); box-sizing: border-box; flex-shrink: 0; }
+.radio-on { border: 7px solid var(--primary-press); }
+.top { display: flex; align-items: center; gap: 14px; height: 44px; }
+.back { width: 44px; height: 44px; border-radius: 14px; background: var(--el); border: 2px solid transparent; box-sizing: border-box;
+  display: flex; align-items: center; justify-content: center; color: var(--text); flex-shrink: 0; }
+.track { flex: 1; height: 12px; border-radius: 999px; background: var(--el); overflow: hidden; }
+.fill { height: 12px; border-radius: 999px; background: var(--primary-press); }
+.badge { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 10px; border-radius: 999px; font-size: 12px; font-weight: 800; }
+.badge-green { background: var(--green-soft); color: var(--green); }
+.badge-muted { background: var(--el); color: var(--muted); }
+.badge-orange { background: var(--primary-soft); color: var(--primary-ink); }
+.row { display: flex; align-items: center; gap: 14px; padding: 14px 16px; }
+.divider { height: 1px; background: var(--line); margin: 0 16px; }
+.iconbox { width: 44px; height: 44px; border-radius: 14px; background: var(--el); display: flex; align-items: center; justify-content: center; color: var(--text); flex-shrink: 0; }
+.section { font-size: 13px; line-height: 16px; font-weight: 800; letter-spacing: 0.8px; color: var(--muted); text-transform: uppercase; padding: 0 4px; }
+.otp { width: 48px; height: 60px; border-radius: 14px; background: var(--el); border: 2px solid transparent; box-sizing: border-box;
+  display: flex; align-items: center; justify-content: center; font-family: 'Fredoka', ui-rounded, system-ui, sans-serif; font-size: 26px; font-weight: 600; color: var(--text); }
+.otp-on { border-color: var(--primary-press); box-shadow: 0 0 0 4px var(--primary-soft); }
+.avatar { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif; font-weight: 600; font-size: 18px; flex-shrink: 0; }
+</style>
+</helmet>
+<div class="light" style="box-sizing: border-box; width: 1280px; height: 1180px; background: #FFFDFA; color: #2B1F16; font-family: 'Nunito', ui-rounded, system-ui, sans-serif; font-weight: 600; padding: 56px; display: flex; flex-direction: column; gap: 40px;">
+  <div style="display: flex; align-items: center; gap: 18px;"><svg width="72" height="72" viewBox="0 0 120 120" overflow="visible">
+  <ellipse cx="60" cy="114" rx="30" ry="4.5" fill="#00000014"></ellipse>
+  <path d="M56 26 C48 6 66 -2 78 6 C68 8 64 14 66 26 Z" fill="#FFD84D"></path><path d="M50 28 C40 16 46 8 52 10 C48 14 50 20 56 28 Z" fill="#F2B72C"></path>
+  <path d="M52 108 l-2 7 M58 109 l0 7 M62 109 l0 7 M68 108 l2 7" stroke="#F49AB0" stroke-width="3" stroke-linecap="round"></path>
+  <circle cx="60" cy="66" r="44" fill="#FFD84D"></circle>
+  <path d="M20 70 q-6 20 12 30 q-4 -14 -2 -28 Z" fill="#F2B72C"></path><path d="M100 70 q6 20 -12 30 q4 -14 2 -28 Z" fill="#F2B72C"></path>
+  <ellipse cx="60" cy="58" rx="31" ry="25" fill="#FFF7D6"></ellipse>
+  <circle cx="37" cy="66" r="9" fill="#FF8A4C"></circle><circle cx="83" cy="66" r="9" fill="#FF8A4C"></circle>
+  <path d="M42 56 q6 -8 12 0 M66 56 q6 -8 12 0" stroke="#2B1F16" stroke-width="3.8" fill="none" stroke-linecap="round"></path>
+  <path d="M55 61 q5 -3 10 0 q0 6 -5 8 q-5 -2 -5 -8 Z" fill="#F29C38"></path>
+  
+  
+</svg><div><div class="display" style="font-size: 40px; line-height: 44px; color: #8A5A00;">Tielo UI kit</div><div style="font-size: 16px; color: #7D6B5B;">Playful &amp; warm · lutino cockatiel gold · Fredoka (display) + Nunito (text) · light + dark</div></div></div>
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 40px;">
+    <div style="display: flex; flex-direction: column; gap: 14px;"><div class="section" style="padding: 0;">Light</div><div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px;"><div style="display: flex; flex-direction: column; gap: 6px;"><div class="light" style="height: 56px; border-radius: 14px; background: var(--bg); border: 2px solid #00000010;"></div><div style="font-size: 12px; font-weight: 800; color: #2B1F16;">Background</div><div style="font-size: 11px; color: #7D6B5B;">--bg</div></div><div style="display: flex; flex-direction: column; gap: 6px;"><div class="light" style="height: 56px; border-radius: 14px; background: var(--surface); border: 2px solid #00000010;"></div><div style="font-size: 12px; font-weight: 800; color: #2B1F16;">Surface</div><div style="font-size: 11px; color: #7D6B5B;">--surface</div></div><div style="display: flex; flex-direction: column; gap: 6px;"><div class="light" style="height: 56px; border-radius: 14px; background: var(--el); border: 2px solid #00000010;"></div><div style="font-size: 12px; font-weight: 800; color: #2B1F16;">Element</div><div style="font-size: 11px; color: #7D6B5B;">--el</div></div><div style="display: flex; flex-direction: column; gap: 6px;"><div class="light" style="height: 56px; border-radius: 14px; background: var(--line); border: 2px solid #00000010;"></div><div style="font-size: 12px; font-weight: 800; color: #2B1F16;">Line</div><div style="font-size: 11px; color: #7D6B5B;">--line</div></div><div style="display: flex; flex-direction: column; gap: 6px;"><div class="light" style="height: 56px; border-radius: 14px; background: var(--text); border: 2px solid #00000010;"></div><div style="font-size: 12px; font-weight: 800; color: #2B1F16;">Text</div><div style="font-size: 11px; color: #7D6B5B;">--text</div></div><div style="display: flex; flex-direction: column; gap: 6px;"><div class="light" style="height: 56px; border-radius: 14px; background: var(--muted); border: 2px solid #00000010;"></div><div style="font-size: 12px; font-weight: 800; color: #2B1F16;">Muted</div><div style="font-size: 11px; color: #7D6B5B;">--muted</div></div><div style="display: flex; flex-direction: column; gap: 6px;"><div class="light" style="height: 56px; border-radius: 14px; background: var(--primary); border: 2px solid #00000010;"></div><div style="font-size: 12px; font-weight: 800; color: #2B1F16;">Primary</div><div style="font-size: 11px; color: #7D6B5B;">--primary</div></div><div style="display: flex; flex-direction: column; gap: 6px;"><div class="light" style="height: 56px; border-radius: 14px; background: var(--primary-press); border: 2px solid #00000010;"></div><div style="font-size: 12px; font-weight: 800; color: #2B1F16;">Primary deep</div><div style="font-size: 11px; color: #7D6B5B;">--primary-press</div></div><div style="display: flex; flex-direction: column; gap: 6px;"><div class="light" style="height: 56px; border-radius: 14px; background: var(--primary-soft); border: 2px solid #00000010;"></div><div style="font-size: 12px; font-weight: 800; color: #2B1F16;">Primary soft</div><div style="font-size: 11px; color: #7D6B5B;">--primary-soft</div></div><div style="display: flex; flex-direction: column; gap: 6px;"><div class="light" style="height: 56px; border-radius: 14px; background: var(--cheek); border: 2px solid #00000010;"></div><div style="font-size: 12px; font-weight: 800; color: #2B1F16;">Cheek</div><div style="font-size: 11px; color: #7D6B5B;">--cheek</div></div><div style="display: flex; flex-direction: column; gap: 6px;"><div class="light" style="height: 56px; border-radius: 14px; background: var(--green); border: 2px solid #00000010;"></div><div style="font-size: 12px; font-weight: 800; color: #2B1F16;">Green</div><div style="font-size: 11px; color: #7D6B5B;">--green</div></div><div style="display: flex; flex-direction: column; gap: 6px;"><div class="light" style="height: 56px; border-radius: 14px; background: var(--red); border: 2px solid #00000010;"></div><div style="font-size: 12px; font-weight: 800; color: #2B1F16;">Red</div><div style="font-size: 11px; color: #7D6B5B;">--red</div></div></div></div>
+    <div style="display: flex; flex-direction: column; gap: 14px;"><div class="section" style="padding: 0;">Dark</div><div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px;"><div style="display: flex; flex-direction: column; gap: 6px;"><div class="dark" style="height: 56px; border-radius: 14px; background: var(--bg); border: 2px solid #00000010;"></div><div style="font-size: 12px; font-weight: 800; color: #2B1F16;">Background</div><div style="font-size: 11px; color: #7D6B5B;">--bg</div></div><div style="display: flex; flex-direction: column; gap: 6px;"><div class="dark" style="height: 56px; border-radius: 14px; background: var(--surface); border: 2px solid #00000010;"></div><div style="font-size: 12px; font-weight: 800; color: #2B1F16;">Surface</div><div style="font-size: 11px; color: #7D6B5B;">--surface</div></div><div style="display: flex; flex-direction: column; gap: 6px;"><div class="dark" style="height: 56px; border-radius: 14px; background: var(--el); border: 2px solid #00000010;"></div><div style="font-size: 12px; font-weight: 800; color: #2B1F16;">Element</div><div style="font-size: 11px; color: #7D6B5B;">--el</div></div><div style="display: flex; flex-direction: column; gap: 6px;"><div class="dark" style="height: 56px; border-radius: 14px; background: var(--line); border: 2px solid #00000010;"></div><div style="font-size: 12px; font-weight: 800; color: #2B1F16;">Line</div><div style="font-size: 11px; color: #7D6B5B;">--line</div></div><div style="display: flex; flex-direction: column; gap: 6px;"><div class="dark" style="height: 56px; border-radius: 14px; background: var(--text); border: 2px solid #00000010;"></div><div style="font-size: 12px; font-weight: 800; color: #2B1F16;">Text</div><div style="font-size: 11px; color: #7D6B5B;">--text</div></div><div style="display: flex; flex-direction: column; gap: 6px;"><div class="dark" style="height: 56px; border-radius: 14px; background: var(--muted); border: 2px solid #00000010;"></div><div style="font-size: 12px; font-weight: 800; color: #2B1F16;">Muted</div><div style="font-size: 11px; color: #7D6B5B;">--muted</div></div><div style="display: flex; flex-direction: column; gap: 6px;"><div class="dark" style="height: 56px; border-radius: 14px; background: var(--primary); border: 2px solid #00000010;"></div><div style="font-size: 12px; font-weight: 800; color: #2B1F16;">Primary</div><div style="font-size: 11px; color: #7D6B5B;">--primary</div></div><div style="display: flex; flex-direction: column; gap: 6px;"><div class="dark" style="height: 56px; border-radius: 14px; background: var(--primary-press); border: 2px solid #00000010;"></div><div style="font-size: 12px; font-weight: 800; color: #2B1F16;">Primary deep</div><div style="font-size: 11px; color: #7D6B5B;">--primary-press</div></div><div style="display: flex; flex-direction: column; gap: 6px;"><div class="dark" style="height: 56px; border-radius: 14px; background: var(--primary-soft); border: 2px solid #00000010;"></div><div style="font-size: 12px; font-weight: 800; color: #2B1F16;">Primary soft</div><div style="font-size: 11px; color: #7D6B5B;">--primary-soft</div></div><div style="display: flex; flex-direction: column; gap: 6px;"><div class="dark" style="height: 56px; border-radius: 14px; background: var(--cheek); border: 2px solid #00000010;"></div><div style="font-size: 12px; font-weight: 800; color: #2B1F16;">Cheek</div><div style="font-size: 11px; color: #7D6B5B;">--cheek</div></div><div style="display: flex; flex-direction: column; gap: 6px;"><div class="dark" style="height: 56px; border-radius: 14px; background: var(--green); border: 2px solid #00000010;"></div><div style="font-size: 12px; font-weight: 800; color: #2B1F16;">Green</div><div style="font-size: 11px; color: #7D6B5B;">--green</div></div><div style="display: flex; flex-direction: column; gap: 6px;"><div class="dark" style="height: 56px; border-radius: 14px; background: var(--red); border: 2px solid #00000010;"></div><div style="font-size: 12px; font-weight: 800; color: #2B1F16;">Red</div><div style="font-size: 11px; color: #7D6B5B;">--red</div></div></div></div>
+  </div>
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px;">
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="section" style="padding: 0;">Type</div>
+      <div class="display" style="font-size: 34px; line-height: 40px;">Hero 34/40</div>
+      <div class="h1">Title 30/36</div>
+      <div class="display" style="font-size: 20px; line-height: 26px;">Header 20/26</div>
+      <div style="font-size: 16px; line-height: 24px; color: #7D6B5B;">Body 16/24 · Nunito 600</div>
+      <div style="font-size: 14px; line-height: 20px; font-weight: 800;">Label 14/20 · 800</div>
+      <div class="section" style="padding: 0;">Section 13 · caps</div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="section" style="padding: 0;">Buttons · 56 tall · radius 18</div>
+      <div class="btn btn-primary">Primary</div>
+      <div class="btn btn-primary" style="box-shadow: none; transform: translateY(4px); margin-bottom: 4px;">Primary · pressed</div>
+      <div class="btn btn-secondary">Secondary</div>
+      <div class="btn btn-disabled">Disabled</div>
+      <div class="btn btn-danger">Destructive</div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="section" style="padding: 0;">Inputs &amp; selection</div>
+      <div class="field">Placeholder</div>
+      <div class="field field-focus">Focused</div>
+      <div class="field" style="border-color: #D9453F; color: #2B1F16;">Error</div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;"><div class="chip">Chip</div><div class="chip chip-on">Selected</div><span class="badge badge-green" style="align-self: center;">Verified</span><span class="badge badge-orange" style="align-self: center;">This device</span></div>
+      <div class="option option-on"><div class="radio radio-on"></div><div class="label">Option · selected</div></div>
+      <div style="display: flex; gap: 8px; align-items: center;"><div class="otp">4</div><div class="otp otp-on">|</div><div class="track" style="margin-left: 10px;"><div class="fill" style="width: 60%;"></div></div></div>
+    </div>
+  </div>
+  <div style="display: flex; gap: 40px; align-items: flex-start;">
+    <div style="display: flex; flex-direction: column; gap: 10px;"><div class="section" style="padding: 0;">Spacing (existing scale)</div><div style="display: flex; gap: 14px; align-items: flex-end;"><div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><div style="width: 4px; height: 4px; background: #FFF0C2; border: 2px solid #E09E00; box-sizing: border-box; border-radius: 4px;"></div><div style="font-size: 12px; font-weight: 800;">4</div></div><div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><div style="width: 8px; height: 8px; background: #FFF0C2; border: 2px solid #E09E00; box-sizing: border-box; border-radius: 4px;"></div><div style="font-size: 12px; font-weight: 800;">8</div></div><div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><div style="width: 16px; height: 16px; background: #FFF0C2; border: 2px solid #E09E00; box-sizing: border-box; border-radius: 4px;"></div><div style="font-size: 12px; font-weight: 800;">16</div></div><div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><div style="width: 24px; height: 24px; background: #FFF0C2; border: 2px solid #E09E00; box-sizing: border-box; border-radius: 4px;"></div><div style="font-size: 12px; font-weight: 800;">24</div></div><div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><div style="width: 32px; height: 32px; background: #FFF0C2; border: 2px solid #E09E00; box-sizing: border-box; border-radius: 4px;"></div><div style="font-size: 12px; font-weight: 800;">32</div></div><div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><div style="width: 64px; height: 64px; background: #FFF0C2; border: 2px solid #E09E00; box-sizing: border-box; border-radius: 4px;"></div><div style="font-size: 12px; font-weight: 800;">64</div></div></div></div>
+    <div style="display: flex; flex-direction: column; gap: 10px;"><div class="section" style="padding: 0;">Radii</div><div style="display: flex; gap: 14px;"><div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><div style="width: 56px; height: 56px; background: #F7EADA; border-radius: 14px;"></div><div style="font-size: 12px; font-weight: 800;">14 icon</div></div><div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><div style="width: 56px; height: 56px; background: #F7EADA; border-radius: 16px;"></div><div style="font-size: 12px; font-weight: 800;">16 field</div></div><div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><div style="width: 56px; height: 56px; background: #F7EADA; border-radius: 18px;"></div><div style="font-size: 12px; font-weight: 800;">18 button</div></div><div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><div style="width: 56px; height: 56px; background: #F7EADA; border-radius: 20px;"></div><div style="font-size: 12px; font-weight: 800;">20 card</div></div><div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><div style="width: 56px; height: 56px; background: #F7EADA; border-radius: 999px;"></div><div style="font-size: 12px; font-weight: 800;">pill</div></div></div></div>
+    <div style="display: flex; flex-direction: column; gap: 10px;"><div class="section" style="padding: 0;">Icons · 24 grid · 2.2 stroke</div><div style="display: flex; gap: 12px; color: #2B1F16;"><div class="iconbox" style="background: #F7EADA;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"></rect><path d="M4 7l8 6 8-6"></path></svg></div><div class="iconbox" style="background: #F7EADA;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"></rect><path d="M11 18.5h2"></path></svg></div><div class="iconbox" style="background: #F7EADA;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="10" rx="2.5"></rect><path d="M8 10.5V8a4 4 0 018 0v2.5"></path></svg></div><div class="iconbox" style="background: #F7EADA;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16.5V11a6 6 0 0112 0v5.5l1.5 2h-15z"></path><path d="M10 21h4"></path></svg></div><div class="iconbox" style="background: #F7EADA;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.5" r="3.5"></circle><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5"></path><circle cx="17" cy="9" r="2.8"></circle><path d="M16.5 14.6c2.6.2 4.4 2 5 5"></path></svg></div><div class="iconbox" style="background: #F7EADA;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="3"></rect><path d="M3.5 10h17M8 3v4M16 3v4"></path></svg></div><div class="iconbox" style="background: #F7EADA;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5h3l1.8-2.5h6.4L17 8.5h3v10.5H4z"></path><circle cx="12" cy="13.5" r="3.3"></circle></svg></div><div class="iconbox" style="background: #F7EADA;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="14" height="10" rx="1.8"></rect><path d="M2.5 19h19"></path></svg></div><div class="iconbox" style="background: #F7EADA;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"></circle><path d="M11 12l8.5-8.5M16.5 6.5l2.5 2.5"></path></svg></div><div class="iconbox" style="background: #F7EADA;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7.5 3v5.5c0 4.5-3.2 8.3-7.5 9.5-4.3-1.2-7.5-5-7.5-9.5V6z"></path><path d="M8.8 12l2.3 2.3 4.2-4.3"></path></svg></div></div></div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

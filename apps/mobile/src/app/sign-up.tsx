@@ -1,14 +1,19 @@
-import { Link } from 'expo-router';
+import { router } from 'expo-router';
 import { useState } from 'react';
+import { Pressable, StyleSheet } from 'react-native';
 
-import { AuthScreen, ErrorText, Field, PrimaryButton } from '@/components/auth-form';
-import { SocialSignIn } from '@/components/social-sign-in';
+import { ErrorText, Field, Screen, TitleBlock } from '@/components/auth-form';
+import { OrDivider, SocialSignIn } from '@/components/social-sign-in';
 import { ThemedText } from '@/components/themed-text';
+import { Button } from '@/components/ui/button';
+import { BackButton } from '@/components/ui/controls';
+import { Icon } from '@/components/ui/icon';
+import { Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { authClient } from '@/lib/auth-client';
 
 export default function SignUpScreen() {
-  const [name, setName] = useState('');
-  const [username, setUsername] = useState('');
+  const theme = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -17,32 +22,32 @@ export default function SignUpScreen() {
   async function onSubmit() {
     setError(null);
     setLoading(true);
-    const { error } = await authClient.signUp.email({
-      name: name.trim(),
-      username: username.trim(),
-      email: email.trim(),
-      password,
-    });
+    // Nickname and display name are collected during onboarding.
+    const { error } = await authClient.signUp.email({ name: '', email: email.trim(), password });
     setLoading(false);
     if (error) setError(error.message ?? 'Sign up failed');
   }
 
   return (
-    <AuthScreen title="Create account">
+    <Screen
+      header={<BackButton onPress={() => router.replace('/sign-in')} />}
+      footer={
+        <>
+          <ErrorText message={error} />
+          <Button label="Create account" onPress={onSubmit} loading={loading} disabled={!email || password.length < 8} />
+          <Pressable onPress={() => router.replace('/sign-in')} accessibilityRole="link" style={styles.footerLink}>
+            <ThemedText type="small" themeColor="textSecondary" style={{ fontFamily: 'Nunito_700Bold' }}>
+              Already have an account? <ThemedText type="linkPrimary">Sign in</ThemedText>
+            </ThemedText>
+          </Pressable>
+        </>
+      }>
+      <TitleBlock
+        title="Create your account"
+        subtitle="Start with Apple, Google or your phone. You'll set up your profile and pet next."
+      />
       <SocialSignIn onError={setError} />
-      <Field
-        placeholder="Name"
-        value={name}
-        onChangeText={setName}
-        autoCapitalize="words"
-        autoComplete="name"
-      />
-      <Field
-        placeholder="Username"
-        value={username}
-        onChangeText={setUsername}
-        autoComplete="username-new"
-      />
+      <OrDivider label="or use email" />
       <Field
         placeholder="Email"
         value={email}
@@ -50,20 +55,25 @@ export default function SignUpScreen() {
         keyboardType="email-address"
         autoComplete="email"
         textContentType="emailAddress"
+        leading={<Icon name="mail" size={20} color={theme.textSecondary} />}
       />
       <Field
-        placeholder="Password (8+ characters)"
+        placeholder="Password"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
         autoComplete="new-password"
         textContentType="newPassword"
+        onSubmitEditing={onSubmit}
+        leading={<Icon name="lock" size={20} color={theme.textSecondary} />}
       />
-      <ErrorText message={error} />
-      <PrimaryButton label="Sign up" onPress={onSubmit} loading={loading} />
-      <Link href="/sign-in" replace>
-        <ThemedText type="link">Already have an account? Sign in</ThemedText>
-      </Link>
-    </AuthScreen>
+      <ThemedText type="small" themeColor="textSecondary" style={{ paddingLeft: 4, marginTop: -Spacing.sm }}>
+        At least 8 characters
+      </ThemedText>
+    </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  footerLink: { alignItems: 'center', paddingVertical: Spacing.sm },
+});

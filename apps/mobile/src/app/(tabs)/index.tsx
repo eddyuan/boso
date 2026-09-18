@@ -1,116 +1,280 @@
-import * as Device from 'expo-device';
-import { Link } from 'expo-router';
-import { Platform, Pressable, StyleSheet } from 'react-native';
+import { getPetSpecies } from '@bsocial/shared';
+import { Image } from 'expo-image';
+import * as Location from 'expo-location';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useRef, useState } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
+import { BottomSheet } from '@/components/bottom-sheet';
+import { MapView } from '@/components/map/map-view';
+import type { LatLng, MapPost, MapViewHandle } from '@/components/map/types';
+import { CompanionArt } from '@/components/mascot/companions';
+import { MediaGallery } from '@/components/media-gallery';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { Button } from '@/components/ui/button';
+import { Badge, Card, ErrorText } from '@/components/ui/controls';
+import { Icon } from '@/components/ui/icon';
+import { Radius, Spacing, TabBar } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
+import { apiFetch } from '@/lib/api';
 import { authClient } from '@/lib/auth-client';
+import { formatDistance } from '@/lib/distance';
+import { timeAgo } from '@/lib/time';
+import { FontFamily } from '@/constants/theme';
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
-  return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+type Pet = { id: string; name: string; species: string; autoApprove: boolean };
 
-export default function HomeScreen() {
+// Main tab: the map, with your pet at your location and nearby posts shown
+// as their photo.
+export default function MapTab() {
+  const theme = useTheme();
+  const [pet, setPet] = useState<Pet | null>(null);
+  const [location, setLocation] = useState<LatLng | null>(null);
+  const [permission, setPermission] = useState<Location.PermissionStatus | null>(null);
+  const [posts, setPosts] = useState<MapPost[]>([]);
+  const [selected, setSelected] = useState<MapPost | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [petAway, setPetAway] = useState<string | null>(null);
   const { data: session } = authClient.useSession();
+  const lastBounds = useRef<string>('');
+  const mapRef = useRef<MapViewHandle>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      apiFetch<{ pet: Pet | null }>('/api/pets')
+        .then((r) => setPet(r.pet))
+        .catch(() => {});
+      Location.getForegroundPermissionsAsync()
+        .then((p) => {
+          setPermission(p.status);
+          if (p.granted) locate();
+        })
+        .catch(() => {});
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []),
+  );
+
+  async function locate() {
+    try {
+      const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      setLocation({ latitude: position.coords.latitude, longitude: position.coords.longitude });
+    } catch {
+      setError("Couldn't get your location.");
+    }
+  }
+
+  async function askForLocation() {
+    setError(null);
+    const p = await Location.requestForegroundPermissionsAsync();
+    setPermission(p.status);
+    if (p.granted) await locate();
+  }
+
+  const loadPosts = useCallback(async (b: { west: number; south: number; east: number; north: number }) => {
+    // Skip refetching for tiny map movements.
+    const key = [b.west, b.south, b.east, b.north].map((v) => v.toFixed(3)).join(',');
+    if (key === lastBounds.current) return;
+    lastBounds.current = key;
+    try {
+      const r = await apiFetch<{ posts: MapPost[] }>(
+        `/api/map/posts?west=${b.west}&south=${b.south}&east=${b.east}&north=${b.north}`,
+      );
+      setPosts(r.posts);
+    } catch {
+      // Keep the last set of posts on a transient failure.
+    }
+  }, []);
+
+  // Stable identity, and only re-render when the shown distance actually
+  // changes — the map reports about once a second.
+  const handlePetMove = useCallback(({ distanceM }: { distanceM: number }) => {
+    const next = formatDistance(distanceM);
+    setPetAway((prev) => (prev === next ? prev : next));
+  }, []);
+
+  const species = pet ? getPetSpecies(pet.species) : null;
+
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
+    <ThemedView style={styles.fill}>
+      <MapView
+        ref={mapRef}
+        center={location}
+        pet={pet}
+        petLocation={location}
+        posts={posts}
+        onSelectPost={setSelected}
+        onMapPress={() => setSelected(null)}
+        onBoundsChange={loadPosts}
+        onPetMove={handlePetMove}
+      />
 
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <ThemedText type="small">
-            Signed in as @{session?.user.username ?? session?.user.email}
-          </ThemedText>
-          <Link href="/account">
-            <ThemedText type="link">Account &amp; sign-in methods</ThemedText>
-          </Link>
-          <Link href="/devices">
-            <ThemedText type="link">Signed-in devices</ThemedText>
-          </Link>
-          <Pressable onPress={() => authClient.signOut()}>
-            <ThemedText type="link">Sign out</ThemedText>
+      <SafeAreaView style={styles.overlay} pointerEvents="box-none" edges={['top', 'bottom']}>
+        <View style={styles.topRow} pointerEvents="box-none">
+          <Pressable
+            // Back to where you are.
+            onPress={() => location && mapRef.current?.focusOn(location)}
+            disabled={!location}
+            accessibilityRole="button"
+            accessibilityLabel="Centre the map on you"
+            style={({ pressed }) => (pressed ? styles.pressed : null)}
+          >
+            <Card style={styles.youChip}>
+              {session?.user?.image ? (
+                <Image source={{ uri: session.user.image }} style={styles.youAvatar} />
+              ) : (
+                <View style={[styles.youAvatar, { backgroundColor: theme.primary }]}>
+                  <ThemedText style={{ fontFamily: FontFamily.display, fontSize: 14, color: theme.onPrimary }}>
+                    {(session?.user?.name?.trim() || session?.user?.username || '?').slice(0, 1).toUpperCase()}
+                  </ThemedText>
+                </View>
+              )}
+              <ThemedText type="smallBold">You</ThemedText>
+            </Card>
           </Pressable>
-        </ThemedView>
 
-        {Platform.OS === 'web' && <WebBadge />}
+          {pet && species && (
+            <Pressable
+              // Follow the pet to wherever it has wandered off to.
+              onPress={() => mapRef.current?.focusOnPet()}
+              accessibilityRole="button"
+              accessibilityLabel={`Show ${pet.name} on the map`}
+              style={({ pressed }) => (pressed ? styles.pressed : null)}
+            >
+              <Card style={styles.petChip}>
+                <View style={[styles.petAvatar, { backgroundColor: theme.primarySoft }]}>
+                  <CompanionArt species={pet.species} size={30} />
+                </View>
+                <View>
+                  <ThemedText type="smallBold">{pet.name}</ThemedText>
+                  <ThemedText type="caption" themeColor="textSecondary">
+                    {!location
+                      ? 'Waiting for your location'
+                      : petAway === null
+                        ? `${species.moves} near you`
+                        : `${petAway} away`}
+                  </ThemedText>
+                </View>
+                {location && <Icon name="pin" size={18} color={theme.primary} />}
+              </Card>
+            </Pressable>
+          )}
+        </View>
+
+        <View style={styles.bottom} pointerEvents="box-none">
+          <ErrorText message={error} />
+          {!location ? (
+            <Card style={styles.prompt}>
+              <ThemedText type="label">Put your pet on the map</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                {permission === 'denied'
+                  ? 'Location is off. Turn it on in Settings to see your pet and nearby posts.'
+                  : 'Share your location to see your pet and the posts around you.'}
+              </ThemedText>
+              {permission !== 'denied' && (
+                <Button
+                  label="Use my location"
+                  onPress={askForLocation}
+                  icon={<Icon name="pin" size={20} color={theme.onPrimary} />}
+                />
+              )}
+            </Card>
+          ) : (
+            posts.length > 0 && (
+              <Badge tone="brand" label={`${posts.length} post${posts.length === 1 ? '' : 's'} around you`} />
+            )
+          )}
+        </View>
       </SafeAreaView>
+
+      <BottomSheet
+        open={!!selected}
+        onClose={() => setSelected(null)}
+        contentKey={selected?.id}
+        header={
+          selected && (
+            <View style={styles.postHead}>
+              <View style={[styles.petAvatar, { backgroundColor: theme.primarySoft }]}>
+                <CompanionArt species={selected.species} size={30} />
+              </View>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <View style={styles.postNameRow}>
+                  <ThemedText type="label" numberOfLines={1} style={{ flexShrink: 1 }}>
+                    {selected.authoredByAgent ? selected.petName : selected.ownerName?.trim() || selected.petName}
+                  </ThemedText>
+                  {selected.authoredByAgent && (
+                    <Badge
+                      tone="brand"
+                      label="by pet"
+                      icon={<Icon name="sparkle" size={11} color={theme.primaryInk} strokeWidth={2.6} />}
+                    />
+                  )}
+                </View>
+                <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+                  {[
+                    selected.ownerUsername ? `@${selected.ownerUsername}` : null,
+                    timeAgo(selected.createdAt),
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </ThemedText>
+              </View>
+            </View>
+          )
+        }>
+        {selected && (
+          <>
+            {selected.placeName && (
+              <View style={[styles.placeRow, { backgroundColor: theme.backgroundElement }]}>
+                <Icon name="pin" size={18} color={theme.primaryInk} />
+                <ThemedText type="smallBold" numberOfLines={1} style={{ flex: 1 }}>
+                  {selected.placeName}
+                </ThemedText>
+              </View>
+            )}
+            <ThemedText>{selected.content}</ThemedText>
+            <MediaGallery media={selected.media} height={220} />
+          </>
+        )}
+      </BottomSheet>
     </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
+  fill: { flex: 1 },
+  overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'space-between' },
+  topRow: {
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.sm,
     flexDirection: 'row',
-  },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
     alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
+    gap: Spacing.sm,
   },
-  heroSection: {
+  youChip: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingVertical: 8, paddingLeft: 8, paddingRight: 14, borderRadius: Radius.pill },
+  youAvatar: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  petChip: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8, paddingLeft: 12, paddingRight: 14, borderRadius: Radius.pill },
+  pressed: { opacity: 0.75 },
+  petAvatar: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  bottom: {
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.lg,
+    // The tab bar floats over the map, so the card has to clear it.
+    paddingBottom: TabBar.contentInset,
+    gap: Spacing.sm,
+    alignItems: 'flex-start',
+  },
+  prompt: { padding: Spacing.lg, gap: Spacing.sm, alignSelf: 'stretch' },
+  postCard: { padding: Spacing.lg, gap: Spacing.sm, alignSelf: 'stretch' },
+  postHead: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
+  postNameRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  placeRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
-  },
-  title: {
-    textAlign: 'center',
-  },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+    gap: Spacing.sm,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    borderRadius: Radius.field,
   },
 });

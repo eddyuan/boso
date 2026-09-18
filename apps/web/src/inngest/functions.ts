@@ -1,20 +1,41 @@
-import { and, desc, eq, inArray, ne, notInArray } from "drizzle-orm";
-import { db, follows, pets, posts } from "@bsocial/db";
+import { and, desc, eq, gt, isNotNull, isNull } from "drizzle-orm";
+import { db, pets, posts, users } from "@bsocial/db";
+import { PET_OWNER_INACTIVE_DAYS } from "@bsocial/shared";
 import { inngest } from "./client";
-import { decideNextAction, type PetContext } from "../lib/agent";
+import { describePersonality, generateComment, generatePost } from "../lib/agent";
 import { recordDecision } from "../lib/actions";
+import { getActionBudget } from "../lib/action-budget";
+import { loadPlannerCandidates, planAction } from "../lib/pet-planner";
+
+// Pets act only for owners who are onboarded, not age-restricted, and were
+// active in the app within PET_OWNER_INACTIVE_DAYS.
+function activeOwnerFilter() {
+  const activeSince = new Date(Date.now() - PET_OWNER_INACTIVE_DAYS * 24 * 60 * 60 * 1000);
+  return and(
+    isNotNull(users.onboardingCompletedAt),
+    isNull(users.ageGateFailedAt),
+    gt(users.lastActiveAt, activeSince),
+  );
+}
 
 /**
- * Hourly fan-out: finds pets due for a decision cycle and fires one
- * "pet/tick" event per pet. Kept dumb on purpose — per-pet rate limiting
- * (maxActionsPerDay) is enforced inside runPetTick, not here, so this stays
- * a cheap query with no business logic to drift out of sync.
+ * Hourly fan-out: fires one "pet/tick" event per pet whose owner is active
+ * (see activeOwnerFilter). Per-pet limits are enforced inside runPetTick, so
+ * this stays a cheap query.
  */
 export const schedulePetTicks = inngest.createFunction(
   { id: "schedule-pet-ticks" },
   { cron: "0 * * * *" },
   async ({ step }) => {
-    const eligiblePets = await step.run("load-pets", () => db.select({ id: pets.id }).from(pets));
+    const eligiblePets = await step.run("load-pets", () =>
+      db
+        .select({ id: pets.id })
+        .from(pets)
+        .innerJoin(users, eq(users.id, pets.userId))
+        .where(activeOwnerFilter()),
+    );
+
+    if (eligiblePets.length === 0) return { fanned: 0 };
 
     await step.sendEvent(
       "fan-out-ticks",
@@ -26,66 +47,92 @@ export const schedulePetTicks = inngest.createFunction(
 );
 
 /**
- * One decision cycle for a single pet: gather context, ask Claude for exactly
- * one action, then record it (auto-executed or queued for approval depending
- * on the pet's autoApprove setting — see lib/actions.ts).
+ * One tick for a single pet:
+ *   1. check its rolling 24h allowance
+ *   2. pick an action with rules (like / visit / follow / comment / post / nothing)
+ *   3. only for content (post, comment), ask the AI model to write the text
+ *   4. record it (auto-executed or queued for approval, see lib/actions.ts)
  */
 export const runPetTick = inngest.createFunction(
-  { id: "run-pet-tick" },
+  {
+    id: "run-pet-tick",
+    // One tick per pet at a time, so two runs can't both pass the budget check.
+    concurrency: { key: "event.data.petId", limit: 1 },
+  },
   { event: "pet/tick" },
   async ({ event, step }) => {
     const petId = event.data.petId;
 
-    const context = await step.run("gather-context", async (): Promise<PetContext | null> => {
-      const [pet] = await db.select().from(pets).where(eq(pets.id, petId));
-      if (!pet) return null;
-
-      const recentOwnPosts = await db
-        .select({ content: posts.content })
-        .from(posts)
-        .where(eq(posts.petId, petId))
-        .orderBy(desc(posts.createdAt))
-        .limit(5);
-
-      const following = await db
-        .select({ id: follows.followingPetId })
-        .from(follows)
-        .where(eq(follows.followerPetId, petId));
-      const followingIds = following.map((f) => f.id);
-
-      const feedPets = followingIds.length > 0 ? followingIds : undefined;
-      const feedPosts = await db
-        .select({ id: posts.id, content: posts.content, petName: pets.name })
-        .from(posts)
-        .innerJoin(pets, eq(pets.id, posts.petId))
-        .where(
-          and(ne(posts.petId, petId), feedPets ? inArray(posts.petId, feedPets) : undefined),
-        )
-        .orderBy(desc(posts.createdAt))
-        .limit(10);
-
-      const excludeIds = [petId, ...followingIds];
-      const followable = await db
-        .select({ id: pets.id, name: pets.name })
+    const pet = await step.run("load-pet", async () => {
+      const [row] = await db
+        .select({ pet: pets, ownerInterests: users.interests })
         .from(pets)
-        .where(notInArray(pets.id, excludeIds))
-        .limit(5);
+        .innerJoin(users, eq(users.id, pets.userId))
+        // Re-checked here: the owner may have gone inactive since the fan-out.
+        .where(and(eq(pets.id, petId), activeOwnerFilter()));
+      return row ?? null;
+    });
+    if (!pet) return { skipped: "pet not found or owner inactive" };
 
-      return {
-        petName: pet.name,
-        personality: pet.personality,
-        recentOwnPosts: recentOwnPosts.map((p) => p.content),
-        recentFeedPosts: feedPosts,
-        followablePets: followable,
-      };
+    const budget = await step.run("check-budget", () =>
+      getActionBudget(petId, pet.pet.maxActionsPerDay),
+    );
+    if (budget.remaining === 0) return { skipped: "daily action limit reached", budget };
+
+    // Planned inside a step so the random choice is memoized across retries.
+    const plan = await step.run("plan", async () => {
+      const candidates = await loadPlannerCandidates(petId, pet.pet.userId, pet.ownerInterests);
+      return planAction({ ...candidates, canPost: budget.canPost, canComment: budget.canComment });
     });
 
-    if (!context) return { skipped: "pet not found" };
+    if (plan.action === "post") {
+      const content = await step.run("write-post", async () => {
+        const recent = await db
+          .select({ content: posts.content })
+          .from(posts)
+          .where(eq(posts.petId, petId))
+          .orderBy(desc(posts.createdAt))
+          .limit(5);
+        return generatePost({
+          petName: pet.pet.name,
+          personality: describePersonality(pet.pet, pet.ownerInterests),
+          recentOwnPosts: recent.map((p) => p.content),
+        });
+      });
 
-    const decision = await step.run("decide", () => decideNextAction(context));
+      await step.run("record-decision", () =>
+        recordDecision(
+          petId,
+          content
+            ? { action: "post", content, reasoning: plan.reasoning }
+            : { action: "none", reasoning: "The model didn't write a usable post." },
+        ),
+      );
+      return { petId, action: content ? "post" : "none", budget };
+    }
 
-    await step.run("record-decision", () => recordDecision(petId, decision));
+    if (plan.action === "comment") {
+      const content = await step.run("write-comment", () =>
+        generateComment({
+          petName: pet.pet.name,
+          personality: describePersonality(pet.pet, pet.ownerInterests),
+          postAuthor: plan.postAuthor,
+          postContent: plan.postContent,
+        }),
+      );
 
-    return { petId, decision: decision.action };
+      await step.run("record-decision", () =>
+        recordDecision(
+          petId,
+          content
+            ? { action: "comment", postId: plan.postId, content, reasoning: plan.reasoning }
+            : { action: "none", reasoning: "The model didn't write a usable reply." },
+        ),
+      );
+      return { petId, action: content ? "comment" : "none", budget };
+    }
+
+    await step.run("record-decision", () => recordDecision(petId, plan));
+    return { petId, action: plan.action, budget };
   },
 );

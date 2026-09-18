@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, FlatList, Platform, Pressable, RefreshControl, StyleSheet } from 'react-native';
+import { ActivityIndicator, Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
 
-import { PrimaryButton } from '@/components/auth-form';
+import { Screen } from '@/components/auth-form';
+import { PageHeader } from '@/components/page-header';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { Button } from '@/components/ui/button';
+import { Badge, Card, ErrorText, IconTile } from '@/components/ui/controls';
+import { Icon } from '@/components/ui/icon';
 import { Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { apiFetch } from '@/lib/api';
 import { authClient } from '@/lib/auth-client';
 
@@ -30,17 +34,30 @@ function confirm(message: string, onConfirm: () => void) {
   ]);
 }
 
+function relativeTime(iso: string | null): string {
+  if (!iso) return 'unknown';
+  const minutes = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+  if (minutes < 5) return 'now';
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+  const days = Math.round(hours / 24);
+  return `${days} day${days === 1 ? '' : 's'} ago`;
+}
+
+const looksLikeComputer = (s: DeviceSession) => /mac|windows|linux|chrome os/i.test(`${s.deviceName} ${s.userAgent}`);
+
 export default function DevicesScreen() {
-  const [sessions, setSessions] = useState<DeviceSession[]>([]);
-  const [loading, setLoading] = useState(true);
+  const theme = useTheme();
+  const [sessions, setSessions] = useState<DeviceSession[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    setLoading(true);
     try {
       const data = await apiFetch<{ sessions: DeviceSession[] }>('/api/me/sessions');
       setSessions(data.sessions);
-    } finally {
-      setLoading(false);
+    } catch {
+      setError("Couldn't load your devices.");
     }
   }, []);
 
@@ -62,64 +79,61 @@ export default function DevicesScreen() {
     await load();
   }
 
-  const others = sessions.filter((s) => !s.current).length;
+  const others = sessions?.filter((s) => !s.current).length ?? 0;
 
   return (
-    <ThemedView style={styles.container}>
-      <FlatList
-        data={sessions}
-        keyExtractor={(s) => s.id}
-        contentContainerStyle={styles.list}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
-        renderItem={({ item }) => (
-          <ThemedView type="backgroundElement" style={styles.row}>
-            <ThemedView type="backgroundElement" style={styles.rowText}>
-              <ThemedText type="smallBold">
-                {item.deviceName ?? 'Unknown device'}
-                {item.current ? '  (this device)' : ''}
+    <Screen
+      header={<PageHeader title="Signed-in devices" />}
+      footer={
+        others > 0 ? (
+          <Button
+            variant="danger"
+            label={`Sign out ${others} other device${others === 1 ? '' : 's'}`}
+            onPress={() => confirm('Sign out all other devices?', revokeOthers)}
+          />
+        ) : undefined
+      }>
+      <ThemedText themeColor="textSecondary">
+        You stay signed in on each device for up to a year. Sign out anything you don&apos;t recognize.
+      </ThemedText>
+      <ErrorText message={error} />
+      {!sessions && !error && <ActivityIndicator color={theme.primaryPress} />}
+      {sessions?.map((s) => (
+        <Card key={s.id} style={styles.card}>
+          <IconTile tone={s.current ? 'brand' : 'muted'}>
+            <Icon name={looksLikeComputer(s) ? 'laptop' : 'phone'} color={s.current ? theme.primaryInk : theme.text} />
+          </IconTile>
+          <View style={styles.cardText}>
+            <View style={styles.titleRow}>
+              <ThemedText type="label" style={{ fontSize: 16, flexShrink: 1 }} numberOfLines={1}>
+                {s.deviceName ?? 'Unknown device'}
               </ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
-                Last active{' '}
-                {item.lastActiveAt ? new Date(item.lastActiveAt).toLocaleString() : 'unknown'}
-                {item.lastActiveIp ? ` · ${item.lastActiveIp}` : ''}
-              </ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
-                Signed in {new Date(item.createdAt).toLocaleDateString()}
-              </ThemedText>
-            </ThemedView>
-            <Pressable
-              onPress={() =>
-                confirm(
-                  item.current ? 'Sign out of this device?' : `Sign out ${item.deviceName ?? 'this device'}?`,
-                  () => revoke(item),
-                )
-              }>
-              <ThemedText type="link">Sign out</ThemedText>
-            </Pressable>
-          </ThemedView>
-        )}
-        ListFooterComponent={
-          others > 0 ? (
-            <PrimaryButton
-              label={`Sign out ${others} other device${others === 1 ? '' : 's'}`}
-              onPress={() => confirm('Sign out all other devices?', revokeOthers)}
-            />
-          ) : null
-        }
-      />
-    </ThemedView>
+              {s.current && <Badge label="This device" tone="brand" />}
+            </View>
+            <ThemedText type="small" themeColor="textSecondary">
+              Active {relativeTime(s.lastActiveAt)}
+              {s.lastActiveIp ? ` · ${s.lastActiveIp}` : ''}
+            </ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              Signed in {new Date(s.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+            </ThemedText>
+          </View>
+          <Pressable
+            onPress={() => confirm(s.current ? 'Sign out of this device?' : `Sign out ${s.deviceName ?? 'this device'}?`, () => revoke(s))}
+            accessibilityRole="button"
+            hitSlop={10}>
+            <ThemedText type="linkPrimary" style={{ color: theme.red, fontSize: 15 }}>
+              Sign out
+            </ThemedText>
+          </Pressable>
+        </Card>
+      ))}
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  list: { padding: Spacing.three, gap: Spacing.two },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.three,
-    padding: Spacing.three,
-    borderRadius: Spacing.three,
-  },
-  rowText: { flex: 1, gap: Spacing.half },
+  card: { flexDirection: 'row', alignItems: 'flex-start', gap: 14, padding: Spacing.lg },
+  cardText: { flex: 1, minWidth: 0, gap: 2 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
 });

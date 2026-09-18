@@ -7,7 +7,7 @@ import { authClient } from '@/lib/auth-client';
 export type SocialProvider = 'google' | 'apple';
 
 // Where the OAuth flow lands afterwards. On native, expoClient turns a relative
-// path into a bsocial:// deep link. On web the API is another origin, so the
+// path into a tielo:// deep link. On web the API is another origin, so the
 // path must be absolute or the browser ends up on the API server.
 function callbackURL(path: string): string {
   return Platform.OS === 'web' ? `${window.location.origin}${path}` : path;
@@ -72,7 +72,7 @@ export async function signInWithProvider(provider: SocialProvider): Promise<stri
     return error ? (error.message ?? 'Sign in with Apple failed') : null;
   }
 
-  // Browser flow; on native, expoClient opens an auth session and returns via bsocial://.
+  // Browser flow; on native, expoClient opens an auth session and returns via tielo://.
   const { error } = await authClient.signIn.social({ provider, callbackURL: callbackURL('/') });
   return error ? (error.message ?? `Sign in with ${provider} failed`) : null;
 }

@@ -4,14 +4,18 @@
 
 // Phone sign-ups have no email yet; Better Auth still needs a unique one, so
 // they get a placeholder on this reserved (RFC 2606) domain.
-export const PLACEHOLDER_EMAIL_DOMAIN = "phone.bsocial.invalid";
+export const PLACEHOLDER_EMAIL_DOMAIN = "phone.tielo.invalid";
+// Placeholder domain used before the rename to Tielo; still recognized.
+const LEGACY_PLACEHOLDER_EMAIL_DOMAINS = ["phone.bsocial.invalid"];
 
 export function placeholderEmailForPhone(phoneNumber: string): string {
   return `${phoneNumber.replace(/\D/g, "")}@${PLACEHOLDER_EMAIL_DOMAIN}`;
 }
 
 export function isPlaceholderEmail(email: string | null | undefined): boolean {
-  return !!email && email.toLowerCase().endsWith(`@${PLACEHOLDER_EMAIL_DOMAIN}`);
+  if (!email) return false;
+  const e = email.toLowerCase();
+  return [PLACEHOLDER_EMAIL_DOMAIN, ...LEGACY_PLACEHOLDER_EMAIL_DOMAINS].some((d) => e.endsWith(`@${d}`));
 }
 
 // "Hide My Email" addresses from Sign in with Apple. They forward mail, but

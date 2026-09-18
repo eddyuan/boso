@@ -2,21 +2,29 @@ import { E164_REGEX } from '@bsocial/shared';
 import { router } from 'expo-router';
 import { useState } from 'react';
 
-import { AuthScreen, ErrorText, Field, PrimaryButton } from '@/components/auth-form';
-import { ThemedText } from '@/components/themed-text';
+import { ErrorText, Field, Screen, TitleBlock } from '@/components/auth-form';
+import { Button } from '@/components/ui/button';
+import { Icon } from '@/components/ui/icon';
+import { BackHeader, HeroIcon, VerifyCodeScreen } from '@/components/verify-code';
+import { useTheme } from '@/hooks/use-theme';
 import { authClient, refreshSession } from '@/lib/auth-client';
 
 // Signed out: sign in or sign up with an SMS code.
 // Signed in: add or replace the account's phone number.
 export default function PhoneScreen() {
+  const theme = useTheme();
   const { data: session } = authClient.useSession();
   const signedIn = !!session;
 
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [code, setCode] = useState('');
   const [codeSent, setCodeSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  async function requestCode(phone: string): Promise<string | null> {
+    const { error } = await authClient.phoneNumber.sendOtp({ phoneNumber: phone });
+    return error ? (error.message ?? 'Could not send code') : null;
+  }
 
   async function sendCode() {
     const phone = phoneNumber.replace(/[\s()-]/g, '');
@@ -26,64 +34,61 @@ export default function PhoneScreen() {
     }
     setError(null);
     setLoading(true);
-    const { error } = await authClient.phoneNumber.sendOtp({ phoneNumber: phone });
+    const message = await requestCode(phone);
     setLoading(false);
-    if (error) return setError(error.message ?? 'Could not send code');
+    if (message) return setError(message);
     setPhoneNumber(phone);
     setCodeSent(true);
   }
 
-  async function verify() {
-    setError(null);
-    setLoading(true);
+  async function verify(code: string): Promise<string | null> {
     const { error } = await authClient.phoneNumber.verify(
-      signedIn
-        ? { phoneNumber, code, updatePhoneNumber: true, disableSession: true }
-        : { phoneNumber, code },
+      signedIn ? { phoneNumber, code, updatePhoneNumber: true, disableSession: true } : { phoneNumber, code },
     );
-    setLoading(false);
-    if (error) return setError(error.message ?? 'Invalid code');
-
+    if (error) return error.message ?? 'Invalid code';
     refreshSession();
     if (signedIn && router.canGoBack()) router.back();
+    return null;
+  }
+
+  if (codeSent) {
+    return (
+      <VerifyCodeScreen
+        icon="phone"
+        destination={phoneNumber}
+        onVerify={verify}
+        onResend={() => requestCode(phoneNumber)}
+        onChangeDestination={() => setCodeSent(false)}
+        changeLabel="Change number"
+      />
+    );
   }
 
   return (
-    <AuthScreen title={signedIn ? 'Add phone number' : 'Continue with phone'}>
-      {!codeSent ? (
+    <Screen
+      header={<BackHeader />}
+      footer={
         <>
-          <Field
-            placeholder="+1 416 555 0123"
-            value={phoneNumber}
-            onChangeText={setPhoneNumber}
-            keyboardType="phone-pad"
-            autoComplete="tel"
-            textContentType="telephoneNumber"
-          />
           <ErrorText message={error} />
-          <PrimaryButton label="Send code" onPress={sendCode} loading={loading} />
+          <Button label="Send code" onPress={sendCode} loading={loading} disabled={phoneNumber.length < 8} />
         </>
-      ) : (
-        <>
-          <ThemedText type="small" themeColor="textSecondary">
-            Enter the 6-digit code sent to {phoneNumber}
-          </ThemedText>
-          <Field
-            placeholder="123456"
-            value={code}
-            onChangeText={setCode}
-            keyboardType="number-pad"
-            autoComplete="one-time-code"
-            textContentType="oneTimeCode"
-            maxLength={6}
-          />
-          <ErrorText message={error} />
-          <PrimaryButton label="Verify" onPress={verify} loading={loading} />
-          <ThemedText type="link" onPress={() => setCodeSent(false)}>
-            Use a different number
-          </ThemedText>
-        </>
-      )}
-    </AuthScreen>
+      }>
+      <HeroIcon name="phone" />
+      <TitleBlock
+        title={signedIn ? 'Add your phone' : 'Continue with phone'}
+        subtitle="We'll text you a 6-digit code. Include your country code."
+      />
+      <Field
+        placeholder="+1 416 555 0123"
+        value={phoneNumber}
+        onChangeText={setPhoneNumber}
+        keyboardType="phone-pad"
+        autoComplete="tel"
+        textContentType="telephoneNumber"
+        autoFocus
+        onSubmitEditing={sendCode}
+        leading={<Icon name="phone" size={20} color={theme.textSecondary} />}
+      />
+    </Screen>
   );
 }

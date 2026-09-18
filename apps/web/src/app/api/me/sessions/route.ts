@@ -6,7 +6,7 @@ import { revokeSessions } from "@/lib/revoke-sessions";
 
 // Signed-in devices for the current user. Session tokens are never returned.
 export async function GET() {
-  const { session: current, response } = await requireSession({ allowUnverifiedContact: true });
+  const { session: current, response } = await requireSession({ allowUnverifiedContact: true, allowIncompleteOnboarding: true });
   if (response) return response;
 
   const rows = await db
@@ -31,7 +31,7 @@ export async function GET() {
 
 // Sign out every other device.
 export async function DELETE() {
-  const { session: current, response } = await requireSession({ allowUnverifiedContact: true });
+  const { session: current, response } = await requireSession({ allowUnverifiedContact: true, allowIncompleteOnboarding: true });
   if (response) return response;
 
   const revoked = await revokeSessions(

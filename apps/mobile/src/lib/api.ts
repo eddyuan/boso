@@ -16,7 +16,8 @@ export class ApiError extends Error {
 // in SecureStore and has to be attached manually; on web the browser sends it.
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
-  if (init.body && !headers.has('Content-Type')) {
+  // FormData sets its own multipart boundary header.
+  if (init.body && !(init.body instanceof FormData) && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
 
