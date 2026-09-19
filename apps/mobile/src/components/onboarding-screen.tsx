@@ -6,6 +6,7 @@ import { Screen, TitleBlock } from '@/components/auth-form';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
 import { BackButton, ErrorText, ProgressBar } from '@/components/ui/controls';
+import { useT } from '@/lib/i18n';
 import { Spacing } from '@/constants/theme';
 import { goToStep, stepNumber } from '@/lib/onboarding';
 
@@ -35,15 +36,16 @@ export function OnboardingScreen({
   subtitle,
   children,
   error,
-  continueLabel = 'Continue',
+  continueLabel,
   onContinue,
   continueDisabled,
   loading,
   onSkip,
-  skipLabel = 'Not now',
+  skipLabel,
   footerNote,
   centered,
 }: Props) {
+  const { t } = useT();
   const { index, total } = stepNumber(step);
   const previous = index > 1 ? ONBOARDING_STEPS[index - 2] : null;
 
@@ -55,19 +57,19 @@ export function OnboardingScreen({
           {previous ? <BackButton onPress={() => goToStep(previous)} /> : <View style={styles.backSpacer} />}
           <ProgressBar value={index / total} />
           <ThemedText type="smallBold" themeColor="textSecondary" style={styles.count}>
-            {index}/{total}
+            {t('onboarding.step', { index, total })}
           </ThemedText>
         </View>
       }
       footer={
         <>
           <ErrorText message={error} />
-          <Button label={continueLabel} onPress={onContinue} disabled={continueDisabled} loading={loading} />
+          <Button label={continueLabel ?? t('onboarding.continue')} onPress={onContinue} disabled={continueDisabled} loading={loading} />
           {footerNote}
           {onSkip && (
             <Pressable onPress={onSkip} accessibilityRole="button" style={styles.skip}>
               <ThemedText type="link" themeColor="textSecondary">
-                {skipLabel}
+                {skipLabel ?? t('onboarding.notNow')}
               </ThemedText>
             </Pressable>
           )}

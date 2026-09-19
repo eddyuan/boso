@@ -84,14 +84,15 @@ export function validateUsername(value: string): UsernameError | null {
   return null;
 }
 
-export const USERNAME_ERROR_MESSAGES: Record<UsernameError | "taken", string> = {
-  too_short: `At least ${USERNAME_MIN} characters`,
-  too_long: `At most ${USERNAME_MAX} characters`,
-  invalid_characters: "Only letters, numbers, _ and .",
-  invalid_format: "Must start with a letter or number, and can't end with or repeat a period",
-  reserved: "This nickname isn't available",
-  taken: "This nickname is taken",
-};
+/**
+ * The wording lives in the catalogue, keyed by the code; only the mapping is here.
+ *
+ * `too_short` and `too_long` need `{min}` / `{max}` filled in by the caller, since
+ * the bounds are constants here and the sentence is not.
+ */
+export function usernameErrorKey(code: UsernameError | "taken"): `username.${UsernameError | "taken"}` {
+  return `username.${code}`;
+}
 
 // ---------------------------------------------------------------------------
 // Display name

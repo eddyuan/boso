@@ -8,6 +8,7 @@ import { OnboardingScreen } from '@/components/onboarding-screen';
 import { ThemedText } from '@/components/themed-text';
 import { Badge, Card, Divider } from '@/components/ui/controls';
 import { Icon } from '@/components/ui/icon';
+import { useT } from '@/lib/i18n';
 import { FontFamily, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { findFriendsFromContacts, type FriendMatch } from '@/lib/contacts';
@@ -34,6 +35,7 @@ function Avatar({ match, index }: { match: FriendMatch; index: number }) {
 
 export default function ContactsStep() {
   const theme = useTheme();
+  const { t, n } = useT();
   const [matches, setMatches] = useState<FriendMatch[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +46,7 @@ export default function ContactsStep() {
     setLoading(true);
     const code = await submitStep('contacts', { granted });
     setLoading(false);
-    if (code) setError("Couldn't save. Please try again.");
+    if (code) setError(t('onboarding.error.save'));
   }
 
   async function findFriends() {
@@ -58,7 +60,7 @@ export default function ContactsStep() {
       }
       setMatches(await findFriendsFromContacts());
     } catch {
-      setError("Couldn't check your contacts. You can try again later.");
+      setError(t('onboarding.contacts.error'));
     } finally {
       setLoading(false);
     }
@@ -70,8 +72,8 @@ export default function ContactsStep() {
     return (
       <OnboardingScreen
         step="contacts"
-        title={count ? `${count} friend${count === 1 ? '' : 's'} already here` : 'No friends here yet'}
-        subtitle={count ? "Your pet can follow them for you once you're set up." : "We'll let you know when someone from your contacts joins."}
+        title={count ? n('onboarding.contacts.foundCount', count) : t('onboarding.contacts.none')}
+        subtitle={t(count ? 'onboarding.contacts.foundBody' : 'onboarding.contacts.noneBody')}
         onContinue={() => finish(true)}
         loading={loading}
         error={error}>
@@ -92,7 +94,7 @@ export default function ContactsStep() {
                       </ThemedText>
                     )}
                   </View>
-                  <Badge label="In contacts" />
+                  <Badge label={t('onboarding.contacts.inContacts')} />
                 </View>
               </View>
             ))}
@@ -106,7 +108,7 @@ export default function ContactsStep() {
     <OnboardingScreen
       step="contacts"
       centered
-      continueLabel={supported ? 'Find friends' : 'Continue'}
+      continueLabel={supported ? t('onboarding.contacts.find') : undefined}
       onContinue={supported ? findFriends : () => finish(false)}
       onSkip={supported ? () => finish(false) : undefined}
       loading={loading}
@@ -122,13 +124,14 @@ export default function ContactsStep() {
           <ThemedText style={[styles.bubbleText, { color: '#1F6B40' }]}>S</ThemedText>
         </View>
       </View>
-      <TitleBlock title="Find your friends" subtitle="See who from your contacts is already on Tielo." />
+      <TitleBlock
+        title={t('onboarding.contacts.title')}
+        subtitle={t('onboarding.contacts.subtitle')}
+      />
       <Card style={styles.privacy}>
         <Icon name="shield" color={theme.green} />
         <ThemedText type="small" style={{ flex: 1 }}>
-          {supported
-            ? 'Numbers and emails are scrambled on your phone before we check them. We never store your contacts.'
-            : 'Finding friends from contacts is available in the mobile app.'}
+          {t(supported ? 'onboarding.contacts.privacy' : 'onboarding.webOnly.contacts')}
         </ThemedText>
       </Card>
     </OnboardingScreen>

@@ -1,4 +1,13 @@
-import { INTERESTS, PET_NAME_MAX, PET_SPECIES, getPetSpecies, type PetSpecies } from '@bsocial/shared';
+import {
+  PET_NAME_MAX,
+  PET_SPECIES,
+  getPetSpecies,
+  interestKey,
+  speciesLabelKey,
+  speciesMovesKey,
+  type Interest,
+  type PetSpecies,
+} from '@bsocial/shared';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
 
@@ -11,22 +20,33 @@ import { Field } from '@/components/ui/field';
 import { Icon, type IconName } from '@/components/ui/icon';
 import { FontFamily, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useT } from '@/lib/i18n';
 import { getOnboardingStatus, submitStep } from '@/lib/onboarding';
 
 type Phase = 'egg' | 'hatching' | 'revealed';
 
-const MOVE_ICON: Record<string, IconName> = { Flies: 'flies', Hops: 'hops', Trots: 'trots' };
+/**
+ * Keyed by species rather than by the English word for how it moves, which is
+ * what it used to be — translating "Flies" would have silently lost the icon.
+ */
+const MOVE_ICON: Record<PetSpecies, IconName> = {
+  cockatiel: 'flies',
+  bunny: 'hops',
+  cat: 'trots',
+  puppy: 'trots',
+};
 const randomSpecies = () => PET_SPECIES[Math.floor(Math.random() * PET_SPECIES.length)].value;
 
 // Step 6: hatch an egg into a random companion, optionally switch, name it, adopt.
 export default function PetStep() {
   const theme = useTheme();
+  const { t, rich } = useT();
   const [phase, setPhase] = useState<Phase>('egg');
   const [species, setSpecies] = useState<PetSpecies>('cockatiel');
   const [name, setName] = useState('');
   const [nameEdited, setNameEdited] = useState(false);
   const [autoApprove, setAutoApprove] = useState(true);
-  const [interests, setInterests] = useState<string[]>([]);
+  const [interests, setInterests] = useState<Interest[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -36,7 +56,7 @@ export default function PetStep() {
   // The pet loves whatever the user picked in the interests step.
   useEffect(() => {
     getOnboardingStatus()
-      .then((s) => setInterests(s.state.interests))
+      .then((s) => setInterests(s.state.interests as Interest[]))
       .catch(() => {});
   }, []);
 
@@ -85,7 +105,7 @@ export default function PetStep() {
     // Tapping Adopt is the consent (see the note under the button).
     const code = await submitStep('pet', { name: name.trim(), species, autoApprove, consent: true });
     setLoading(false);
-    if (code) setError("Couldn't adopt your pet. Please try again.");
+    if (code) setError(t('onboarding.pet.error.adopt'));
   }
 
   const rotate = wobble.interpolate({ inputRange: [-2, 2], outputRange: ['-16deg', '16deg'] });
@@ -94,13 +114,13 @@ export default function PetStep() {
     return (
       <OnboardingScreen
         step="pet"
-        title="Your pet is ready to hatch"
-        subtitle="Tap the egg to meet your companion."
-        continueLabel="Hatch"
+        title={t('onboarding.pet.readyTitle')}
+        subtitle={t('onboarding.pet.readySubtitle')}
+        continueLabel={t('onboarding.pet.hatch')}
         onContinue={hatch}
         loading={phase === 'hatching'}>
         <View style={styles.eggStage}>
-          <Pressable onPress={hatch} disabled={phase === 'hatching'} accessibilityRole="button" accessibilityLabel="Hatch the egg">
+          <Pressable onPress={hatch} disabled={phase === 'hatching'} accessibilityRole="button" accessibilityLabel={t('onboarding.pet.hatchEgg')}>
             <View style={[styles.eggHalo, { backgroundColor: theme.primarySoft }]}>
               <Animated.View style={{ transform: [{ rotate }] }}>
                 <Egg size={210} cracked={phase === 'hatching'} />
@@ -108,35 +128,40 @@ export default function PetStep() {
             </View>
           </Pressable>
           <ThemedText type="small" themeColor="textSecondary" style={styles.center}>
-            It could be a <ThemedText type="smallBold">cockatiel</ThemedText>, <ThemedText type="smallBold">bunny</ThemedText>{' '}
-            or <ThemedText type="smallBold">cat</ThemedText>. You can switch after it hatches.
+            {/* One sentence, three named slots: which species are listed and in
+                what order is data, and the punctuation between them is the
+                translator's. */}
+            {rich('onboarding.pet.couldBe', {
+              first: <ThemedText type="smallBold">{t(speciesLabelKey(PET_SPECIES[0].value)).toLowerCase()}</ThemedText>,
+              second: <ThemedText type="smallBold">{t(speciesLabelKey(PET_SPECIES[1].value)).toLowerCase()}</ThemedText>,
+              third: <ThemedText type="smallBold">{t(speciesLabelKey(PET_SPECIES[2].value)).toLowerCase()}</ThemedText>,
+            })}
           </ThemedText>
         </View>
       </OnboardingScreen>
     );
   }
 
-  const info = getPetSpecies(species);
-  const displayName = name.trim() || info.names[0];
-  const loves = interests.map((v) => INTERESTS.find((i) => i.value === v)?.label ?? v).join(', ');
+  const displayName = name.trim() || getPetSpecies(species).names[0];
+  const loves = interests.map((v) => t(interestKey(v))).join(', ');
   const scale = pop.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] });
 
   return (
     <OnboardingScreen
       step="pet"
-      continueLabel={`Adopt ${displayName}`}
+      continueLabel={t('onboarding.pet.adopt', { name: displayName })}
       onContinue={adopt}
       continueDisabled={!name.trim()}
       loading={loading}
       error={error}
       footerNote={
         <ThemedText type="caption" style={styles.center}>
-          {displayName} uses AI to post, comment, like and follow for you. You can change this anytime.
+          {t('onboarding.pet.consent', { name: displayName })}
         </ThemedText>
       }>
       <View style={styles.reveal}>
         <ThemedText type="title" style={styles.center}>
-          It&apos;s a {info.label.toLowerCase()}!
+          {t('onboarding.pet.itsA', { species: t(speciesLabelKey(species)).toLowerCase() })}
         </ThemedText>
         <View style={[styles.petHalo, { backgroundColor: theme.primarySoft }]}>
           <Animated.View style={{ transform: [{ scale }] }}>
@@ -145,8 +170,8 @@ export default function PetStep() {
           <View style={styles.movesBadge}>
             <Badge
               tone="brand"
-              label={`${info.moves} on the map`}
-              icon={<Icon name={MOVE_ICON[info.moves]} size={14} color={theme.primaryInk} strokeWidth={2.4} />}
+              label={t('onboarding.pet.movesOnMap', { moves: t(speciesMovesKey(species)) })}
+              icon={<Icon name={MOVE_ICON[species]} size={14} color={theme.primaryInk} strokeWidth={2.4} />}
             />
           </View>
         </View>
@@ -154,20 +179,20 @@ export default function PetStep() {
 
       <View style={styles.switcher}>
         <ThemedText type="smallBold" themeColor="textSecondary">
-          Not the one?
+          {t('onboarding.pet.notTheOne')}
         </ThemedText>
         {PET_SPECIES.filter((s) => s.value !== species).map((s) => (
           <Pressable
             key={s.value}
             onPress={() => choose(s.value)}
             accessibilityRole="button"
-            accessibilityLabel={`Switch to ${s.label}`}
+            accessibilityLabel={t('onboarding.pet.switchTo', { species: t(speciesLabelKey(s.value)) })}
             style={({ pressed }) => [styles.switchTile, { opacity: pressed ? 0.7 : 1 }]}>
             <View style={[styles.switchCircle, { backgroundColor: theme.surface, borderColor: theme.line }]}>
               <CompanionArt species={s.value} size={46} />
             </View>
             <ThemedText type="caption" style={{ fontFamily: FontFamily.bodyHeavy }}>
-              {s.label}
+              {t(speciesLabelKey(s.value))}
             </ThemedText>
           </Pressable>
         ))}
@@ -175,7 +200,7 @@ export default function PetStep() {
 
       <View style={styles.group}>
         <ThemedText type="label" style={{ paddingLeft: 4 }}>
-          Name
+          {t('onboarding.pet.name')}
         </ThemedText>
         <View style={styles.nameRow}>
           <View style={{ flex: 1 }}>
@@ -190,7 +215,7 @@ export default function PetStep() {
               style={{ fontSize: 18 }}
             />
           </View>
-          <IconButton onPress={shuffleName} accessibilityLabel="Suggest another name">
+          <IconButton onPress={shuffleName} accessibilityLabel={t('onboarding.pet.suggestName')}>
             <Icon name="shuffle" />
           </IconButton>
         </View>
@@ -200,20 +225,22 @@ export default function PetStep() {
         <View style={styles.infoRow}>
           <Icon name="sparkle" size={20} color={theme.primaryPress} />
           <ThemedText type="small" numberOfLines={1} style={styles.infoText}>
-            {loves ? `${displayName} loves ${loves}` : `${displayName} loves what you love`}
+            {loves
+              ? t('onboarding.pet.loves', { name: displayName, interests: loves })
+              : t('onboarding.pet.lovesWhatYouLove', { name: displayName })}
           </ThemedText>
           <ThemedText type="smallBold" themeColor="textSecondary">
-            Edit later
+            {t('onboarding.pet.editLater')}
           </ThemedText>
         </View>
         <Divider />
         <View style={styles.infoRow}>
           <Icon name={autoApprove ? 'check' : 'bell'} size={20} color={autoApprove ? theme.green : theme.primaryInk} strokeWidth={2.6} />
           <ThemedText type="small" style={styles.infoText}>
-            {autoApprove ? 'Posts on its own' : 'Asks you before posting'}
+            {t(autoApprove ? 'pet.postsOnItsOwn' : 'onboarding.pet.askFirst')}
           </ThemedText>
           <Pressable onPress={() => setAutoApprove((v) => !v)} accessibilityRole="button" hitSlop={10}>
-            <ThemedText type="linkPrimary">Change</ThemedText>
+            <ThemedText type="linkPrimary">{t('onboarding.pet.change')}</ThemedText>
           </Pressable>
         </View>
       </Card>

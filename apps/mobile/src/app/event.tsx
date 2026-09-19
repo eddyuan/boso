@@ -1,3 +1,4 @@
+import type { Translator } from '@bsocial/shared';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
@@ -7,6 +8,7 @@ import { Screen } from '@/components/auth-form';
 import { ThemedText } from '@/components/themed-text';
 import { Badge, Card, ErrorText } from '@/components/ui/controls';
 import { Icon } from '@/components/ui/icon';
+import { useT } from '@/lib/i18n';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { apiFetch } from '@/lib/api';
@@ -28,6 +30,7 @@ type Live = {
  */
 export default function EventScreen() {
   const theme = useTheme();
+  const { t, num } = useT();
   const [data, setData] = useState<Live | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,22 +38,22 @@ export default function EventScreen() {
     useCallback(() => {
       apiFetch<Live>('/api/me/event')
         .then(setData)
-        .catch(() => setError("Couldn't load the event."));
-    }, []),
+        .catch(() => setError(t('event.error.load')));
+    }, [t]),
   );
 
   const met = data?.event ? data.total >= data.event.target : false;
 
   return (
-    <Screen header={<BackHeader title={data?.event?.title ?? 'Event'} />}>
+    <Screen header={<BackHeader title={data?.event?.title ?? t('event.title')} />}>
       <ErrorText message={error} />
       {!data && !error && <ActivityIndicator color={theme.primaryPress} />}
 
       {data && !data.event && (
         <Card style={styles.card}>
-          <ThemedText type="label">Nothing running</ThemedText>
+          <ThemedText type="label">{t('event.none.title')}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            Events are occasional and time-boxed. There&apos;s nothing to join at the moment.
+            {t('event.none.body')}
           </ThemedText>
         </Card>
       )}
@@ -59,14 +62,13 @@ export default function EventScreen() {
         <>
           <Card style={styles.hero}>
             <ThemedText style={styles.big}>
-              {data.total.toLocaleString()}
+              {num(data.total)}
               <ThemedText type="subtitle" themeColor="textSecondary">
-                {' / '}
-                {data.event.target.toLocaleString()}
+                {` / ${num(data.event.target)}`}
               </ThemedText>
             </ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              {data.event.goalLabel} in your neighbourhood
+              {t('event.inNeighbourhood', { goal: data.event.goalLabel })}
             </ThemedText>
             <View style={[styles.track, { backgroundColor: theme.backgroundElement }]}>
               <View
@@ -74,8 +76,8 @@ export default function EventScreen() {
               />
             </View>
             <View style={styles.badges}>
-              <Badge tone="brand" label={met ? 'Goal met' : remaining(data.hoursLeft)} />
-              {data.yours > 0 && <Badge label={`${data.yours} from you`} />}
+              <Badge tone="brand" label={met ? t('event.goalMet') : remaining(t, data.hoursLeft)} />
+              {data.yours > 0 && <Badge label={t('event.fromYou', { count: data.yours })} />}
             </View>
           </Card>
 
@@ -86,22 +88,19 @@ export default function EventScreen() {
           )}
 
           <Card style={styles.card}>
-            <ThemedText type="label">One bar, not a ranking</ThemedText>
+            <ThemedText type="label">{t('event.notARanking.title')}</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              There&apos;s no position to lose and no list of who&apos;s busy near you. Your own number is
-              shown to you and to nobody else.
+              {t('event.notARanking.body')}
             </ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              Only real accounts count toward it — seeded pets can make a neighbourhood look inhabited,
-              but they can&apos;t fill this in.
+              {t('event.realOnly')}
             </ThemedText>
           </Card>
 
           <Card style={styles.card}>
-            <ThemedText type="label">Counted from what actually happened</ThemedText>
+            <ThemedText type="label">{t('event.counted.title')}</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              Nothing is tallied separately, so the bar can&apos;t disagree with the thing it&apos;s
-              counting. Past the target it stays full and says so — there&apos;s no next tier.
+              {t('event.counted.body')}
             </ThemedText>
           </Card>
         </>
@@ -110,10 +109,10 @@ export default function EventScreen() {
   );
 }
 
-function remaining(hours: number): string {
-  if (hours <= 0) return 'Ending';
-  if (hours < 24) return `${Math.round(hours)}h left`;
-  return `${Math.round(hours / 24)}d left`;
+function remaining(t: Translator['t'], hours: number): string {
+  if (hours <= 0) return t('event.endingSoon');
+  if (hours < 24) return t('event.hoursLeft', { hours: Math.round(hours) });
+  return t('event.daysLeft', { days: Math.round(hours / 24) });
 }
 
 

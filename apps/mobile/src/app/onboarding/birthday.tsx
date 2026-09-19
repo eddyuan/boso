@@ -1,24 +1,26 @@
-import { MIN_AGE } from '@bsocial/shared';
+import { MIN_AGE, type Translator } from '@bsocial/shared';
 import { useMemo, useState } from 'react';
 import { Alert, Platform } from 'react-native';
 
 import { BirthdayPicker } from '@/components/birthday-picker';
 import { OnboardingScreen } from '@/components/onboarding-screen';
+import { useT } from '@/lib/i18n';
 import { formatBirthday, toIsoDate, yearsAgo } from '@/lib/birthday';
 import { submitStep } from '@/lib/onboarding';
 
-function confirmBirthday(date: Date): Promise<boolean> {
-  const message = `Is ${formatBirthday(date)} correct? You won't be able to change your birthday later.`;
+function confirmBirthday(t: Translator['t'], date: Date): Promise<boolean> {
+  const message = t('onboarding.birthday.check', { date: formatBirthday(date) });
   if (Platform.OS === 'web') return Promise.resolve(window.confirm(message));
   return new Promise((resolve) =>
-    Alert.alert('Confirm your birthday', message, [
-      { text: 'Edit', style: 'cancel', onPress: () => resolve(false) },
-      { text: 'Confirm', onPress: () => resolve(true) },
+    Alert.alert(t('onboarding.birthday.title'), message, [
+      { text: t('onboarding.birthday.edit'), style: 'cancel', onPress: () => resolve(false) },
+      { text: t('onboarding.birthday.confirm'), onPress: () => resolve(true) },
     ]),
   );
 }
 
 export default function BirthdayStep() {
+  const { t } = useT();
   const [birthday, setBirthday] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -36,7 +38,7 @@ export default function BirthdayStep() {
 
   async function onContinue() {
     if (!birthday) return;
-    if (!(await confirmBirthday(birthday))) return;
+    if (!(await confirmBirthday(t, birthday))) return;
 
     setError(null);
     setLoading(true);
@@ -44,15 +46,15 @@ export default function BirthdayStep() {
     setLoading(false);
     // age_restricted: the root layout switches to the restricted screen.
     if (code && code !== 'age_restricted') {
-      setError(code === 'invalid_birthday' ? 'Enter a valid date' : "Couldn't save. Please try again.");
+      setError(t(code === 'invalid_birthday' ? 'onboarding.birthday.invalid' : 'onboarding.error.save'));
     }
   }
 
   return (
     <OnboardingScreen
       step="birthday"
-      title="When's your birthday?"
-      subtitle={`You must be ${MIN_AGE} or older to use Tielo. This won't be shown on your profile.`}
+      title={t('onboarding.birthday.question')}
+      subtitle={t('onboarding.birthday.subtitle', { age: MIN_AGE })}
       onContinue={onContinue}
       continueDisabled={!birthday}
       loading={loading}

@@ -7,6 +7,7 @@ import { OnboardingScreen } from '@/components/onboarding-screen';
 import { ThemedText } from '@/components/themed-text';
 import { Card } from '@/components/ui/controls';
 import { Icon } from '@/components/ui/icon';
+import { useT } from '@/lib/i18n';
 import { FontFamily, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { submitStep } from '@/lib/onboarding';
@@ -15,6 +16,7 @@ import { submitStep } from '@/lib/onboarding';
 // to the main app.
 export default function CalendarStep() {
   const theme = useTheme();
+  const { t } = useT();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const supported = Platform.OS !== 'web';
@@ -24,7 +26,7 @@ export default function CalendarStep() {
     setLoading(true);
     const code = await submitStep('calendar', { granted });
     setLoading(false);
-    if (code) setError("Couldn't save. Please try again.");
+    if (code) setError(t('onboarding.error.save'));
   }
 
   async function allow() {
@@ -38,17 +40,18 @@ export default function CalendarStep() {
     await finish(granted);
   }
 
+  // An illustration of a day, not the user's actual calendar.
   const slots = [
-    { time: '10:00', label: 'Busy', bg: theme.primarySoft, fg: theme.primaryInk },
-    { time: '14:00', label: 'Your pet posts for you', bg: theme.greenSoft, fg: theme.green },
-    { time: '19:00', label: 'Concert', bg: theme.backgroundElement, fg: theme.textSecondary },
+    { time: '10:00', label: t('onboarding.calendar.exampleBusy'), bg: theme.primarySoft, fg: theme.primaryInk },
+    { time: '14:00', label: t('onboarding.calendar.exampleTitle'), bg: theme.greenSoft, fg: theme.green },
+    { time: '19:00', label: t('onboarding.calendar.exampleEvent'), bg: theme.backgroundElement, fg: theme.textSecondary },
   ];
 
   return (
     <OnboardingScreen
       step="calendar"
       centered
-      continueLabel={supported ? 'Connect calendar' : 'Finish'}
+      continueLabel={t(supported ? 'onboarding.calendar.connect' : 'onboarding.finish')}
       onContinue={supported ? allow : () => finish(false)}
       onSkip={supported ? () => finish(false) : undefined}
       loading={loading}
@@ -56,7 +59,7 @@ export default function CalendarStep() {
       <Card style={[styles.agenda, { boxShadow: '0px 10px 24px rgba(43,31,22,0.08)' }]}>
         <View style={styles.agendaHeader}>
           <ThemedText type="header" style={{ fontSize: 18 }}>
-            Today
+            {t('common.today')}
           </ThemedText>
           <Icon name="calendar" size={20} color={theme.textSecondary} />
         </View>
@@ -72,11 +75,11 @@ export default function CalendarStep() {
         ))}
       </Card>
       <TitleBlock
-        title="Let your pet know your schedule"
-        subtitle="Your pet can tell when you're busy, traveling or at an event, and act at the right moments."
+        title={t('onboarding.calendar.title')}
+        subtitle={t('onboarding.calendar.subtitle')}
       />
       <ThemedText type="small" themeColor="textSecondary">
-        {supported ? 'Your calendar is never shared or posted.' : 'Calendar access is available in the mobile app.'}
+        {t(supported ? 'onboarding.calendar.private' : 'onboarding.webOnly.calendar')}
       </ThemedText>
     </OnboardingScreen>
   );

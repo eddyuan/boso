@@ -14,7 +14,7 @@ import {
   type TranslationKey,
 } from '@bsocial/shared';
 import { getLocales } from 'expo-localization';
-import { createContext, useContext, useMemo, type ReactNode } from 'react';
+import { Fragment, createContext, useContext, useMemo, type ReactNode } from 'react';
 
 import { authClient } from '@/lib/auth-client';
 
@@ -51,6 +51,17 @@ type I18n = {
    * decides *which* sentence applies; this decides what it says.
    */
   p: (phrase: Phrase) => string;
+  /**
+   * A translated sentence with React nodes interpolated into it — a link, a bold
+   * word. The alternative is splicing the sentence around the node in JSX, which
+   * bakes English word order into the layout: the legal line's two links and the
+   * list of possible companions both read backwards in a language that puts them
+   * somewhere else. This keeps the whole sentence, and its order, in the
+   * catalogue.
+   */
+  rich: (key: TranslationKey, parts: Record<string, ReactNode>) => ReactNode;
+  /** A bare number, grouped the way the region groups them. */
+  num: (value: number) => string;
   /** "320 m" or "1,050 ft", in the device's units. */
   distance: (metres: number) => string;
   /** "now", "12 min ago", "5 days ago". */
@@ -84,6 +95,8 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       t,
       n,
       p,
+      rich: (key, parts) => interpolateNodes(t(key), parts),
+      num: (value) => new Intl.NumberFormat(tag).format(value),
       distance: (metres) => formatDistanceShared(metres, tag, measurement),
       timeAgo: (iso) => formatTimeAgoShared(iso, tag),
       day: (day) => formatDayShared(day, locale, tag),
@@ -91,6 +104,20 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   }, [stored]);
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
+}
+
+/**
+ * Splits a translated string on its `{placeholders}` and swaps in nodes.
+ *
+ * A placeholder with no node given is left as literal text, which makes a typo
+ * visible on screen rather than silently dropping a word.
+ */
+function interpolateNodes(text: string, parts: Record<string, ReactNode>): ReactNode {
+  return text.split(/(\{\w+\})/g).map((piece, i) => {
+    const name = /^\{(\w+)\}$/.exec(piece)?.[1];
+    const node = name ? parts[name] : undefined;
+    return <Fragment key={i}>{node ?? piece}</Fragment>;
+  });
 }
 
 /**

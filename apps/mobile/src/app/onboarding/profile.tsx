@@ -1,8 +1,9 @@
 import {
   DISPLAY_NAME_MAX,
-  USERNAME_ERROR_MESSAGES,
   USERNAME_MAX,
+  USERNAME_MIN,
   normalizeUsername,
+  usernameErrorKey,
   validateUsername,
   type UsernameError,
 } from '@bsocial/shared';
@@ -19,6 +20,7 @@ import { Icon } from '@/components/ui/icon';
 import { FontFamily, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { apiFetch } from '@/lib/api';
+import { useT } from '@/lib/i18n';
 import { authClient } from '@/lib/auth-client';
 import { submitStep } from '@/lib/onboarding';
 
@@ -46,6 +48,7 @@ async function uploadAvatar(asset: ImagePicker.ImagePickerAsset): Promise<string
 // Step 4: nickname (@handle, required) + display name and photo (optional).
 export default function ProfileStep() {
   const theme = useTheme();
+  const { t } = useT();
   const { data: session } = authClient.useSession();
   const [username, setUsername] = useState(session?.user.username ?? '');
   const [name, setName] = useState(session?.user.name ?? '');
@@ -94,7 +97,7 @@ export default function ProfileStep() {
     try {
       setImage(await uploadAvatar(result.assets[0]));
     } catch {
-      setError("Couldn't upload that photo. Try a JPEG or PNG under 5 MB.");
+      setError(t('onboarding.profile.error.photo'));
     } finally {
       setUploading(false);
     }
@@ -106,10 +109,15 @@ export default function ProfileStep() {
     const code = await submitStep('profile', { username, name: name.trim(), image });
     setLoading(false);
     if (code) {
-      setError(USERNAME_ERROR_MESSAGES[code as UsernameError | 'taken'] ?? "Couldn't save. Please try again.");
+      // Any code that isn't a username complaint gets the generic sentence.
+      setError(usernameError(code as UsernameError | 'taken') ?? t('onboarding.error.save'));
       if (code === 'taken') setAvailability({ state: 'unavailable', reason: 'taken' });
     }
   }
+
+  // `too_short` / `too_long` carry the bounds; the rest ignore the extra vars.
+  const usernameError = (code: UsernameError | 'taken') =>
+    t(usernameErrorKey(code), { min: USERNAME_MIN, max: USERNAME_MAX });
 
   const handle = normalizeUsername(username);
   const unavailable = availability.state === 'unavailable';
@@ -117,13 +125,13 @@ export default function ProfileStep() {
   return (
     <OnboardingScreen
       step="profile"
-      title="Set up your profile"
-      subtitle="How people find and see you on Tielo."
+      title={t('onboarding.profile.title')}
+      subtitle={t('onboarding.profile.subtitle')}
       onContinue={onContinue}
       continueDisabled={availability.state !== 'available' || uploading}
       loading={loading}
       error={error}>
-      <Pressable onPress={pickPhoto} style={styles.avatarWrap} accessibilityRole="button" accessibilityLabel="Choose profile photo">
+      <Pressable onPress={pickPhoto} style={styles.avatarWrap} accessibilityRole="button" accessibilityLabel={t('onboarding.profile.choosePhoto')}>
         <View>
           <View
             style={[
@@ -143,19 +151,19 @@ export default function ProfileStep() {
           </View>
         </View>
         <ThemedText type="linkPrimary" style={{ fontSize: 15 }}>
-          {image ? 'Change photo' : 'Add photo (optional)'}
+          {t(image ? 'onboarding.profile.changePhoto' : 'onboarding.profile.addPhoto')}
         </ThemedText>
       </Pressable>
 
       <View style={styles.group}>
         <View style={styles.labelRow}>
-          <ThemedText type="label">Nickname</ThemedText>
-          <Badge label="Required" tone="brand" />
+          <ThemedText type="label">{t('onboarding.profile.nickname')}</ThemedText>
+          <Badge label={t('onboarding.profile.required')} tone="brand" />
         </View>
         <Field
           value={username}
           onChangeText={(v) => setUsername(v.replace(/\s/g, ''))}
-          placeholder="nickname"
+          placeholder={t('onboarding.profile.nicknamePlaceholder')}
           maxLength={USERNAME_MAX + 1}
           autoComplete="username-new"
           error={unavailable}
@@ -171,25 +179,25 @@ export default function ProfileStep() {
         />
         {availability.state === 'available' && (
           <ThemedText type="smallBold" style={{ color: theme.green, paddingLeft: 4 }}>
-            @{handle} is available
+            {t('onboarding.profile.available', { handle })}
           </ThemedText>
         )}
         {unavailable && (
           <ThemedText type="smallBold" style={{ color: theme.red, paddingLeft: 4 }}>
-            {USERNAME_ERROR_MESSAGES[availability.reason]}
+            {usernameError(availability.reason)}
           </ThemedText>
         )}
       </View>
 
       <View style={styles.group}>
         <View style={styles.labelRow}>
-          <ThemedText type="label">Display name</ThemedText>
-          <Badge label="Optional" />
+          <ThemedText type="label">{t('onboarding.profile.displayName')}</ThemedText>
+          <Badge label={t('onboarding.profile.optional')} />
         </View>
         <Field
           value={name}
           onChangeText={setName}
-          placeholder="Display name"
+          placeholder={t('onboarding.profile.displayName')}
           maxLength={DISPLAY_NAME_MAX}
           autoCapitalize="words"
           autoCorrect
@@ -197,8 +205,8 @@ export default function ProfileStep() {
         />
         <ThemedText type="small" themeColor="textSecondary" style={{ paddingLeft: 4 }}>
           {name.trim() || !handle
-            ? 'Shown on your profile and posts. Spaces, emoji and any language are fine.'
-            : `Leave empty and you'll show as @${handle}.`}
+            ? t('onboarding.profile.displayNameHint')
+            : t('onboarding.profile.fallsBackToHandle', { handle })}
         </ThemedText>
       </View>
     </OnboardingScreen>

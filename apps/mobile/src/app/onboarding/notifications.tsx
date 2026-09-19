@@ -10,6 +10,7 @@ import { TitleBlock } from '@/components/auth-form';
 import { OnboardingScreen } from '@/components/onboarding-screen';
 import { ThemedText } from '@/components/themed-text';
 import { Badge, Card } from '@/components/ui/controls';
+import { useT } from '@/lib/i18n';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { apiFetch } from '@/lib/api';
@@ -30,6 +31,7 @@ async function registerPushToken() {
 
 export default function NotificationsStep() {
   const theme = useTheme();
+  const { t } = useT();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,7 +40,7 @@ export default function NotificationsStep() {
     setLoading(true);
     const code = await submitStep('notifications', { granted });
     setLoading(false);
-    if (code) setError("Couldn't save. Please try again.");
+    if (code) setError(t('onboarding.error.save'));
   }
 
   async function allow() {
@@ -55,7 +57,7 @@ export default function NotificationsStep() {
     <OnboardingScreen
       step="notifications"
       centered
-      continueLabel="Turn on notifications"
+      continueLabel={t('onboarding.notifications.allow')}
       onContinue={allow}
       onSkip={() => finish(false)}
       loading={loading}
@@ -67,18 +69,18 @@ export default function NotificationsStep() {
             <CompanionArt species="cockatiel" size={36} />
           </View>
           <View style={styles.previewText}>
-            <ThemedText type="label">Your pet wants to post</ThemedText>
+            <ThemedText type="label">{t('onboarding.notifications.example')}</ThemedText>
             <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-              “Tonkotsu &gt; everything. Fight me.”
+              {t('onboarding.notifications.exampleBody')}
             </ThemedText>
           </View>
-          <Badge label="Review" tone="brand" />
+          <Badge label={t('onboarding.notifications.review')} tone="brand" />
         </Card>
         <Mascot mood="excited" size={130} />
       </View>
       <TitleBlock
-        title="Know what your pet is up to"
-        subtitle="Get a heads-up when your pet wants your approval, and a recap of what it did while you were away."
+        title={t('onboarding.notifications.title')}
+        subtitle={t('onboarding.notifications.subtitle')}
       />
     </OnboardingScreen>
   );

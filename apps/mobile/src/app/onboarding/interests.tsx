@@ -1,12 +1,14 @@
-import { INTERESTS, MAX_INTERESTS, MIN_INTERESTS, type Interest } from '@bsocial/shared';
+import { INTERESTS, MAX_INTERESTS, MIN_INTERESTS, interestKey, type Interest } from '@bsocial/shared';
 import { useEffect, useState } from 'react';
 
 import { OnboardingScreen } from '@/components/onboarding-screen';
 import { ThemedText } from '@/components/themed-text';
 import { Chip, ChipGroup } from '@/components/ui/controls';
+import { useT } from '@/lib/i18n';
 import { getOnboardingStatus, submitStep } from '@/lib/onboarding';
 
 export default function InterestsStep() {
+  const { t, n } = useT();
   const [selected, setSelected] = useState<Interest[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -29,7 +31,7 @@ export default function InterestsStep() {
     setLoading(true);
     const code = await submitStep('interests', { interests: selected });
     setLoading(false);
-    if (code) setError("Couldn't save. Please try again.");
+    if (code) setError(t('onboarding.error.save'));
   }
 
   const remaining = MIN_INTERESTS - selected.length;
@@ -37,9 +39,9 @@ export default function InterestsStep() {
   return (
     <OnboardingScreen
       step="interests"
-      title="What are you into?"
-      subtitle={`Pick at least ${MIN_INTERESTS}. Your pet will post and engage around these.`}
-      continueLabel={remaining > 0 ? `Pick ${remaining} more` : 'Continue'}
+      title={t('onboarding.interests.title')}
+      subtitle={t('onboarding.interests.subtitle', { min: MIN_INTERESTS })}
+      continueLabel={remaining > 0 ? n('onboarding.interests.pickMore', remaining) : undefined}
       onContinue={onContinue}
       continueDisabled={remaining > 0}
       loading={loading}
@@ -47,7 +49,12 @@ export default function InterestsStep() {
       footerNote={
         selected.length > 0 ? (
           <ThemedText type="smallBold" themeColor="textSecondary" style={{ textAlign: 'center' }}>
-            {selected.length >= MAX_INTERESTS ? `${MAX_INTERESTS} selected (max)` : `${selected.length} selected`}
+            {t(
+              selected.length >= MAX_INTERESTS
+                ? 'onboarding.interests.selectedMax'
+                : 'onboarding.interests.selected',
+              { count: selected.length },
+            )}
           </ThemedText>
         ) : undefined
       }>
@@ -55,7 +62,7 @@ export default function InterestsStep() {
         {INTERESTS.map((i) => (
           <Chip
             key={i.value}
-            label={`${i.emoji} ${i.label}`}
+            label={`${i.emoji} ${t(interestKey(i.value))}`}
             selected={selected.includes(i.value)}
             onPress={() => toggle(i.value)}
           />

@@ -6,6 +6,7 @@ import { ExternalLink } from '@/components/external-link';
 import { Mascot } from '@/components/mascot/mascot';
 import { OnboardingScreen } from '@/components/onboarding-screen';
 import { ThemedText } from '@/components/themed-text';
+import { useT } from '@/lib/i18n';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { submitStep } from '@/lib/onboarding';
@@ -15,6 +16,7 @@ const PRIVACY_URL = (process.env.EXPO_PUBLIC_PRIVACY_URL ?? 'https://tielo.app/p
 
 export default function TermsStep() {
   const theme = useTheme();
+  const { t, rich } = useT();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -22,28 +24,34 @@ export default function TermsStep() {
     setLoading(true);
     const code = await submitStep('terms', { version: TERMS_VERSION });
     setLoading(false);
-    if (code) setError("Couldn't save. Please try again.");
+    if (code) setError(t('onboarding.error.save'));
   }
 
   return (
     <OnboardingScreen
       step="terms"
       centered
-      continueLabel="Agree and continue"
+      continueLabel={t('onboarding.terms.agree')}
       onContinue={onContinue}
       loading={loading}
       error={error}
       footerNote={
         <ThemedText type="small" themeColor="textSecondary" style={styles.legal}>
-          By continuing, you agree to our{' '}
-          <ExternalLink href={TERMS_URL}>
-            <ThemedText type="linkPrimary">Terms of Service</ThemedText>
-          </ExternalLink>{' '}
-          and{' '}
-          <ExternalLink href={PRIVACY_URL}>
-            <ThemedText type="linkPrimary">Privacy Policy</ThemedText>
-          </ExternalLink>
-          , including how your pet may post and interact on your behalf.
+          {/* One sentence with the links inside it, rather than three fragments
+              spliced together — the order of "terms", "privacy" and the rest of
+              the clause is the translator's to decide. */}
+          {rich('onboarding.terms.legal', {
+            terms: (
+              <ExternalLink href={TERMS_URL}>
+                <ThemedText type="linkPrimary">{t('onboarding.terms.terms')}</ThemedText>
+              </ExternalLink>
+            ),
+            privacy: (
+              <ExternalLink href={PRIVACY_URL}>
+                <ThemedText type="linkPrimary">{t('onboarding.terms.privacy')}</ThemedText>
+              </ExternalLink>
+            ),
+          })}
         </ThemedText>
       }>
       <View style={styles.hero}>
@@ -51,10 +59,10 @@ export default function TermsStep() {
           <Mascot mood="waving" size={160} />
         </View>
         <ThemedText type="hero" style={styles.center}>
-          Welcome to Tielo
+          {t('onboarding.terms.title')}
         </ThemedText>
         <ThemedText themeColor="textSecondary" style={[styles.center, { maxWidth: 300 }]}>
-          Your AI pet keeps your social life going, even when you're away.
+          {t('onboarding.terms.body')}
         </ThemedText>
       </View>
     </OnboardingScreen>
