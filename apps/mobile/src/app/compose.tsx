@@ -1,7 +1,9 @@
+import { Image } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { Screen } from '@/components/auth-form';
 import { PlacePicker, type Place } from '@/components/place-picker';
@@ -16,8 +18,14 @@ import { apiFetch } from '@/lib/api';
 const MAX_LENGTH = 500;
 // Show the counter only once it's worth worrying about.
 const COUNTER_FROM = 400;
+/**
+ * The API accepts 20, but a compose screen that can hold 20 thumbnails isn't a
+ * compose screen. Four fills the strip without scrolling on a phone.
+ */
+const MAX_PHOTOS = 4;
 
 type LatLng = { latitude: number; longitude: number };
+type Photo = { url: string; thumbUrl: string; kind: 'image' };
 
 /** Writing a post as yourself. Your pet writes its own — see the pet's activity. */
 export default function ComposeScreen() {
@@ -28,11 +36,53 @@ export default function ComposeScreen() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [locating, setLocating] = useState(false);
   const [posting, setPosting] = useState(false);
+  const [photos, setPhotos] = useState<Photo[]>([]);
+  const [uploading, setUploading] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   const trimmed = content.trim();
   const tooLong = trimmed.length > MAX_LENGTH;
-  const canPost = trimmed.length > 0 && !tooLong && !posting;
+  // A photo still needs words: the feed and the map both lead with the text.
+  const canPost = trimmed.length > 0 && !tooLong && !posting && uploading === 0;
+
+  /**
+   * Photos upload as they're picked rather than on Post, so publishing is a
+   * single small request and a failed post never loses the pictures.
+   */
+  async function addPhotos() {
+    setError(null);
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      setError('Photo access is off. Turn it on in Settings to add pictures.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsMultipleSelection: true,
+      selectionLimit: MAX_PHOTOS - photos.length,
+      quality: 0.9,
+    });
+    if (result.canceled) return;
+
+    setUploading(result.assets.length);
+    for (const asset of result.assets) {
+      try {
+        const form = new FormData();
+        // React Native's FormData takes this shape rather than a Blob.
+        form.append('file', {
+          uri: asset.uri,
+          name: asset.fileName ?? 'photo.jpg',
+          type: asset.mimeType ?? 'image/jpeg',
+        } as unknown as Blob);
+        const stored = await apiFetch<Photo>('/api/uploads/post-media', { method: 'POST', body: form });
+        setPhotos((prev) => [...prev, { url: stored.url, thumbUrl: stored.thumbUrl, kind: 'image' }]);
+      } catch {
+        setError("Couldn't add one of those photos.");
+      }
+      setUploading((n) => n - 1);
+    }
+  }
 
   async function attachLocation() {
     if (place) {
@@ -63,7 +113,11 @@ export default function ComposeScreen() {
       await apiFetch('/api/posts', {
         method: 'POST',
         // A chosen place carries its own coordinates, so it replaces the raw fix.
-        body: JSON.stringify(venue ? { content: trimmed, placeId: venue.id } : { content: trimmed, ...(place ?? {}) }),
+        body: JSON.stringify({
+          content: trimmed,
+          media: photos,
+          ...(venue ? { placeId: venue.id } : (place ?? {})),
+        }),
       });
       router.back();
     } catch {
@@ -115,6 +169,40 @@ export default function ComposeScreen() {
         <ThemedText type="small" style={{ color: tooLong ? theme.red : theme.textSecondary, textAlign: 'right' }}>
           {trimmed.length} / {MAX_LENGTH}
         </ThemedText>
+      )}
+
+      {(photos.length > 0 || uploading > 0) && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
+          {photos.map((photo) => (
+            <View key={photo.url}>
+              <Image source={{ uri: photo.thumbUrl }} style={styles.thumb} contentFit="cover" />
+              <Pressable
+                onPress={() => setPhotos((prev) => prev.filter((p) => p.url !== photo.url))}
+                accessibilityRole="button"
+                accessibilityLabel="Remove photo"
+                hitSlop={8}
+                style={[styles.remove, { backgroundColor: theme.background }]}>
+                <Icon name="close" size={14} strokeWidth={3} />
+              </Pressable>
+            </View>
+          ))}
+          {Array.from({ length: uploading }).map((_, i) => (
+            <View key={`pending-${i}`} style={[styles.thumb, styles.pending, { backgroundColor: theme.backgroundElement }]}>
+              <ActivityIndicator color={theme.primaryPress} />
+            </View>
+          ))}
+        </ScrollView>
+      )}
+
+      {photos.length + uploading < MAX_PHOTOS && (
+        <Pressable onPress={addPhotos} accessibilityRole="button" accessibilityLabel="Add photos">
+          <Card style={styles.place}>
+            <Icon name="camera" color={theme.textSecondary} />
+            <ThemedText type="small" style={{ flex: 1 }}>
+              {photos.length === 0 ? 'Add photos' : `Add another (${photos.length}/${MAX_PHOTOS})`}
+            </ThemedText>
+          </Card>
+        </Pressable>
       )}
 
       <Pressable
@@ -195,4 +283,17 @@ const styles = StyleSheet.create({
     outlineStyle: 'none' as never,
   },
   place: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, padding: Spacing.lg },
+  strip: { gap: Spacing.sm, paddingVertical: 2 },
+  thumb: { width: 96, height: 96, borderRadius: Radius.field },
+  pending: { alignItems: 'center', justifyContent: 'center' },
+  remove: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

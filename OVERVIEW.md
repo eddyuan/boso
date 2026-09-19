@@ -798,6 +798,7 @@ All under `apps/web/src/app/api`. Guard: `requireSession()` in [`lib/session.ts`
 | `GET`/`POST`/`PATCH /api/me/playdates` | onboarded | Who you could meet · propose · accept or decline |
 | `GET /api/me/missions` | onboarded | Today's three goals and their progress |
 | `GET /api/me/diary` | onboarded | The diary, newest first; credits the read once a day |
+| `POST /api/uploads/post-media` | signed in | Multipart `file` → card + thumb WebP URLs for `media[]` |
 | `GET /api/posts/:postId/viewers` | onboarded | Which pets viewed your post (author only) |
 | `POST /api/posts` | onboarded | Write a post as yourself: content, optional place/coordinates, and up to 20 photos/videos (`media[]`, already uploaded) |
 | `GET /api/places/search?q=&latitude=&longitude=` | onboarded | Places near you, or by name |
@@ -941,7 +942,7 @@ Worth stating plainly, because "built" reads like "working":
 - [x] ~~Post views recorded but never surfaced~~ — `GET /api/posts/:postId/viewers` returns them to the author, shown behind an eye count on your own posts in the feed. Author-only, enforced server-side; there is deliberately no "posts you looked at" view.
 - [x] ~~No automated moderation~~ — every post (human and agent) is classified for topics and safety, with an admin review queue. **Not yet covered:** videos aren't scored (left to human review rather than passed as safe), and there's no automated re-scan when thresholds change — an admin re-queues a batch from the Review page.
 - [x] ~~Pets don't set coordinates~~ — pet posts now anchor to the owner's home area, offset by the wander model and snapped to nearby venues.
-- [ ] Compose (the app screen) has no photo picker yet — `POST /api/posts` already accepts up to 20 `media[]` items, but only the admin tools (seeding, mock-user posts) attach any; needs an upload endpoint like the avatar one plus UI.
+- [x] ~~Compose has no photo picker~~ — `POST /api/uploads/post-media` re-encodes an upload to a card and a thumb WebP, and compose uploads as you pick (up to 4) so publishing stays one small request and a failed post never loses the photos. **Not yet covered:** replies still have no picker, and video upload has no endpoint (the API accepts `kind: "video"` but nothing produces one).
 - [x] ~~Liking and commenting aren't wired up~~ — posts and replies can be liked, and replies are written from a threaded sheet in the feed. **Not yet covered:** no photo picker for replies (the API accepts `media[]`), and the map's post sheet shows counts without the reply UI.
 - [ ] Map tab is web-only: the native Mapbox layer needs a development build (not Expo Go) and a Mapbox secret download token (`sk.…`, `DOWNLOADS:READ`).
 - [ ] The pet stands at the user's own location and doesn't wander; the "walk/fly around" behaviour only exists in the `/dev/mascot` demo.
@@ -1018,3 +1019,4 @@ Worth stating plainly, because "built" reads like "working":
 | 2026-09-18 | Design: roadmap mockups in design/app-ui: 27 `Rm*` artboards across six "Roadmap ·" canvas pages (overview + one per phase), following the plan-data principles (levels unlock expression only, bots never become friends, mood dips and levels never do) |
 | 2026-09-18 | Daily missions, derived from the bond ledger so reward and evidence are one table |
 | 2026-09-18 | UI for six features that had none: missions and playdates on Activity, treasure shelf on Profile, whiskers line and errands on the map, who-looked on your own posts |
+| 2026-09-18 | Photo picker in compose, with a post-media upload endpoint that never stores the original |

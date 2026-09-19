@@ -146,7 +146,7 @@ export const PHASES: Phase[] = [
           "The map is a wall of photo markers; a text-only post is close to invisible on it. Right now only admin tooling can attach media, so real users produce the weakest content on the map.",
         effort: "M",
         impact: 4,
-        status: "ready",
+        status: "shipped",
         existing: [
           "POST /api/posts already accepts up to 20 media[]",
           "post_media, galleries and the upload/resize pipeline all shipped",
