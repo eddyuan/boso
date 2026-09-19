@@ -985,3 +985,38 @@ export const configAudit = pgTable(
   },
   (t) => [index("config_audit_key_idx").on(t.key, t.createdAt)],
 );
+
+export const jobStatusEnum = pgEnum("job_status", ["running", "succeeded", "failed"]);
+
+/**
+ * One row per background-job run.
+ *
+ * Nothing has ever recorded whether a scheduled job ran. The diary, the morning
+ * digest, the comeback nudge and the classifier are all invisible: if the nightly
+ * diary silently stopped, the only symptom would be users noticing their pet had
+ * gone quiet, weeks later.
+ *
+ * The row is written when a run *starts*, not when it finishes, so a job that
+ * dies partway — killed mid-flight, timed out, lost its worker — still leaves a
+ * trace. Those are exactly the failures that leave no log line, and a
+ * finish-only record would show nothing at all.
+ */
+export const jobRuns = pgTable(
+  "job_runs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    /** The Inngest function id, e.g. "write-diaries". */
+    job: text("job").notNull(),
+    status: jobStatusEnum("status").notNull().default("running"),
+    startedAt: timestamp("started_at").notNull().defaultNow(),
+    finishedAt: timestamp("finished_at"),
+    durationMs: integer("duration_ms"),
+    /** First line of the error, enough to recognise it without storing a novel. */
+    error: text("error"),
+    /** Whatever the handler returned — counts, skips, "paused". */
+    result: jsonb("result"),
+    /** True when an admin pressed the button rather than the schedule firing. */
+    manual: boolean("manual").notNull().default(false),
+  },
+  (t) => [index("job_runs_job_idx").on(t.job, t.startedAt)],
+);

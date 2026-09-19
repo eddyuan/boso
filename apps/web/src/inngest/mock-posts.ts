@@ -6,6 +6,7 @@ import { attachPostMedia } from "../lib/post-media";
 import { resolvePetPostLocation } from "../lib/pet-location";
 import { alreadyPosted, dueSlot, parseSchedule } from "../lib/posting-schedule";
 import { isPetsPaused } from "../lib/settings";
+import { tracked } from "@/lib/jobs";
 
 /**
  * Seeded personas posting on their own schedule.
@@ -24,8 +25,11 @@ const MAX_IMAGES = 3;
 
 export const scheduleMockPosts = inngest.createFunction(
   { id: "schedule-mock-posts" },
-  { cron: "0 * * * *" },
-  async ({ step }) => {
+  // Also runnable on demand from /admin/jobs, which is how a missed
+  // nightly gets caught up without waiting for tomorrow.
+  [{ cron: "0 * * * *" }, { event: "admin/run.schedule-mock-posts" }],
+  async ({step}) =>
+    tracked("schedule-mock-posts", async () => {
     // The panic button stops everything autonomous, bots included — a pause
     // that leaves eight accounts posting isn't much of a pause.
     if (await step.run("check-paused", () => isPetsPaused())) return { fanned: 0, paused: true };
@@ -70,7 +74,7 @@ export const scheduleMockPosts = inngest.createFunction(
       due.map((d) => ({ name: "mock/post" as const, data: d })),
     );
     return { fanned: due.length };
-  },
+  }),
 );
 
 export const runMockPost = inngest.createFunction(
@@ -81,7 +85,8 @@ export const runMockPost = inngest.createFunction(
     retries: 2,
   },
   { event: "mock/post" },
-  async ({ event, step }) => {
+  async ({event, step}) =>
+    tracked("run-mock-post", async () => {
     const { userId, slot } = event.data;
 
     const context = await step.run("load-persona", async () => {
@@ -122,5 +127,5 @@ export const runMockPost = inngest.createFunction(
     await step.sendEvent("classify", { name: "post/created", data: { postId } });
 
     return { postId, slot, images: draft.images.length, placed: at !== null };
-  },
+  }),
 );

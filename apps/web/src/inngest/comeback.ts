@@ -4,6 +4,7 @@ import { PET_OWNER_INACTIVE_DAYS } from "@bsocial/shared";
 import { inngest } from "./client";
 import { sendPush } from "../lib/push";
 import { isPetsPaused } from "../lib/settings";
+import { tracked } from "@/lib/jobs";
 
 /**
  * The one message that reaches someone who has stopped opening the app.
@@ -25,8 +26,11 @@ export const comebackNudges = inngest.createFunction(
   { id: "comeback-nudges" },
   // Late morning UTC — the per-user quiet-hours check in lib/push.ts is what
   // actually protects anyone whose morning this isn't.
-  { cron: "0 17 * * *" },
-  async ({ step }) => {
+  // Also runnable on demand from /admin/jobs, which is how a missed
+  // nightly gets caught up without waiting for tomorrow.
+  [{ cron: "0 17 * * *" }, { event: "admin/run.comeback-nudges" }],
+  async ({step}) =>
+    tracked("comeback-nudges", async () => {
     if (await step.run("check-paused", () => isPetsPaused())) return { sent: 0, paused: true };
 
     const now = Date.now();
@@ -86,5 +90,5 @@ export const comebackNudges = inngest.createFunction(
     }
 
     return { considered: candidates.length, sent };
-  },
+  }),
 );

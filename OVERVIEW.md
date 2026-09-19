@@ -990,6 +990,7 @@ Admin-only (all `requireAdmin`, under `/api/admin`):
 | `GET /api/admin/users/:userId` | One account in full: profile, pet, sign-in methods, devices, login history, push tokens, recent posts and pet decisions |
 | `GET /api/admin/telemetry` | Economy figures and API spend over a window |
 | `GET`/`PATCH /api/admin/config` | Read the tuning registry and values; change or reset one |
+| `GET`/`POST /api/admin/jobs` | Job health and recent runs; queue one to run now |
 | `PATCH /api/admin/places` | Mark a place as a hotspot |
 | `GET`/`POST`/`DELETE /api/admin/events` | Schedule collective events; see the running one's progress |
 | `PATCH /api/admin/posts` · `DELETE /api/admin/posts?id=` | Hide/unhide a post (`posts.hiddenAt`) · delete it permanently |
@@ -1162,6 +1163,36 @@ and hide drift that does.
 
 ---
 
+### Job visibility
+
+Nothing recorded whether a scheduled job had run. If the nightly diary stopped, the symptom would have
+been users noticing their pet had gone quiet — weeks later, with nothing to look at.
+
+`/admin/jobs` shows all eight functions with last run, last success, duration, 24-hour counts and the
+last error, plus a **Run now** button for the five with a cron ([`lib/jobs.ts`](apps/web/src/lib/jobs.ts)).
+
+Two decisions carry it:
+
+- **The row is written when a run starts, not when it finishes.** A job killed mid-flight — timed out,
+  worker lost — produces no log line, and a finish-only record would show nothing at all. Those rows
+  stay visible as `running` with no `finishedAt`, which is exactly how you spot them.
+- **Instrumentation wraps the handler**, so a job can't be added without being watched, and each job's
+  code stays about its own work. Bookkeeping never changes the outcome: a failed insert is logged and
+  swallowed, and the handler's error is always rethrown so Inngest still retries as configured.
+
+Running by hand **sends the job's own event** rather than invoking the handler in the request. The work
+then happens on a worker with the same retries and step memoisation a scheduled run gets; calling it
+inline would execute inside a request that can time out halfway, which is the failure this page exists
+to catch.
+
+A scheduled job counts as **overdue** after its own window (2h for hourly, 26h for daily). Event-driven
+functions have no window, because silence there means nobody posted, not that anything is broken.
+
+> Right now **all eight report "never run"** — no Inngest scheduler has been connected. That is the
+> standing caveat stated throughout this document, now visible on a page instead of buried in prose.
+
+---
+
 ## 11. Status, known gaps & open decisions
 
 ### Done
@@ -1293,4 +1324,5 @@ a person can supply, which is why `/admin/roadmap` now marks them **Needs you** 
 | 2026-09-19 | Design: regenerated both published canvas bundles from the artboards, added `review.html` and the missing `support.js` |
 | 2026-09-19 | Game ops 1/5 — telemetry: `api_calls` spend ledger across every paid provider, plus an economy page putting actual drop rates, XP and mission completions next to their configured values |
 | 2026-09-19 | Game ops 2/5 — live tuning: 35 bounded values in the database with an audit trail, wired through XP, drop rate, push caps, radii and the spend ceilings |
+| 2026-09-19 | Game ops 3/5 — job visibility: every Inngest handler records its run, with overdue alarms and a manual trigger; confirms all eight have never run |
 | 2026-09-18 | Backfill photo handles lazily via Place Details, so venues imported before the field-mask change can get photos too |

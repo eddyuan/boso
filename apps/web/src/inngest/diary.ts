@@ -5,6 +5,7 @@ import { dayBounds, gatherDay, worthWriting, writeEntry } from "../lib/diary";
 import { petState } from "../lib/pet-mood";
 import { sendPush } from "../lib/push";
 import { isPetsPaused } from "../lib/settings";
+import { tracked } from "@/lib/jobs";
 
 /**
  * The nightly diary, and the one morning message that carries it.
@@ -23,8 +24,11 @@ function yesterday(now: Date): string {
 export const writeDiaries = inngest.createFunction(
   { id: "write-diaries" },
   // Early UTC, so the entry exists before anyone's morning digest goes out.
-  { cron: "20 6 * * *" },
-  async ({ step }) => {
+  // Also runnable on demand from /admin/jobs, which is how a missed
+  // nightly gets caught up without waiting for tomorrow.
+  [{ cron: "20 6 * * *" }, { event: "admin/run.write-diaries" }],
+  async ({step}) =>
+    tracked("write-diaries", async () => {
     if (await step.run("check-paused", () => isPetsPaused())) return { written: 0, paused: true };
 
     const day = yesterday(new Date());
@@ -74,14 +78,17 @@ export const writeDiaries = inngest.createFunction(
     }
 
     return { day, considered: active.length, written };
-  },
+  }),
 );
 
 export const morningDigest = inngest.createFunction(
   { id: "morning-digest" },
   // Hourly; each user is only sent to when it's actually morning where they are.
-  { cron: "0 * * * *" },
-  async ({ step }) => {
+  // Also runnable on demand from /admin/jobs, which is how a missed
+  // nightly gets caught up without waiting for tomorrow.
+  [{ cron: "0 * * * *" }, { event: "admin/run.morning-digest" }],
+  async ({step}) =>
+    tracked("morning-digest", async () => {
     if (await step.run("check-paused", () => isPetsPaused())) return { sent: 0, paused: true };
 
     const day = yesterday(new Date());
@@ -121,5 +128,5 @@ export const morningDigest = inngest.createFunction(
     }
 
     return { day, candidates: entries.length, sent };
-  },
+  }),
 );

@@ -17,6 +17,7 @@ import {
   Smartphone,
   SlidersHorizontal,
   Sparkles,
+  Timer,
   TrendingUp,
   ShieldAlert,
   Sprout,
@@ -37,6 +38,7 @@ const NAV_GROUPS: { label: string; items: { href: string; label: string; icon: L
       { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
       { href: "/admin/map", label: "Coverage", icon: Globe2 },
       { href: "/admin/telemetry", label: "Telemetry", icon: TrendingUp },
+      { href: "/admin/jobs", label: "Jobs", icon: Timer },
     ],
   },
   {

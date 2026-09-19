@@ -21,6 +21,16 @@ type Events = {
       slot: number;
     };
   };
+  /**
+   * An admin pressing "Run now". One event per job rather than a single generic
+   * one, so Inngest's own dashboard shows which job was asked for and a payload
+   * can't name a function that doesn't exist.
+   */
+  "admin/run.schedule-pet-ticks": { data: Record<string, never> };
+  "admin/run.schedule-mock-posts": { data: Record<string, never> };
+  "admin/run.comeback-nudges": { data: Record<string, never> };
+  "admin/run.write-diaries": { data: Record<string, never> };
+  "admin/run.morning-digest": { data: Record<string, never> };
 };
 
 export const inngest = new Inngest({

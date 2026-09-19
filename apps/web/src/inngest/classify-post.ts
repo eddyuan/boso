@@ -4,6 +4,7 @@ import { INTERESTS, SENSITIVE_THRESHOLD, verdictFromScores, type ModerationScore
 import { inngest } from "./client";
 import { classifyImages, classifyText, emptyTextClassification, mergeScores, type TextClassification } from "../lib/classify";
 import { attachPostTopics, knownTopicSlugs, refreshUserTopics } from "../lib/topics";
+import { tracked } from "@/lib/jobs";
 
 const INTEREST_VALUES = INTERESTS.map((i) => i.value);
 const IMAGE_BATCH = 8;
@@ -24,7 +25,8 @@ export const classifyPost = inngest.createFunction(
     retries: 3,
   },
   { event: "post/created" },
-  async ({ event, step }) => {
+  async ({event, step}) =>
+    tracked("classify-post", async () => {
     const postId = event.data.postId;
 
     const post = await step.run("load-post", async () => {
@@ -99,5 +101,5 @@ export const classifyPost = inngest.createFunction(
     }
 
     return { postId, status: verdict.status, categories: verdict.categories, topics: attached };
-  },
+  }),
 );

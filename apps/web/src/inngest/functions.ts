@@ -7,6 +7,7 @@ import { recordDecision } from "../lib/actions";
 import { getActionBudget } from "../lib/action-budget";
 import { loadPlannerCandidates, planAction } from "../lib/pet-planner";
 import { isPetsPaused } from "../lib/settings";
+import { tracked } from "@/lib/jobs";
 
 // Pets act only for owners who are onboarded, not age-restricted, and were
 // active in the app within PET_OWNER_INACTIVE_DAYS.
@@ -26,8 +27,11 @@ function activeOwnerFilter() {
  */
 export const schedulePetTicks = inngest.createFunction(
   { id: "schedule-pet-ticks" },
-  { cron: "0 * * * *" },
-  async ({ step }) => {
+  // Also runnable on demand from /admin/jobs, which is how a missed
+  // nightly gets caught up without waiting for tomorrow.
+  [{ cron: "0 * * * *" }, { event: "admin/run.schedule-pet-ticks" }],
+  async ({step}) =>
+    tracked("schedule-pet-ticks", async () => {
     // Admin kill switch (Settings on the dashboard). Checked here so pausing
     // stops the whole fan-out rather than 8000 ticks each deciding to no-op.
     if (await step.run("check-paused", () => isPetsPaused())) return { fanned: 0, paused: true };
@@ -48,7 +52,7 @@ export const schedulePetTicks = inngest.createFunction(
     );
 
     return { fanned: eligiblePets.length };
-  },
+  }),
 );
 
 /**
@@ -65,7 +69,8 @@ export const runPetTick = inngest.createFunction(
     concurrency: { key: "event.data.petId", limit: 1 },
   },
   { event: "pet/tick" },
-  async ({ event, step }) => {
+  async ({event, step}) =>
+    tracked("run-pet-tick", async () => {
     const petId = event.data.petId;
 
     // Re-checked per tick, not just at fan-out: ticks queued before the pause
@@ -143,5 +148,5 @@ export const runPetTick = inngest.createFunction(
 
     await step.run("record-decision", () => recordDecision(petId, plan));
     return { petId, action: plan.action, budget };
-  },
+  }),
 );
