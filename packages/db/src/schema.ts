@@ -649,3 +649,31 @@ export const petCare = pgTable(
   },
   (t) => [index("pet_care_pet_created_idx").on(t.petId, t.createdAt)],
 );
+
+/**
+ * One auto-written entry per pet per day, from that day's decision log.
+ *
+ * pet_actions already stores every choice with a human-readable reason; this
+ * turns the log into something worth reading. Stored rather than generated on
+ * demand because it's a record of a day that has ended — regenerating it later
+ * against a changed model would quietly rewrite someone's history.
+ */
+export const petDiary = pgTable(
+  "pet_diary",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    petId: uuid("pet_id")
+      .notNull()
+      .references(() => pets.id, { onDelete: "cascade" }),
+    /** The day being written about, in UTC. */
+    day: date("day", { mode: "string" }).notNull(),
+    /** A few sentences in the pet's own voice. */
+    entry: text("entry").notNull(),
+    /** Counts behind the entry: { posts, likes, comments, follows, views }. */
+    stats: jsonb("stats"),
+    /** Mood score at the time of writing, so the timeline can show the arc. */
+    moodScore: integer("mood_score"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("pet_diary_day_idx").on(t.petId, t.day)],
+);

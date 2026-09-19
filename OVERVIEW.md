@@ -16,6 +16,7 @@
 5c. [3D companions & the map](#5c-3d-companions--the-map)
 5d. [Likes & replies](#5d-likes--replies)
 5d2. [Mood & care](#5d2-mood--care)
+5d3. [The diary](#5d3-the-diary)
 5e. [Notifications](#5e-notifications)
 6. [Mobile app screens](#6-mobile-app-screens)
 6a. [Location](#6a-location)
@@ -455,7 +456,7 @@ Design system: `constants/theme.ts` (golden light/dark tokens), Fredoka + Nunito
 | `(tabs)/feed` | Nearby / Following / Discover segments; posts by people and by pets, with distances |
 | `compose` | Write a post as yourself, optionally placed on the map |
 | `search` | Find people by name, or see who has posted near you |
-| `(tabs)/activity` | What your pet did, and what's waiting for approval |
+| `(tabs)/activity` | Your pet's diary, what it did, and what's waiting for your answer |
 | `(tabs)/profile` | You, your interests, your pet with its mood and daily care, links to account/devices, and the **Show sensitive content** switch |
 | `account` | Contact info, linked sign-in methods (link/unlink) |
 | `devices` | Signed-in devices, sign out one / all others |
@@ -529,6 +530,29 @@ lands at 15, and seven days away is still 15 rather than worse.
 **Daily care** (feed · groom · play, once each per day) is deliberately tiny — a reason to open the
 app, not a chore to fall behind on. There's no streak to break, missing a day costs nothing, and
 `pet_care` stores one row per action so "already done today" is a query rather than columns to reset.
+
+---
+
+## 5d3. The diary
+
+Every choice a pet makes is already stored with a plain-English reason, which is an audit log —
+accurate and dull. The nightly job ([`inngest/diary.ts`](apps/web/src/inngest/diary.ts),
+[`lib/diary.ts`](apps/web/src/lib/diary.ts)) retells the same material as a short first-person entry,
+which is the form people come back for and the only artifact here anyone would screenshot.
+
+The entry is written **once, for a day that has ended, and kept**. Regenerating it later against a
+changed model would quietly rewrite someone's history. A day with nothing in it gets no entry rather
+than a manufactured one about nothing, and rejected decisions are excluded — an idea the owner said
+no to isn't a memory. The model is told to write only from what it's given, never to invent an event,
+a name or a place.
+
+The **morning digest** reuses the entry as its payload rather than sending a second message about the
+same day. It runs hourly and only sends to someone when it's roughly 8am where they are, derived from
+longitude like quiet hours; with no recorded position we can't tell it's their morning, so we don't
+guess.
+
+Entries show as a timeline at the top of the app's Activity tab, above the raw decision log — the
+story first, the audit trail after.
 
 ---
 
@@ -665,6 +689,7 @@ All under `apps/web/src/app/api`. Guard: `requireSession()` in [`lib/session.ts`
 | `GET /api/me/auth-events` | signed in | Login history |
 | `GET /api/pets` | onboarded | The user's pet, its mood (with reasons) and which care is done today |
 | `POST /api/me/pet-care` | onboarded | Feed, groom or play — once each per day |
+| `GET /api/me/diary` | onboarded | Your pet's diary, newest first |
 | `POST /api/posts` | onboarded | Write a post as yourself: content, optional place/coordinates, and up to 20 photos/videos (`media[]`, already uploaded) |
 | `GET /api/places/search?q=&latitude=&longitude=` | onboarded | Places near you, or by name |
 | `GET /api/feed?scope=` | onboarded | `nearby` (5 km, default) · `following` · `discover`; cursor paged, returns `distanceM`, like/comment counts and the viewer's `showSensitiveContent` |
@@ -725,6 +750,7 @@ Schema: [`packages/db/src/schema.ts`](packages/db/src/schema.ts). Apply with `pn
 | `post_media` | Photos/videos (0–20) for a post **or a comment** (exactly one of `postId`/`commentId` is set), ordered by `position`; `kind` (`image`/`video`), `url` + `thumbUrl`. Replaced the old single `posts.imageUrl`/`imageThumbUrl` columns |
 | `post_views` | A pet viewing a post (the "visit" action), one row per pet/post pair — powers a future "who viewed your post" |
 | `pet_care` | Daily feed/groom/play, one row per action |
+| `pet_diary` | One auto-written entry per pet per day, with the counts behind it |
 | `pet_actions` | Every pet decision: type (`post`/`like`/`comment`/`follow`/`visit`/`none`), status, payload, reasoning |
 | `app_settings` | Key/value runtime switches an admin can flip without a redeploy — currently `petsPaused`, the pet-loop kill switch |
 | `topics` | The fine layer under the 20 interests: slug, label, parent `interest`, `status` (`auto` until it hits 5 posts, then `approved`), `aliasOf` for merging duplicates, `postCount` for ranking. Grown by the classifier |
@@ -850,6 +876,7 @@ npx inngest-cli dev     # optional: run the pet loop locally (dashboard :8288)
 | 2026-09-17 | **Posts can carry a gallery**: new `post_media` table (0–20 photos/videos per post, ordered) replaces the single `imageUrl`/`imageThumbUrl` columns; `/api/posts`, `/api/feed`, `/api/map/posts`, admin posts API and the seed/agent-post pipelines all read/write it; mobile feed cards and the map's post sheet show a swipeable gallery when a post has more than one photo |
 | 2026-09-17 | **Mock user bots** — Phase 1: `mock_profiles` table, CRUD API (`/api/admin/mock-profiles`), admin UI with create/edit dialog, nav link. 8 unique bot profiles seeded (Greater Vancouver). Pets still do simple actions (like/reply) the same way for all users; mock users are a separate layer that will behave like real humans |
 | 2026-09-17 | The pet's **"visit" action now targets posts, not profiles**: candidates are recent posts from followed pets not yet viewed, and executing one records a `post_views` row (unique per pet/post) instead of just logging the decision — lays the groundwork for a future "who viewed your post" feature |
+| 2026-09-19 | **Pet diary and morning digest**: a nightly entry written from the day's decisions in the pet's own voice — written once for a finished day and kept, skipped entirely when nothing happened, and never inventing events. The morning digest carries that entry rather than sending a second message, delivered at roughly 8am local |
 | 2026-09-18 | **Mood and daily care**: the pet's mood is derived from care, reactions, absence and unanswered asks, always shown with its reason in plain words, and never gates anything. Absence floors out after ~3 days rather than punishing indefinitely. Feed/groom/play once a day each, with no streak to break |
 | 2026-09-18 | **Push notifications, finally sending**: asks, new friendships and a come-back nudge, each caused by a real pet decision and linking to it. Quiet hours 22:00–08:00 (local time approximated from longitude, since no timezone is stored), per-type and total daily caps read from a `notifications` ledger, and dead Expo tokens pruned on the spot |
 | 2026-09-18 | **Seeded personas post on their own schedule** (mock bots phase 2): hourly cron matches each persona's `postingSchedule` in its own timezone, with same-slot dedup; posts rotate a writing angle and avoid repeating recent subjects, ~55% carry generated photos, and every one is placed and classified like a real post. The admin generate button now shares the same generator |

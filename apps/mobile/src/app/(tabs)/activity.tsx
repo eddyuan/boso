@@ -12,6 +12,14 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { apiFetch } from '@/lib/api';
 
+type DiaryEntry = {
+  id: string;
+  day: string;
+  entry: string;
+  moodScore: number | null;
+  stats: { posts: number; comments: number; likes: number; follows: number; views: number; received: number } | null;
+};
+
 type PetAction = {
   id: string;
   type: 'post' | 'like' | 'comment' | 'follow' | 'visit' | 'none';
@@ -44,6 +52,7 @@ export default function ActivityTab() {
   const [actions, setActions] = useState<PetAction[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [diary, setDiary] = useState<DiaryEntry[]>([]);
 
   const load = useCallback(
     () =>
@@ -56,6 +65,9 @@ export default function ActivityTab() {
   useFocusEffect(
     useCallback(() => {
       load();
+      apiFetch<{ entries: DiaryEntry[] }>('/api/me/diary?limit=7')
+        .then((r) => setDiary(r.entries))
+        .catch(() => {});
     }, [load]),
   );
 
@@ -90,6 +102,28 @@ export default function ActivityTab() {
             {pending.length} thing{pending.length === 1 ? '' : 's'} your pet wants to do. Say yes or skip below.
           </ThemedText>
         </Card>
+      )}
+
+      {diary.length > 0 && (
+        <>
+          <ThemedText type="label">Diary</ThemedText>
+          {diary.map((day) => (
+            <Card key={day.id} style={styles.diary}>
+              <View style={styles.diaryHead}>
+                <ThemedText type="smallBold" themeColor="textSecondary" style={{ flex: 1 }}>
+                  {formatDay(day.day)}
+                </ThemedText>
+                {day.stats && day.stats.received > 0 && (
+                  <Badge tone="brand" label={`${day.stats.received} reacted`} />
+                )}
+              </View>
+              <ThemedText>{day.entry}</ThemedText>
+            </Card>
+          ))}
+          <ThemedText type="label" style={{ marginTop: Spacing.sm }}>
+            Everything else
+          </ThemedText>
+        </>
       )}
 
       {actions?.length === 0 && (
@@ -162,8 +196,21 @@ export default function ActivityTab() {
   );
 }
 
+/** "Yesterday" reads better than a date for the entry people actually open. */
+function formatDay(day: string): string {
+  const date = new Date(`${day}T12:00:00Z`);
+  const today = new Date();
+  const days = Math.round((today.getTime() - date.getTime()) / 86_400_000);
+  if (days <= 0) return 'Today';
+  if (days === 1) return 'Yesterday';
+  if (days < 7) return date.toLocaleDateString(undefined, { weekday: 'long' });
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
 const styles = StyleSheet.create({
   pending: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: Spacing.lg },
+  diary: { padding: Spacing.lg, gap: Spacing.xs },
+  diaryHead: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: Spacing.lg, paddingVertical: 14 },
   rowText: { flex: 1, minWidth: 0, gap: 2 },
   ask: { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.lg, gap: Spacing.sm },
