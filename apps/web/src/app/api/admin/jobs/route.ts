@@ -40,11 +40,28 @@ export async function POST(req: Request) {
   try {
     await inngest.send({ name: job.event as "admin/run.write-diaries", data: {} });
   } catch (error) {
-    // Almost always a missing INNGEST_EVENT_KEY or no worker reachable — worth
-    // saying plainly, since "nothing happened" is the same symptom as a job that
-    // ran and did nothing.
+    // "Nothing happened" looks identical to "ran and did nothing", so the reason
+    // has to be specific enough to act on. The two failures here are both about
+    // *which mode* Inngest picked, which is decided by NODE_ENV rather than by
+    // the keys — the part that surprises people.
     const message = error instanceof Error ? error.message : String(error);
-    return NextResponse.json({ error: "send_failed", reason: message }, { status: 502 });
+    const cloud = !/^dev/i.test(process.env.NODE_ENV ?? "") || process.env.INNGEST_DEV === "0";
+    let reason = message;
+
+    if (/event key not found|401/i.test(message)) {
+      reason =
+        "Inngest rejected the event key. This build is talking to Inngest Cloud (chosen by NODE_ENV/VERCEL_ENV, not by the keys), " +
+        "so INNGEST_EVENT_KEY and INNGEST_SIGNING_KEY must both be set to real values from app.inngest.com — " +
+        `blank counts as missing. Currently EVENT_KEY is ${process.env.INNGEST_EVENT_KEY ? "set" : "blank"} ` +
+        `and SIGNING_KEY is ${process.env.INNGEST_SIGNING_KEY ? "set" : "blank"}. ` +
+        "To use a local dev server from a production build instead, set INNGEST_DEV=1.";
+    } else if (/ECONNREFUSED|fetch failed|8288/i.test(message) && !cloud) {
+      reason =
+        "No Inngest dev server is listening on 127.0.0.1:8288. Start one with: " +
+        "npx inngest-cli@latest dev -u http://localhost:3000/api/inngest";
+    }
+
+    return NextResponse.json({ error: "send_failed", reason, mode: cloud ? "cloud" : "dev" }, { status: 502 });
   }
 
   return NextResponse.json({ ok: true, queued: job.event });

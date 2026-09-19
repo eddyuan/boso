@@ -59,7 +59,11 @@ export default function JobsPage() {
         body: JSON.stringify({ job }),
       });
       const body = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(body.reason ?? body.error ?? "Failed");
+      if (!res.ok) {
+        throw new Error(
+          (body.mode ? `Inngest is in ${body.mode} mode. ` : "") + (body.reason ?? body.error ?? "Failed"),
+        );
+      }
       setMessage({ tone: "ok", text: `Queued ${job}. It appears below once a worker picks it up.` });
       reload();
     } catch (e) {

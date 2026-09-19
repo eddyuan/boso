@@ -1192,6 +1192,18 @@ functions have no window, because silence there means nobody posted, not that an
 > Right now **all eight report "never run"** — no Inngest scheduler has been connected. That is the
 > standing caveat stated throughout this document, now visible on a page instead of buried in prose.
 
+**Connecting one.** Inngest picks its mode from `NODE_ENV`/`VERCEL_ENV`, *not* from whether the keys are
+set — which is the part that catches people out, since blank keys don't mean "use local".
+
+| Running as | What happens | What you need |
+|---|---|---|
+| `next dev` | Talks to a dev server on `127.0.0.1:8288` | `npx inngest-cli@latest dev -u http://localhost:3000/api/inngest`, keys blank |
+| Production build or Vercel | Talks to Inngest Cloud | Real `INNGEST_EVENT_KEY` **and** `INNGEST_SIGNING_KEY`, plus the app synced so Inngest can reach `/api/inngest` |
+
+Blank keys in cloud mode give `401 Event key not found`. `INNGEST_DEV=1` forces local mode from a
+production build; `INNGEST_DEV=0` forces cloud. `/admin/jobs` names whichever of these is wrong when a
+manual run fails.
+
 ---
 
 ### Player inspector
