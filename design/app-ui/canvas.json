@@ -51,87 +51,6 @@
   ],
   "artboards": [
     {
-      "file": "MapTab.dc.html",
-      "x": 0,
-      "y": 0,
-      "w": 390,
-      "h": 844,
-      "page": "app",
-      "title": "Map &middot; main tab"
-    },
-    {
-      "file": "FeedTab.dc.html",
-      "x": 480,
-      "y": 0,
-      "w": 390,
-      "h": 1000,
-      "page": "app",
-      "title": "Feed"
-    },
-    {
-      "file": "FeedTabDark.dc.html",
-      "x": 960,
-      "y": 0,
-      "w": 390,
-      "h": 1000,
-      "page": "app",
-      "title": "Feed \u00b7 dark"
-    },
-    {
-      "file": "ActivityTab.dc.html",
-      "x": 1440,
-      "y": 0,
-      "w": 390,
-      "h": 1900,
-      "page": "app",
-      "title": "Activity \u00b7 as built"
-    },
-    {
-      "file": "ActivityReactions.dc.html",
-      "x": 1920,
-      "y": 0,
-      "w": 390,
-      "h": 980,
-      "page": "app",
-      "title": "Notifications \u00b7 not built"
-    },
-    {
-      "file": "ProfileTab.dc.html",
-      "x": 2400,
-      "y": 0,
-      "w": 390,
-      "h": 1780,
-      "page": "app",
-      "title": "Profile \u00b7 as built"
-    },
-    {
-      "file": "Compose.dc.html",
-      "x": 0,
-      "y": 1990,
-      "w": 390,
-      "h": 844,
-      "page": "app",
-      "title": "New post"
-    },
-    {
-      "file": "Search.dc.html",
-      "x": 480,
-      "y": 1990,
-      "w": 390,
-      "h": 844,
-      "page": "app",
-      "title": "Search"
-    },
-    {
-      "file": "Layout.dc.html",
-      "x": 960,
-      "y": 1990,
-      "w": 1180,
-      "h": 1190,
-      "page": "app",
-      "title": "Layout & spacing"
-    },
-    {
       "file": "MascotEmotions.dc.html",
       "x": 0,
       "y": 0,
@@ -652,6 +571,87 @@
       "h": 844,
       "page": "auth",
       "title": "Age restricted"
+    },
+    {
+      "file": "MapTab.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "page": "app",
+      "title": "Map &middot; main tab"
+    },
+    {
+      "file": "FeedTab.dc.html",
+      "x": 480,
+      "y": 0,
+      "w": 390,
+      "h": 1000,
+      "page": "app",
+      "title": "Feed"
+    },
+    {
+      "file": "FeedTabDark.dc.html",
+      "x": 960,
+      "y": 0,
+      "w": 390,
+      "h": 1000,
+      "page": "app",
+      "title": "Feed \u00b7 dark"
+    },
+    {
+      "file": "PetTab.dc.html",
+      "x": 1440,
+      "y": 0,
+      "w": 390,
+      "h": 2240,
+      "page": "app",
+      "title": "Your pet \u00b7 the third tab"
+    },
+    {
+      "file": "ProfileTab.dc.html",
+      "x": 1920,
+      "y": 0,
+      "w": 390,
+      "h": 1100,
+      "page": "app",
+      "title": "Profile \u00b7 as built"
+    },
+    {
+      "file": "ActivityReactions.dc.html",
+      "x": 2400,
+      "y": 0,
+      "w": 390,
+      "h": 980,
+      "page": "app",
+      "title": "Notifications \u00b7 not built"
+    },
+    {
+      "file": "Compose.dc.html",
+      "x": 2880,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "page": "app",
+      "title": "New post"
+    },
+    {
+      "file": "Search.dc.html",
+      "x": 3360,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "page": "app",
+      "title": "Search"
+    },
+    {
+      "file": "Layout.dc.html",
+      "x": 3840,
+      "y": 0,
+      "w": 1180,
+      "h": 1190,
+      "page": "app",
+      "title": "Layout & spacing"
     }
   ]
 }

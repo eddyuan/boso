@@ -35,7 +35,7 @@ any artboard, or it goes stale in exactly the way the published bundles did.
 
 | Page | What's on it |
 |---|---|
-| `app` | The four tabs as built, plus compose, search and the layout scale |
+| `app` | The four tabs as built, plus compose, search and the layout scale. The third tab is the **pet**, not an activity feed |
 | `auth`, `onboarding`, `account` | Sign-in, the nine onboarding steps, account and devices |
 | `mascot-emotions`, `system` | The 12 mascot moods, and the UI kit |
 | `rm-overview` | Principles, the phase map, and **what changed during the build** |
@@ -55,6 +55,10 @@ stopped describing the product.
 
 **Replaced**
 
+- `ActivityTab` → **`PetTab`**. The third tab held three unrelated jobs — an inbox, a goals board and a
+  log — and read as thin however full it was. It's the pet now: one subject with several sections, and
+  the only tab that always has something in it. `ProfileTab` shrank to just the person, since it had
+  been carrying both identities at once.
 - `RmLeaderboard` → **`RmNeighbourhoodGoal`**. A weekly per-area ranking
   publishes who is most active within a few streets, makes progress relative so
   one person rises only as another falls, and reads as false wherever seeded

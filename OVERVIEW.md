@@ -1474,4 +1474,5 @@ a person can supply, which is why `/admin/roadmap` now marks them **Needs you** 
 | 2026-09-19 | Admin: denser sidebar (17 items, ~160px shorter, 32px narrower) and the platform UI font instead of the rounded display face — it's a tool, read at small sizes for hours |
 | 2026-09-19 | App navigation: one owner tab per detail screen; the post thread becomes a real screen reachable by id, replacing the reply sheet |
 | 2026-09-19 | App: diary, event, shelf, bond and friendship screens with entries from their owner tabs; the whisper line opens its sources; `affinity_events` added so a friendship can be explained |
+| 2026-09-19 | Tabs: the third is now the pet rather than an activity feed, with the pet's own art as its icon and a badge for waiting decisions; Profile is the person again |
 | 2026-09-18 | Backfill photo handles lazily via Place Details, so venues imported before the field-mask change can get photos too |
