@@ -130,3 +130,15 @@ export function useT(): I18n {
   if (!value) throw new Error('useT must be used inside <I18nProvider>');
   return value;
 }
+
+/**
+ * The locale alone, falling back instead of throwing.
+ *
+ * For `ThemedText`, which needs it only to pick a typeface. That's the one caller
+ * where a missing provider shouldn't be fatal: it is the leaf every screen renders,
+ * so throwing would turn a cosmetic question into a blank app, and guessing wrong
+ * costs a font rather than a language.
+ */
+export function useLocaleOrDefault(): Locale {
+  return useContext(I18nContext)?.locale ?? DEFAULT_LOCALE;
+}

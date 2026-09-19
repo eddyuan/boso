@@ -3,7 +3,7 @@
 > Living document. Describes what the app does, how it's built, and where things live.
 > Update it in the same change as the code it describes.
 >
-> _Last updated: 2026-09-18_
+> _Last updated: 2026-09-19_
 
 ## Contents
 
@@ -29,6 +29,7 @@
 6. [Mobile app screens](#6-mobile-app-screens)
 6a. [Location](#6a-location)
 6b. [Topics & content classification](#6b-topics--content-classification)
+6c. [Language](#6c-language)
 7. [API reference](#7-api-reference)
 8. [Data model](#8-data-model)
 9. [Configuration](#9-configuration)
@@ -1014,6 +1015,80 @@ an unknown slug returns nothing rather than everything.
 
 ---
 
+## 6c. Language
+
+Two locales: **English** (`en`, the source) and **Simplified Chinese** (`zh`). The catalogue and
+runtime live in [`packages/shared/src/i18n`](packages/shared/src/i18n) so the server and both apps
+read one set of strings — push notifications are built on the server and screens are built on the
+device, and two catalogues would drift.
+
+### Language and units are separate questions
+
+- **Words follow the person.** Their stored choice (`users.locale`) if they made one, their device
+  otherwise. The column is **nullable, and `null` means "follow the device"** — not "English". Anyone
+  who never opens the picker keeps tracking their phone, including when we add a language they speak.
+- **Numbers, dates and distances follow the device's region**, always. Those describe where you are,
+  not what you read. The tag handed to `Intl` is the chosen language pinned to the device's region —
+  `zh-US`, not `zh-CN` — so a Chinese speaker in Texas gets Chinese words and miles.
+
+The picker is the **Language** row on Profile, which lists each language in its own name (简体中文,
+not "Chinese"): somebody scanning for their language is looking for the word they'd recognise.
+`PATCH /api/me/account` takes `locale` (a known code, or `null`), and it's declared on the session so
+the first screen renders in the right language instead of visibly switching.
+
+### Rules the catalogue enforces
+
+1. **A whole sentence per key.** Never assembled from fragments — word order differs by language.
+   Where a sentence has to contain a React node (the legal line's two links, the list of possible
+   companions), `rich()` interpolates nodes into named slots so the *translation* decides the order.
+2. **Counts go through `Intl.PluralRules`,** as `_one` / `_other` pairs. English has two forms,
+   Chinese one, Arabic six; a hand-rolled `n === 1` mistranslates all of them without ever looking
+   broken in development. `n()` only accepts a key that actually has plural forms — the type is
+   derived from the keys ending `_other`.
+3. **`zh.ts` is a complete `Record<TranslationKey, string>`.** Adding an English string without a
+   Chinese one is a build error rather than English quietly appearing mid-screen.
+4. **Numbers in placeholders are formatted centrally** by `Intl.NumberFormat` — "13,460 XP" against
+   "13.460 XP" — rather than at each call site, one of which would be missed.
+
+### The server decides which sentence; the client decides what it says
+
+`computeMood` used to return finished English prose ("Mochi hasn't seen you in 3 days"), which the
+app had no way to translate. It returns a **`Phrase`** — a key plus its values — so the server keeps
+choosing *which* of the seven reasons applies (it has the signals) and the reader's device words it.
+The pet's name isn't passed in at all; whoever renders supplies it.
+
+The same split applies to the game's vocabulary. The constant tables in `onboarding.ts`, `bond.ts`,
+`treasures.ts`, `missions.ts` and `relationships.ts` keep their English `label` fields, because the
+server puts those in AI prompts and the admin panel shows them — both English on purpose. What the
+*app* shows is keyed by id through typed builders (`speciesLabelKey`, `tierBlurbKey`, `unlockKey`…).
+They're functions rather than lookup maps for one reason: `` `species.${PetSpecies}.label` `` expands
+over the whole union, so it only satisfies `TranslationKey` when every species has wording. A fifth
+companion without a label stops the build.
+
+`GET /api/me/missions`, `/api/me/relationships` and `/api/me/relationships/:petId` send ids alone
+rather than ids *and* their English labels, which was two answers to the same question.
+
+### The pet writes in your language
+
+Every AI prompt site — `agent.ts`, `diary.ts`, `whiskers.ts`, `mock-poster.ts` — is told the language
+outright (`Write in Simplified Chinese.`) rather than left to infer it. All of them embed other
+people's posts, which is exactly what makes a model drift into *their* language. A reply is the one
+exception: it follows the language of the post it answers and only falls back to the owner's setting
+when the post gives no signal.
+
+A seeded persona's language is its user row's, so a Chinese-speaking neighbourhood can be seeded
+without a second place to configure it.
+
+### Typography
+
+Fredoka and Nunito have no CJK glyphs. Left alone the platform falls back per *glyph*, so one Chinese
+sentence containing a name or a number comes out in two typefaces at two apparent weights. For `zh`,
+`ThemedText` hands the whole run to the system face (PingFang SC, Noto Sans CJK) and restores the
+weights explicitly, since Nunito carried them in the family name. Sizes and line heights are
+unchanged. Headings lose the rounded look in Chinese; consistency was judged the better trade.
+
+---
+
 ## 7. API reference
 
 All under `apps/web/src/app/api`. Guard: `requireSession()` in [`lib/session.ts`](apps/web/src/lib/session.ts)
@@ -1030,7 +1105,7 @@ All under `apps/web/src/app/api`. Guard: `requireSession()` in [`lib/session.ts`
 | `POST /api/me/push-tokens` | verified contact | Register Expo push token |
 | `POST /api/contacts/match` | verified contact | Find friends from hashed contacts |
 | `GET /api/me/account` | signed in | Contact status + linked sign-in methods |
-| `PATCH /api/me/account` | onboarded | Preferences — currently `showSensitiveContent` |
+| `PATCH /api/me/account` | onboarded | Preferences: `showSensitiveContent` and/or `locale`. Either alone is fine; only the keys sent are written, and an empty body is rejected rather than silently doing nothing |
 | `DELETE /api/me/account/providers/:providerId` | signed in | Unlink Google/Apple |
 | `GET /api/me/sessions` | signed in | Signed-in devices |
 | `DELETE /api/me/sessions` | signed in | Sign out all other devices |
@@ -1106,7 +1181,7 @@ Schema: [`packages/db/src/schema.ts`](packages/db/src/schema.ts). Apply with `pn
 
 | Table | Purpose |
 |---|---|
-| `users` | Account + profile + onboarding fields (birthday, gender, interests, username, terms, prompts), `isAdmin`, `isMock`, `showSensitiveContent`, and `lastLatitude`/`lastLongitude`/`lastLocationAt` (coarse live position, never published directly) |
+| `users` | Account + profile + onboarding fields (birthday, gender, interests, username, terms, prompts), `isAdmin`, `isMock`, `showSensitiveContent`, `locale` (**nullable — `null` means follow the device**, see [6c](#6c-language)), and `lastLatitude`/`lastLongitude`/`lastLocationAt` (coarse live position, never published directly) |
 | `sessions` | One per device; device name, last active time/IP |
 | `accounts` | Sign-in methods per user (`credential`, `google`, `apple`) |
 | `verifications` | OTP codes (managed by Better Auth) |
@@ -1379,6 +1454,12 @@ Worth stating plainly, because "built" reads like "working":
 - [ ] No step-up verification (fresh code) before unlinking providers or changing contact info.
 - [ ] Phone-only users can't set a password; no password reset UI yet.
 - [ ] Terms/Privacy URLs are placeholders; legal pages don't exist.
+- [ ] **`zh-Hant` resolves to Simplified Chinese.** `resolveLocale` drops the script as well as the region, so a Traditional reader gets Simplified — much closer than English, still not right. The fix is a `zh-Hant` catalogue, not a change to the resolver.
+- [ ] **Topic labels aren't localised.** Topics are database rows with a slug and one label; the slug is the canonical identity, so the shape is right, but a label per locale needs a `topic_labels` table. Feed chips show whatever the row says.
+- [ ] **Admin-authored content arrives in the language it was written in** — event titles, blurbs and goal names live in `live_events` as text. Fine while one team writes them; a per-locale field is the fix if that changes.
+- [ ] **The pet's voice hasn't been tuned per language.** The prompt names the language and the model complies, but the persona instructions ("playful, a little conspiratorial") were written and tested against English output.
+- [ ] **No RTL.** No right-to-left language is in the catalogue, and nothing in the layouts uses logical start/end properties yet.
+- [ ] The dev-map scratch screen, the admin-only restart-profile button and the Mapbox setup message are deliberately English (developer and admin surfaces).
 - [x] ~~Every S3 upload failed with `501 NotImplemented` inside Next~~ — aws4fetch wraps requests in `new Request(...)`, which normalises any body to a stream, so the length was lost and the runtime fell back to `Transfer-Encoding: chunked`; S3 rejects that on PUT. `putObject` now declares `Content-Length` explicitly (unsignable, so it can't disturb the signature). Wrapping the body in a `Blob` does **not** fix it — the Request wrapper discards a Blob's size too.
 - [x] ~~An empty `S3_ENDPOINT` silently disabled S3~~ — a set-but-blank variable left the derived endpoint as `""`, so a fully configured bucket wrote to `public/uploads` instead. Blank is now treated as absent everywhere in `storage.ts`, and an unconfigured bucket warns at startup rather than failing quietly.
 - [ ] Production cross-site cookies for Expo web on a separate domain not configured.
@@ -1480,3 +1561,4 @@ a person can supply, which is why `/admin/roadmap` now marks them **Needs you** 
 | 2026-09-19 | App: diary, event, shelf, bond and friendship screens with entries from their owner tabs; the whisper line opens its sources; `affinity_events` added so a friendship can be explained |
 | 2026-09-19 | Tabs: the third is now the pet rather than an activity feed, with the pet's own art as its icon and a badge for waiting decisions; Profile is the person again |
 | 2026-09-18 | Backfill photo handles lazily via Place Details, so venues imported before the field-mask change can get photos too |
+| 2026-09-19 | Two languages. Shared `i18n` catalogue + `Intl` runtime, `users.locale` (nullable = follow device), Language row on Profile, every app string extracted, Simplified Chinese as the first translation. Mood reasons and the game's vocabulary now travel as ids/phrases rather than English prose. Along the way: three push notifications still deep-linked to the `activity` tab removed in fd520a2, the age gate's heading hardcoded 18 next to an interpolated `MIN_AGE`, `MOVE_ICON` was keyed by the English word "Flies", the web map tested `moves === 'Flies'`, and signing a device out reported nothing when it failed |

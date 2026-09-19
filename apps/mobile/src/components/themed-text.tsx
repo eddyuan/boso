@@ -1,7 +1,8 @@
-import { StyleSheet, Text, type TextProps } from 'react-native';
+import { StyleSheet, Text, type TextProps, type TextStyle } from 'react-native';
 
 import { FontFamily, Fonts, ThemeColor } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useLocaleOrDefault } from '@/lib/i18n';
 
 export type ThemedTextProps = TextProps & {
   type?:
@@ -21,8 +22,38 @@ export type ThemedTextProps = TextProps & {
   themeColor?: ThemeColor;
 };
 
+/**
+ * Locales the bundled fonts can't draw.
+ *
+ * Fredoka and Nunito have no CJK glyphs at all. Left alone, the platform falls
+ * back per *glyph*, so one Chinese sentence with a name or a number in it comes
+ * out in two typefaces at two apparent weights. Handing the whole run to the
+ * system face instead is the lesser evil — PingFang and Noto Sans CJK are both
+ * good, and consistency beats keeping the rounded look on the Latin characters
+ * that happen to be in the string.
+ */
+const NO_LATIN_FONT_COVERAGE = new Set(['zh']);
+
+/**
+ * With the family gone, so is the weight — Nunito_700Bold carried it in the name.
+ * These put it back explicitly, so a label still reads as a label.
+ */
+const FALLBACK_WEIGHT: Partial<Record<NonNullable<ThemedTextProps['type']>, TextStyle>> = {
+  hero: { fontWeight: '700' },
+  title: { fontWeight: '700' },
+  header: { fontWeight: '600' },
+  subtitle: { fontWeight: '600' },
+  smallBold: { fontWeight: '700' },
+  label: { fontWeight: '700' },
+  // Uppercasing and letter-spacing a run of Han characters just spreads them out.
+  section: { fontWeight: '700', textTransform: 'none', letterSpacing: 0 },
+  link: { fontWeight: '700' },
+  linkPrimary: { fontWeight: '700' },
+};
+
 export function ThemedText({ style, type = 'default', themeColor, ...rest }: ThemedTextProps) {
   const theme = useTheme();
+  const locale = useLocaleOrDefault();
   const defaultColor =
     type === 'link' || type === 'linkPrimary'
       ? theme.primaryInk
@@ -30,7 +61,22 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
         ? theme.textSecondary
         : theme.text;
 
-  return <Text style={[{ color: themeColor ? theme[themeColor] : defaultColor }, styles[type], style]} {...rest} />;
+  // `code` keeps its mono family: monospace is the point of it, and the system
+  // mono faces cover CJK.
+  const systemFace = NO_LATIN_FONT_COVERAGE.has(locale) && type !== 'code';
+
+  return (
+    <Text
+      style={[
+        { color: themeColor ? theme[themeColor] : defaultColor },
+        styles[type],
+        systemFace && { fontFamily: undefined },
+        systemFace && FALLBACK_WEIGHT[type],
+        style,
+      ]}
+      {...rest}
+    />
+  );
 }
 
 const styles = StyleSheet.create({

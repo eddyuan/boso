@@ -41,6 +41,12 @@ states the rules that only start to matter once text is translated: rows grow ra
 buttons size to content, and **no sentence is ever built by concatenating fragments** — word order
 differs by language, so a whole sentence gets a whole key.
 
+Three of those rules were added *after* the second language shipped, because implementing it is what
+found them: a sentence wrapped around a link in the layout fixes English word order in place;
+language and region are separate settings (words follow the person, units follow the device); and the
+rounded display face is Latin-only, so a CJK run needs the system face rather than per-glyph
+substitution. See [OVERVIEW.md §6c](../../OVERVIEW.md#6c-language) for how each is implemented.
+
 `Components` shows each class in its real states, labelled with single words, so it can't drift back into
 being about copy.
 

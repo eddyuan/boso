@@ -1,6 +1,7 @@
 import { en, type TranslationKey } from "./en";
+import { zh } from "./zh";
 
-export { en };
+export { en, zh };
 export * from "./content";
 export type { TranslationKey };
 
@@ -11,13 +12,21 @@ export type { TranslationKey };
  * and screens are built on the device — two catalogues would drift, and the one
  * that drifts is always the one you can't see.
  *
- * English is the only locale so far. That's deliberate: the plumbing is worth
- * proving before any translation exists, and a second locale is then a file rather
- * than a refactor.
+ * English is the source; `zh.ts` is the first translation and the proof that a
+ * second locale is a file rather than a refactor. It's typed as a *complete*
+ * record of `en`'s keys, so adding an English string without a Chinese one stops
+ * the build rather than quietly shipping English into a Chinese screen.
  */
 
+/**
+ * `label` is the English name, for AI prompts — a model steers most reliably on
+ * "Write in Simplified Chinese". `endonym` is the name in the language itself,
+ * which is what goes in the picker: somebody scanning for their own language is
+ * looking for the word they'd recognise, not our word for it.
+ */
 export const LOCALES = [
   { code: "en", label: "English", endonym: "English" },
+  { code: "zh", label: "Simplified Chinese", endonym: "简体中文" },
 ] as const;
 
 export type Locale = (typeof LOCALES)[number]["code"];
@@ -25,12 +34,16 @@ export type Locale = (typeof LOCALES)[number]["code"];
 export const DEFAULT_LOCALE: Locale = "en";
 
 /** Catalogues keyed by locale. New locales are checked against `en`'s keys. */
-const CATALOGUES: Record<Locale, Partial<Record<TranslationKey, string>>> = { en };
+const CATALOGUES: Record<Locale, Partial<Record<TranslationKey, string>>> = { en, zh };
 
 /**
  * Narrows anything — a device tag like `en-GB`, a stored column, `undefined` — to
  * a locale we actually have. Region is dropped: `en-GB` and `en-US` differ in
  * units and dates, which `Intl` handles from the full tag, not in wording.
+ *
+ * Script is dropped too, which is a real limitation rather than a simplification:
+ * `zh-Hant` lands on Simplified. Closer than English, still not right, and the
+ * fix is a `zh-Hant` catalogue rather than a change here.
  */
 export function resolveLocale(input: string | null | undefined): Locale {
   if (!input) return DEFAULT_LOCALE;

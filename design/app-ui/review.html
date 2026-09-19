@@ -576,6 +576,33 @@ a:hover { color: var(--primary-press); }
         <div class="rule"><span class="tick">&check;</span><div>Buttons size to content with a minimum, never a fixed width.</div></div>
         <div class="rule"><span class="cross">&times;</span><div>No two-line label squeezed into a one-line slot &mdash; it will be three lines somewhere.</div></div>
         <div class="rule"><span class="cross">&times;</span><div>No sentence built by concatenating fragments. Word order differs by language; a whole sentence per key.</div></div>
+        <div class="rule"><span class="cross">&times;</span><div>No sentence wrapped around a link or a bold word in the layout &mdash; that fixes English word order in place. Named slots, filled by the translation.</div></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="spec-h">Language is not region</div>
+      <div class="small" style="font-size:13px; line-height:20px; margin-top:10px;">
+        Two independent settings, and conflating them is the easy mistake. Words follow the person; numbers,
+        dates, distances and units follow the device. Somebody reading Chinese on a phone set to the US
+        wants Chinese words and miles.
+      </div>
+      <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">
+        <div class="rule"><span class="tick">&check;</span><div>&ldquo;Match my device&rdquo; is a real option in the picker, not a synonym for the default language.</div></div>
+        <div class="rule"><span class="tick">&check;</span><div>Each language named in itself &mdash; &#31616;&#20307;&#20013;&#25991;, not &ldquo;Chinese&rdquo;.</div></div>
+        <div class="rule"><span class="cross">&times;</span><div>Never a unit, separator or date order baked into a label.</div></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="spec-h">The display face doesn&rsquo;t cover every script</div>
+      <div class="small" style="font-size:13px; line-height:20px; margin-top:10px;">
+        The rounded display and body faces are Latin-only. Left alone the platform substitutes per
+        <i>glyph</i>, so one CJK sentence containing a name or a number arrives in two typefaces at two
+        apparent weights.
+      </div>
+      <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">
+        <div class="rule"><span class="tick">&check;</span><div>Hand the whole run to the system face for a script the fonts can&rsquo;t draw, and restore weight explicitly.</div></div>
+        <div class="rule"><span class="tick">&check;</span><div>Sizes and line heights stay put; only the family changes.</div></div>
+        <div class="rule"><span class="cross">&times;</span><div>No uppercasing or letter-spacing on a script that has neither case nor a need for it.</div></div>
       </div>
     </div>
   </div>
