@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, gt, sql } from "drizzle-orm";
 import { bondEvents, db, pets } from "@bsocial/db";
 import { XP_VALUES, leveledUp, progressFor, type BondProgress, type XpEvent } from "@bsocial/shared";
 
@@ -39,6 +39,28 @@ export async function awardXp(petId: string, event: XpEvent): Promise<AwardResul
 /** Fire-and-forget: XP must never be the reason a real action fails. */
 export function awardXpQuietly(petId: string, event: XpEvent): void {
   void awardXp(petId, event).catch((error) => console.error("[bond] award failed:", error));
+}
+
+/**
+ * Awards at most once per UTC day.
+ *
+ * For events triggered by reading rather than doing, where the act is real but
+ * repeatable at no cost — opening the diary twice isn't twice the ritual. The
+ * ledger is the dedupe key, so this needs no extra column and can't drift from
+ * what was actually paid out.
+ */
+export async function awardXpOncePerDay(petId: string, event: XpEvent): Promise<AwardResult | null> {
+  const now = new Date();
+  const dayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+
+  const [already] = await db
+    .select({ id: bondEvents.id })
+    .from(bondEvents)
+    .where(and(eq(bondEvents.petId, petId), eq(bondEvents.event, event), gt(bondEvents.createdAt, dayStart)))
+    .limit(1);
+  if (already) return null;
+
+  return awardXp(petId, event);
 }
 
 export async function bondFor(petId: string): Promise<BondProgress> {

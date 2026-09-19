@@ -20,6 +20,7 @@
 5d4. [Pet relationships](#5d4-pet-relationships)
 5d5. [Bond level](#5d5-bond-level)
 5d6. [Playdates](#5d6-playdates)
+5d7. [Daily missions](#5d7-daily-missions)
 5e. [Notifications](#5e-notifications)
 6. [Mobile app screens](#6-mobile-app-screens)
 6a. [Location](#6a-location)
@@ -594,10 +595,10 @@ local gossip until day 16, which charges a new user days of grinding for exactly
 that would have kept them. Every unlock in the table is something the pet *wears, carries, collects
 or is called*, and there's a test asserting it.
 
-**XP pays for the behaviour we want to be true.** Answering what your pet asked is the largest single
-award — it's the trust ritual and the most distinctive thing in the product — and rejecting counts as
-much as approving, since paying only for "yes" would be buying consent. Daily care is a floor at
-6.3× less. Measured over 90 days: care-only grinding reaches level 7, engaged play 13, social play
+**XP pays for the behaviour we want to be true.** The two largest awards are making a new friend (30)
+and answering what your pet asked (25) — the second being the trust ritual and the most distinctive
+interaction in the product, where rejecting counts as much as approving, since paying only for "yes"
+would be buying consent. Daily care is the smallest at 4, a floor rather than the engine. Measured over 90 days: care-only grinding reaches level 7, engaged play 13, social play
 16 — the chore floor can't carry you.
 
 Levels never decay. A fortnight away costs nothing; mood is the thing that droops and recovers, so
@@ -627,6 +628,28 @@ being true. Accepting pays both pets, and counts as the strongest signal two pet
 
 Places can be marked `isHotspot` in admin; a meeting point is picked from real venues roughly between
 the two owners, preferring hotspots, so neither has to cross town.
+
+---
+
+## 5d7. Daily missions
+
+Three light goals a day ([`packages/shared/src/missions.ts`](packages/shared/src/missions.ts)),
+to orient a session for someone who opens the app without a reason.
+
+Two properties do the work. They're **stable for the day** — seeded per user per date, so the list
+can't reshuffle on a refresh, which a goal cannot survive. And a mission is **only offered when the
+app can actually satisfy it**: "answer your pet" never appears if nothing asked, "catch up" never
+appears without a diary entry, "make a friend" never appears with nobody nearby. Verified that with
+no conditions met, zero conditional missions are offered.
+
+Progress is read from the **bond ledger** rather than tracked separately. Every act a mission asks
+for already writes a `bond_events` row, so the ledger is both the reward and the evidence — a mission
+can't claim you haven't done something the bond already paid you for, and every mission is
+completable by construction, since an event that couldn't be counted couldn't be paid either. The
+reward shown is derived from `XP_VALUES` for the same reason: a separate mission XP table would be a
+second source of truth that drifts from the first.
+
+Nothing here is a streak — missing a day costs nothing and starts nothing over.
 
 ---
 
@@ -769,6 +792,8 @@ All under `apps/web/src/app/api`. Guard: `requireSession()` in [`lib/session.ts`
 | `POST /api/me/errand` | onboarded | Send the pet to a map point; returns a ranked bundle |
 | `GET /api/me/treasures` | onboarded | The shelf of what the pet has brought home |
 | `GET`/`POST`/`PATCH /api/me/playdates` | onboarded | Who you could meet · propose · accept or decline |
+| `GET /api/me/missions` | onboarded | Today's three goals and their progress |
+| `GET /api/me/diary` | onboarded | The diary, newest first; credits the read once a day |
 | `GET /api/posts/:postId/viewers` | onboarded | Which pets viewed your post (author only) |
 | `POST /api/posts` | onboarded | Write a post as yourself: content, optional place/coordinates, and up to 20 photos/videos (`media[]`, already uploaded) |
 | `GET /api/places/search?q=&latitude=&longitude=` | onboarded | Places near you, or by name |
@@ -789,6 +814,7 @@ Admin-only (all `requireAdmin`, under `/api/admin`):
 | `GET /api/admin/stats`, `/users`, `/posts`, `/places`, `/strays` | Dashboard and list views |
 | `PATCH /api/admin/users` | Set a user's password |
 | `GET /api/admin/users/:userId` | One account in full: profile, pet, sign-in methods, devices, login history, push tokens, recent posts and pet decisions |
+| `PATCH /api/admin/places` | Mark a place as a hotspot |
 | `PATCH /api/admin/posts` · `DELETE /api/admin/posts?id=` | Hide/unhide a post (`posts.hiddenAt`) · delete it permanently |
 | `GET /api/admin/pet-actions` | Every pet decision, filterable by type/status/search, with unfiltered status tallies |
 | `PATCH /api/admin/pet-actions` | Approve a pending decision (carries it out via `executeAction`) or reject it |
@@ -973,3 +999,4 @@ npx inngest-cli dev     # optional: run the pet loop locally (dashboard :8288)
 | 2026-09-18 | **Admin tools**: Agent activity log over `pet_actions` (filter by type/status, approve or reject a pending decision); post moderation (`posts.hiddenAt` hide/unhide + delete, respected by feed, map, search and the pet planner); a pet-loop kill switch (`app_settings.petsPaused`, checked at fan-out and per tick); a Coverage map showing posts/places/stray homes for aiming seeding; and per-user detail pages (devices, login history, sign-in methods, posts, pet decisions) |
 | 2026-09-17 | **Comment threading schema**: `comments` gained `parentId` (flat, one-level threading — always points at the thread's top-level comment) and `replyToPetId` (the "@Name" target), plus a new `comment_likes` table and `post_media.commentId` so replies can eventually carry photos too. No API/UI uses this yet |
 | 2026-09-18 | Design: roadmap mockups in design/app-ui: 27 `Rm*` artboards across six "Roadmap ·" canvas pages (overview + one per phase), following the plan-data principles (levels unlock expression only, bots never become friends, mood dips and levels never do) |
+| 2026-09-18 | Daily missions, derived from the bond ledger so reward and evidence are one table |

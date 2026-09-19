@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { desc, sql } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { db, places, posts } from "@bsocial/db";
 import { requireSession } from "@/lib/session";
 
@@ -61,4 +61,28 @@ export async function GET(req: Request) {
     page,
     pageSize: PAGE_SIZE,
   });
+}
+
+const hotspotSchema = z.object({ id: z.string().uuid(), isHotspot: z.boolean() });
+
+/**
+ * Mark a place as a gathering spot. Hotspots are preferred as playdate meeting
+ * points, and are where pets will be drawn to wander.
+ */
+export async function PATCH(req: Request) {
+  const { session, response } = await requireSession({ requireAdmin: true });
+  if (response) return response;
+  void session;
+
+  const parsed = hotspotSchema.safeParse(await req.json().catch(() => null));
+  if (!parsed.success) return NextResponse.json({ error: "invalid_body" }, { status: 400 });
+
+  const [updated] = await db
+    .update(places)
+    .set({ isHotspot: parsed.data.isHotspot })
+    .where(eq(places.id, parsed.data.id))
+    .returning({ id: places.id, isHotspot: places.isHotspot });
+
+  if (!updated) return NextResponse.json({ error: "not_found" }, { status: 404 });
+  return NextResponse.json({ place: updated });
 }
