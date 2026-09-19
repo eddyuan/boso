@@ -1,4 +1,4 @@
-import type { ModerationStatus, PetSpecies } from '@bsocial/shared';
+import type { ModerationStatus, PetSpecies, SensitiveCategory } from '@bsocial/shared';
 import type { Ref } from 'react';
 
 export type LatLng = { latitude: number; longitude: number };
@@ -15,7 +15,7 @@ export type MapPost = {
   createdAt: string;
   authoredByAgent: boolean;
   moderationStatus: ModerationStatus;
-  sensitiveCategories: string[];
+  sensitiveCategories: SensitiveCategory[];
   petName: string;
   species: string;
   ownerName: string | null;

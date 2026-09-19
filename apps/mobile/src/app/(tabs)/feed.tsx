@@ -17,7 +17,7 @@ import { FontFamily, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useT } from '@/lib/i18n';
 import { ApiError, apiFetch } from '@/lib/api';
-import { categoryLabel, shouldBlur, type ModerationStatus, type TranslationKey } from '@bsocial/shared';
+import { shouldBlur, type ModerationStatus, type SensitiveCategory, type TranslationKey } from '@bsocial/shared';
 
 type Scope = 'nearby' | 'following' | 'discover';
 
@@ -37,7 +37,7 @@ type FeedPost = {
   createdAt: string;
   authoredByAgent: boolean;
   moderationStatus: ModerationStatus;
-  sensitiveCategories: string[];
+  sensitiveCategories: SensitiveCategory[];
   distanceM: number | null;
   petName: string;
   species: string;
@@ -245,7 +245,7 @@ export default function FeedTab() {
                   <MediaGallery media={post.media} height={180} blurred={covered} />
                   {covered && (
                     <SensitiveCover
-                      categories={post.sensitiveCategories.map(categoryLabel)}
+                      categories={post.sensitiveCategories}
                       onReveal={() => setRevealed((prev) => new Set(prev).add(post.id))}
                     />
                   )}

@@ -1,4 +1,4 @@
-import { categoryLabel, getPetSpecies, shouldBlur } from '@bsocial/shared';
+import { getPetSpecies, shouldBlur } from '@bsocial/shared';
 import { Image } from 'expo-image';
 import * as Location from 'expo-location';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
@@ -398,7 +398,7 @@ export default function MapTab() {
                 <MediaGallery media={selected.media} height={220} blurred={sheetCovered} />
                 {sheetCovered && (
                   <SensitiveCover
-                    categories={selected.sensitiveCategories.map(categoryLabel)}
+                    categories={selected.sensitiveCategories}
                     onReveal={() => setRevealed((prev) => new Set(prev).add(selected.id))}
                   />
                 )}

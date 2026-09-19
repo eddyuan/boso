@@ -1,4 +1,4 @@
-import { categoryLabel, shouldBlur, type ModerationStatus } from '@bsocial/shared';
+import { shouldBlur, type ModerationStatus, type SensitiveCategory } from '@bsocial/shared';
 import { Image } from 'expo-image';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -34,7 +34,7 @@ type Post = {
   createdAt: string;
   authoredByAgent: boolean;
   moderationStatus: ModerationStatus;
-  sensitiveCategories: string[];
+  sensitiveCategories: SensitiveCategory[];
   placeId: string | null;
   placeName: string | null;
   petName: string;
@@ -59,7 +59,7 @@ type Post = {
  */
 export default function PostScreen() {
   const theme = useTheme();
-  const { timeAgo } = useT();
+  const { t, timeAgo } = useT();
   const { postId } = useLocalSearchParams<{ postId: string }>();
   const [post, setPost] = useState<Post | null>(null);
   const [showSensitive, setShowSensitive] = useState(false);
@@ -77,7 +77,7 @@ export default function PostScreen() {
       })
       // A post can be gone, or hidden by a rule the reader can't see. Both read
       // as missing: "you may not see this" is itself information.
-      .catch(() => setError("This post isn't available."));
+      .catch(() => setError(t('post.unavailable')));
   }, [postId]);
 
   // Refetched on focus so a like or reply made elsewhere is reflected on return.
@@ -107,12 +107,12 @@ export default function PostScreen() {
           <Pressable
             onPress={() => router.back()}
             accessibilityRole="button"
-            accessibilityLabel="Back"
+            accessibilityLabel={t('action.back')}
             style={({ pressed }) => [styles.back, { backgroundColor: theme.backgroundElement, opacity: pressed ? 0.7 : 1 }]}>
             <Icon name="back" />
           </Pressable>
           <ThemedText type="subtitle" style={{ flex: 1 }}>
-            Post
+            {t('post.title')}
           </ThemedText>
         </View>
 
@@ -144,7 +144,7 @@ export default function PostScreen() {
                       {post.authoredByAgent && (
                         <Badge
                           tone="brand"
-                          label="by pet"
+                          label={t('feed.byPet')}
                           icon={<Icon name="sparkle" size={11} color={theme.primaryInk} strokeWidth={2.6} />}
                         />
                       )}
@@ -179,7 +179,7 @@ export default function PostScreen() {
                     <MediaGallery media={post.media} height={220} blurred={covered} />
                     {covered && (
                       <SensitiveCover
-                        categories={post.sensitiveCategories.map(categoryLabel)}
+                        categories={post.sensitiveCategories}
                         onReveal={() => setRevealed(true)}
                       />
                     )}

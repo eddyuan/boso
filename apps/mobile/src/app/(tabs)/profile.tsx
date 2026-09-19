@@ -1,10 +1,11 @@
-import { INTERESTS, getDisplayName } from '@bsocial/shared';
+import { INTERESTS, LOCALES, getDisplayName, interestKey, type Locale } from '@bsocial/shared';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Switch, View } from 'react-native';
 
 import { Screen } from '@/components/auth-form';
+import { LanguageSheet } from '@/components/language-sheet';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
 import { Card, ChipGroup, Divider, IconTile, ListRow } from '@/components/ui/controls';
@@ -13,6 +14,10 @@ import { FontFamily, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { apiFetch } from '@/lib/api';
 import { authClient } from '@/lib/auth-client';
+import { useT } from '@/lib/i18n';
+
+/** The chosen language, named in itself — that's the word someone recognises. */
+const languageName = (code: Locale) => LOCALES.find((l) => l.code === code)?.endonym ?? code;
 
 /**
  * You — not your pet.
@@ -23,9 +28,11 @@ import { authClient } from '@/lib/auth-client';
  */
 export default function ProfileTab() {
   const theme = useTheme();
+  const { t, locale, chosen } = useT();
   const { data: session } = authClient.useSession();
   const [showSensitive, setShowSensitive] = useState(false);
   const [savingSensitive, setSavingSensitive] = useState(false);
+  const [languageOpen, setLanguageOpen] = useState(false);
 
   const user = session?.user;
   // Session is the source of truth; local state only covers the in-flight toggle.
@@ -80,7 +87,7 @@ export default function ProfileTab() {
             return (
               <View key={value} style={[styles.interest, { backgroundColor: theme.primarySoft }]}>
                 <ThemedText type="small" style={{ color: theme.primaryInk, fontFamily: FontFamily.bodyBold }}>
-                  {interest ? `${interest.emoji} ${interest.label}` : value}
+                  {interest ? `${interest.emoji} ${t(interestKey(interest.value))}` : value}
                 </ThemedText>
               </View>
             );
@@ -95,8 +102,8 @@ export default function ProfileTab() {
               <Icon name="person" />
             </IconTile>
           }
-          title="Account"
-          subtitle="Contact, sign-in methods"
+          title={t('profile.account')}
+          subtitle={t('profile.accountBody')}
           trailing={<Icon name="chevron" size={20} color={theme.textSecondary} />}
           onPress={() => router.push('/account')}
         />
@@ -107,9 +114,21 @@ export default function ProfileTab() {
               <Icon name="laptop" />
             </IconTile>
           }
-          title="Signed-in devices"
+          title={t('profile.devices')}
           trailing={<Icon name="chevron" size={20} color={theme.textSecondary} />}
           onPress={() => router.push('/devices')}
+        />
+        <Divider />
+        <ListRow
+          icon={
+            <IconTile>
+              <Icon name="globe" />
+            </IconTile>
+          }
+          title={t('profile.language')}
+          subtitle={chosen ? languageName(locale) : t('profile.languageSystem')}
+          trailing={<Icon name="chevron" size={20} color={theme.textSecondary} />}
+          onPress={() => setLanguageOpen(true)}
         />
         <Divider />
         <ListRow
@@ -118,31 +137,32 @@ export default function ProfileTab() {
               <Icon name="eye" />
             </IconTile>
           }
-          title="Show sensitive content"
-          subtitle="Skip the cover on posts marked sensitive"
+          title={t('profile.showSensitive')}
+          subtitle={t('profile.showSensitiveBody')}
           trailing={
             <Switch
               value={sensitiveOn}
               onValueChange={toggleSensitive}
               disabled={savingSensitive}
               trackColor={{ true: theme.primary, false: theme.backgroundElement }}
-              accessibilityLabel="Show sensitive content"
+              accessibilityLabel={t('profile.showSensitive')}
             />
           }
         />
       </Card>
 
       <ThemedText type="small" themeColor="textSecondary" style={styles.note}>
-        Sensitive content is off by default and never suggested. It sits here for the people who go
-        looking for it.
+        {t('profile.sensitiveNote')}
       </ThemedText>
 
       <Button
         variant="danger"
-        label="Sign out"
+        label={t('profile.signOut')}
         icon={<Icon name="logout" size={20} color={theme.red} />}
         onPress={() => authClient.signOut()}
       />
+
+      <LanguageSheet open={languageOpen} onClose={() => setLanguageOpen(false)} />
     </Screen>
   );
 }

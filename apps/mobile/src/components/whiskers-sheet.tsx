@@ -6,6 +6,7 @@ import { CompanionArt } from '@/components/mascot/companions';
 import { ThemedText } from '@/components/themed-text';
 import { Badge, Card } from '@/components/ui/controls';
 import { Icon } from '@/components/ui/icon';
+import { useT } from '@/lib/i18n';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -39,6 +40,7 @@ export function WhiskersSheet({
   onClose: () => void;
 }) {
   const theme = useTheme();
+  const { t } = useT();
 
   return (
     <BottomSheet
@@ -48,12 +50,12 @@ export function WhiskersSheet({
         <View style={{ gap: 2 }}>
           <View style={styles.titleRow}>
             <ThemedText type="label" style={{ flex: 1 }}>
-              Whiskers
+              {t('whiskers.title')}
             </ThemedText>
-            <Badge label="One a day" />
+            <Badge label={t('whiskers.oneADay')} />
           </View>
           <ThemedText type="small" themeColor="textSecondary">
-            What {petName} picked up nearby
+            {t('whiskers.subtitle', { name: petName })}
           </ThemedText>
         </View>
       }>
@@ -66,7 +68,7 @@ export function WhiskersSheet({
           {whiskers.sources.length > 0 && (
             <>
               <ThemedText type="label" style={styles.section}>
-                {petName} heard it from
+                {t('whiskers.heardFrom', { name: petName })}
               </ThemedText>
               {whiskers.sources.map((s) => (
                 <Pressable
@@ -76,7 +78,7 @@ export function WhiskersSheet({
                     router.push(`/post/${s.id}`);
                   }}
                   accessibilityRole="button"
-                  accessibilityLabel={`Open the post from ${s.ownerName ?? s.petName}`}>
+                  accessibilityLabel={t('whiskers.a11y.openSource', { name: s.ownerName ?? s.petName })}>
                   <View style={[styles.source, { backgroundColor: theme.backgroundElement }]}>
                     <View style={[styles.art, { backgroundColor: theme.primarySoft }]}>
                       <CompanionArt species={s.species} size={24} />
@@ -100,14 +102,12 @@ export function WhiskersSheet({
               what was said at the time, so a short list isn't an error. */}
           {whiskers.sources.length < whiskers.sourcePostIds.length && (
             <ThemedText type="caption" themeColor="textSecondary" style={styles.note}>
-              {whiskers.sourcePostIds.length - whiskers.sources.length} of the posts behind this have since
-              been removed.
+              {t('whiskers.someRemoved', { count: whiskers.sourcePostIds.length - whiskers.sources.length })}
             </ThemedText>
           )}
 
           <ThemedText type="small" themeColor="textSecondary" style={styles.note}>
-            Written once each morning and kept for the day — it&apos;s the same news all day, and it needs
-            at least three posts nearby before there&apos;s a pattern worth repeating.
+            {t('whiskers.note')}
           </ThemedText>
         </>
       )}

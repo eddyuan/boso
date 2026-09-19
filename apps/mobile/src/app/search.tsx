@@ -1,4 +1,4 @@
-import { INTERESTS } from '@bsocial/shared';
+import { INTERESTS, interestKey } from '@bsocial/shared';
 import { Image } from 'expo-image';
 import * as Location from 'expo-location';
 import { router } from 'expo-router';
@@ -30,7 +30,7 @@ type Person = {
 /** Find people: by name while typing, or whoever has posted near you. */
 export default function SearchScreen() {
   const theme = useTheme();
-  const { distance } = useT();
+  const { t, distance } = useT();
   const [query, setQuery] = useState('');
   const [people, setPeople] = useState<Person[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -52,9 +52,9 @@ export default function SearchScreen() {
       setPeople(result.people);
     } catch {
       setPeople([]);
-      setError("Couldn't search right now.");
+      setError(t('search.error.load'));
     }
-  }, []);
+  }, [t]);
 
   // Debounced so every keystroke doesn't hit the API.
   useEffect(() => {
@@ -70,7 +70,7 @@ export default function SearchScreen() {
           <Pressable
             onPress={() => router.back()}
             accessibilityRole="button"
-            accessibilityLabel="Back"
+            accessibilityLabel={t('action.back')}
             style={({ pressed }) => [
               styles.back,
               { backgroundColor: theme.backgroundElement, opacity: pressed ? 0.7 : 1 },
@@ -82,7 +82,7 @@ export default function SearchScreen() {
             <TextInput
               value={query}
               onChangeText={setQuery}
-              placeholder="Search people and pets"
+              placeholder={t('search.placeholder')}
               placeholderTextColor={theme.textSecondary}
               autoFocus
               autoCapitalize="none"
@@ -94,14 +94,12 @@ export default function SearchScreen() {
         </View>
       }>
       <ErrorText message={error} />
-      <SectionTitle>{query.trim() ? 'Results' : 'People near you'}</SectionTitle>
+      <SectionTitle>{t(query.trim() ? 'search.results' : 'search.peopleNearYou')}</SectionTitle>
       {!people && <ActivityIndicator color={theme.primaryPress} />}
 
       {people?.length === 0 && (
         <ThemedText type="small" themeColor="textSecondary">
-          {query.trim()
-            ? `No one matches “${query.trim()}”.`
-            : 'No one has posted near you yet. Try searching by nickname.'}
+          {query.trim() ? t('search.noResults', { query: query.trim() }) : t('search.nobodyNearby')}
         </ThemedText>
       )}
 
@@ -122,10 +120,15 @@ export default function SearchScreen() {
                 )}
                 <View style={styles.rowText}>
                   <ThemedText type="label" numberOfLines={1}>
-                    {person.name?.trim() || (person.username ? `@${person.username}` : 'Someone')}
+                    {person.name?.trim() || (person.username ? `@${person.username}` : t('search.someone'))}
                   </ThemedText>
                   <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-                    {[person.username ? `@${person.username}` : null, person.distanceM === undefined ? null : `${distance(person.distanceM)} away`]
+                    {[
+                      person.username ? `@${person.username}` : null,
+                      person.distanceM === undefined
+                        ? null
+                        : t('search.awayFrom', { distance: distance(person.distanceM) }),
+                    ]
                       .filter(Boolean)
                       .join(' · ')}
                   </ThemedText>
@@ -139,7 +142,7 @@ export default function SearchScreen() {
         </Card>
       )}
 
-      <SectionTitle>Browse by interest</SectionTitle>
+      <SectionTitle>{t('search.byInterest')}</SectionTitle>
       <View style={styles.interests}>
         {INTERESTS.slice(0, 8).map((interest) => (
           <Pressable
@@ -151,7 +154,7 @@ export default function SearchScreen() {
               { backgroundColor: theme.backgroundElement, opacity: pressed ? 0.7 : 1 },
             ]}>
             <ThemedText type="small" style={{ fontFamily: FontFamily.bodyBold }}>
-              {interest.emoji} {interest.label}
+              {`${interest.emoji} ${t(interestKey(interest.value))}`}
             </ThemedText>
           </Pressable>
         ))}

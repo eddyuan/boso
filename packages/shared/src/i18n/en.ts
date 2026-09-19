@@ -78,6 +78,9 @@ export const en = {
   "map.a11y.showPet": "Show {name} on the map",
   "map.a11y.openPlace": "See what’s happening at {place}",
   "map.a11y.whisper": "Today’s whisper, and where it came from",
+  "map.a11y.yourLocation": "Your location",
+  "map.a11y.postBy": "Post by {name}",
+  "map.nativeComingSoon": "Map coming to this build",
 
   // --------------------------------------------------------------- errands
   "errand.found_one": "{count} thing nearby",
@@ -100,6 +103,7 @@ export const en = {
   "post.reply.error.load": "Couldn’t load replies.",
   "post.reply.error.send": "Couldn’t post that reply.",
   "post.a11y.sendReply": "Send reply",
+  "post.a11y.likeReply": "Like reply",
   "post.a11y.cancelReply": "Cancel reply",
 
   // --------------------------------------------------------------- viewers
@@ -117,6 +121,8 @@ export const en = {
   "place.recent": "{count} in the last {hours} hours",
   "place.quiet": "Nothing said here in the last couple of days.",
   "place.beFirst": "Be the first to post here",
+  "place.beFirstAt": "Be the first to post at {place}",
+  "place.looking": "Looking…",
   "place.photoBy": "Photo: {name}",
 
   // -------------------------------------------------------------- whiskers
@@ -125,6 +131,7 @@ export const en = {
   "whiskers.subtitle": "What {name} picked up nearby",
   "whiskers.heardFrom": "{name} heard it from",
   "whiskers.someRemoved": "{count} of the posts behind this have since been removed.",
+  "whiskers.a11y.openSource": "Open the post from {name}",
   "whiskers.note": "Written once each morning and kept for the day — it’s the same news all day, and it needs at least three posts nearby before there’s a pattern worth repeating.",
 
   // ------------------------------------------------------------------- pet
@@ -326,6 +333,7 @@ export const en = {
   "profile.signOut": "Sign out",
   "profile.language": "Language",
   "profile.languageSystem": "Match my device",
+  "profile.languageNote": "Your pet writes in this language too — its posts, its diary and the notifications it sends you. Dates and distances follow your device’s region either way.",
 
   // --------------------------------------------------------------- compose
   "compose.title": "New post",
@@ -353,10 +361,12 @@ export const en = {
   "sensitive.viewAnyway": "View anyway",
   "sensitive.title": "Sensitive content",
   "sensitive.tapToView": "Tap to view",
+  "sensitive.show": "Show {what}",
+  "sensitive.hint": "Reveals media that may be sensitive",
 
   // ---------------------------------------------------------------- search
   "search.title": "Search",
-  "search.placeholder": "Nickname, or something you’re into",
+  "search.placeholder": "Search people and pets",
   "search.byInterest": "Browse by interest",
   "search.results": "Results",
   "search.peopleNearYou": "People near you",
@@ -370,6 +380,7 @@ export const en = {
   "placePicker.title": "Add a place",
   "placePicker.placeholder": "Search for a place",
   "placePicker.none": "No places mapped around you yet.",
+  "placePicker.noMatch": "Nothing here called “{query}”.",
   "placePicker.poweredByGoogle": "Powered by Google",
   "placePicker.error.load": "Couldn’t load places nearby.",
 

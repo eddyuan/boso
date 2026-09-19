@@ -44,7 +44,7 @@ export function PlacePicker({
   onPick: (place: Place) => void;
 }) {
   const theme = useTheme();
-  const { distance } = useT();
+  const { t, distance } = useT();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Place[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -63,10 +63,10 @@ export function PlacePicker({
         setResults(result.places);
       } catch {
         setResults([]);
-        setError("Couldn't load places.");
+        setError(t('placePicker.error.load'));
       }
     },
-    [near],
+    [near, t],
   );
 
   useEffect(() => {
@@ -84,7 +84,7 @@ export function PlacePicker({
             <Pressable
               onPress={onClose}
               accessibilityRole="button"
-              accessibilityLabel="Close"
+              accessibilityLabel={t('action.close')}
               style={({ pressed }) => [
                 styles.close,
                 { backgroundColor: theme.backgroundElement, opacity: pressed ? 0.7 : 1 },
@@ -96,7 +96,7 @@ export function PlacePicker({
               <TextInput
                 value={query}
                 onChangeText={setQuery}
-                placeholder="Search for a place"
+                placeholder={t('placePicker.placeholder')}
                 placeholderTextColor={theme.textSecondary}
                 autoFocus
                 autoCorrect={false}
@@ -110,7 +110,7 @@ export function PlacePicker({
             {!results && <ActivityIndicator color={theme.primaryPress} />}
             {results?.length === 0 && (
               <ThemedText type="small" themeColor="textSecondary">
-                {query.trim() ? `Nothing here called “${query.trim()}”.` : 'No places mapped around you yet.'}
+                {query.trim() ? t('placePicker.noMatch', { query: query.trim() }) : t('placePicker.none')}
               </ThemedText>
             )}
 
@@ -149,7 +149,7 @@ export function PlacePicker({
             )}
 
             <ThemedText type="caption" themeColor="textSecondary" style={styles.attribution}>
-              Powered by Google
+              {t('placePicker.poweredByGoogle')}
             </ThemedText>
           </View>
         </SafeAreaView>

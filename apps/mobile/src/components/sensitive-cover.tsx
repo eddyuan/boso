@@ -1,7 +1,9 @@
+import { categoryLabelKey, type SensitiveCategory } from '@bsocial/shared';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Icon } from '@/components/ui/icon';
+import { useT } from '@/lib/i18n';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -16,18 +18,23 @@ export function SensitiveCover({
   categories,
   onReveal,
 }: {
-  categories: string[];
+  /** Category ids; the wording comes from the catalogue, not from the server. */
+  categories: SensitiveCategory[];
   onReveal: () => void;
 }) {
   const theme = useTheme();
-  const label = categories.length > 0 ? categories.join(' · ') : 'Sensitive content';
+  const { t } = useT();
+  const label =
+    categories.length > 0
+      ? categories.map((c) => t(categoryLabelKey(c))).join(' · ')
+      : t('sensitive.title');
 
   return (
     <Pressable
       onPress={onReveal}
       accessibilityRole="button"
-      accessibilityLabel={`Show ${label.toLowerCase()}`}
-      accessibilityHint="Reveals media that may be sensitive"
+      accessibilityLabel={t('sensitive.show', { what: label.toLowerCase() })}
+      accessibilityHint={t('sensitive.hint')}
       style={[StyleSheet.absoluteFill, styles.cover, { borderRadius: Radius.field }]}>
       <View style={[styles.pill, { backgroundColor: theme.surface }]}>
         <Icon name="eye" size={16} color={theme.textSecondary} />
@@ -36,7 +43,7 @@ export function SensitiveCover({
         </ThemedText>
       </View>
       <ThemedText themeColor="textSecondary" style={styles.hint}>
-        Tap to view
+        {t('sensitive.tapToView')}
       </ThemedText>
     </Pressable>
   );

@@ -1,3 +1,4 @@
+import type { SensitiveCategory } from '@bsocial/shared';
 import { useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -21,7 +22,7 @@ const base = {
   ownerUsername: null,
   ownerImage: null,
   moderationStatus: 'approved' as const,
-  sensitiveCategories: [] as string[],
+  sensitiveCategories: [] as SensitiveCategory[],
   placeId: null,
 };
 const POSTS: MapPost[] = [

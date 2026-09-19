@@ -1,6 +1,7 @@
 import { useImperativeHandle } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { useT } from '@/lib/i18n';
 import { CompanionArt } from '@/components/mascot/companions';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
@@ -15,6 +16,7 @@ import type { MapPost, MapViewProps } from './types';
  */
 export function MapView({ ref, pet, posts }: MapViewProps) {
   const theme = useTheme();
+  const { t } = useT();
   // Nothing to focus on until there's a real map here.
   useImperativeHandle(ref, () => ({ focusOn: () => {}, focusOnPet: () => {} }));
   return (
@@ -22,7 +24,7 @@ export function MapView({ ref, pet, posts }: MapViewProps) {
       <View style={[styles.halo, { backgroundColor: theme.primarySoft }]}>
         <CompanionArt species={pet?.species ?? 'cockatiel'} size={110} />
       </View>
-      <ThemedText type="header">Map coming to this build</ThemedText>
+      <ThemedText type="header">{t('map.nativeComingSoon')}</ThemedText>
       <ThemedText type="small" themeColor="textSecondary" style={styles.message}>
         The native map needs a development build. It already works in the web version, where{' '}
         {pet?.name ?? 'your pet'} walks around in 3D.

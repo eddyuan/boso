@@ -7,6 +7,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 import { ThemedText } from '@/components/themed-text';
 import { useTheme } from '@/hooks/use-theme';
+import { useT } from '@/lib/i18n';
 import { API_URL } from '@/lib/auth-client';
 import { distanceBetween } from '@/lib/distance';
 import { getPetSpecies } from '@bsocial/shared';
@@ -78,6 +79,7 @@ export function MapView({
   onMapPress,
 }: MapViewProps) {
   const theme = useTheme();
+  const { t } = useT();
   const hostRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
@@ -184,7 +186,8 @@ export function MapView({
       petGroup.clear();
       actions = {};
       playing = undefined;
-      const flies = getPetSpecies(species).moves === 'Flies';
+      // By species, not by the English word for how it moves.
+      const flies = species === 'cockatiel';
       wander = new Wander({ flies, speedMps: flies ? FLY_SPEED_MPS : WALK_SPEED_MPS });
       wander.setHome(petGroup.position.x, petGroup.position.z, true);
       new GLTFLoader().load(
@@ -250,7 +253,7 @@ export function MapView({
 
     const dotEl = document.createElement('div');
     dotEl.style.pointerEvents = 'none';
-    dotEl.setAttribute('aria-label', 'Your location');
+    dotEl.setAttribute('aria-label', t('map.a11y.yourLocation'));
     dotEl.innerHTML = '<span class="tielo-you"></span>';
     const dot = new mapboxgl.Marker({ element: dotEl }).setLngLat(youAt);
     if (petLocation) {
@@ -431,7 +434,7 @@ export function MapView({
       seen.add(post.id);
       if (markersRef.current.has(post.id)) continue;
       const el = document.createElement('button');
-      el.setAttribute('aria-label', `Post by ${post.petName}`);
+      el.setAttribute('aria-label', t('map.a11y.postBy', { name: post.petName }));
       el.style.cssText = `width:52px;height:52px;border-radius:50%;border:3px solid ${theme.surface};background:${theme.primarySoft} center/cover no-repeat;cursor:pointer;box-shadow:0 4px 10px rgba(43,31,22,0.25);padding:0`;
       // Markers are 52px: the first photo's thumbnail, not the full card image.
       const icon = post.media[0]?.thumbUrl ?? post.media[0]?.url;
@@ -468,7 +471,7 @@ export function MapView({
       seen.add(place.id);
       if (placeMarkersRef.current.has(place.id)) continue;
       const el = document.createElement('button');
-      el.setAttribute('aria-label', `See what's happening at ${place.name}`);
+      el.setAttribute('aria-label', t('map.a11y.openPlace', { place: place.name }));
       const accent = place.isHotspot ? theme.primary : theme.surface;
       const ink = place.isHotspot ? theme.onPrimary : theme.text;
       el.style.cssText = `display:flex;align-items:center;gap:5px;max-width:150px;padding:5px 10px;border-radius:999px;border:1.5px solid ${theme.line};background:${accent};color:${ink};font:600 12px/1.2 system-ui,sans-serif;cursor:pointer;box-shadow:0 2px 6px rgba(43,31,22,0.18);white-space:nowrap;overflow:hidden;text-overflow:ellipsis`;

@@ -50,6 +50,7 @@ const liked = (c: Comment, next: boolean) => ({
 });
 
 export function useCommentThread(postId: string | null, onCountChange?: (postId: string, total: number) => void) {
+  const { t } = useT();
   const [threads, setThreads] = useState<Thread[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
@@ -63,7 +64,7 @@ export function useCommentThread(postId: string | null, onCountChange?: (postId:
       setThreads(r.comments);
       onCountChange?.(postId, r.total);
     } catch {
-      setError("Couldn't load replies.");
+      setError(t('post.reply.error.load'));
     }
   }, [postId, onCountChange]);
 
@@ -93,7 +94,7 @@ export function useCommentThread(postId: string | null, onCountChange?: (postId:
       setReplyTo(null);
       await load();
     } catch {
-      setError("Couldn't post that reply.");
+      setError(t('post.reply.error.send'));
     }
     setSending(false);
   };
@@ -125,6 +126,7 @@ export type CommentThreadState = ReturnType<typeof useCommentThread>;
 /** The conversation itself. */
 export function CommentList({ state }: { state: CommentThreadState }) {
   const theme = useTheme();
+  const { t } = useT();
   const { threads, error, toggleLike, setReplyTo } = state;
 
   return (
@@ -133,7 +135,7 @@ export function CommentList({ state }: { state: CommentThreadState }) {
       {!threads && !error && <ActivityIndicator color={theme.primaryPress} />}
       {threads?.length === 0 && (
         <ThemedText themeColor="textSecondary" style={styles.empty}>
-          No replies yet. Say something.
+          {t('post.noReplies')}
         </ThemedText>
       )}
       {threads?.map((thread) => (
@@ -161,6 +163,7 @@ export function CommentList({ state }: { state: CommentThreadState }) {
 /** The input. Pinned by the screen, so it doesn't scroll away mid-reply. */
 export function CommentComposer({ state }: { state: CommentThreadState }) {
   const theme = useTheme();
+  const { t } = useT();
   const { draft, setDraft, replyTo, setReplyTo, sending, send } = state;
 
   return (
@@ -168,9 +171,9 @@ export function CommentComposer({ state }: { state: CommentThreadState }) {
       {replyTo && (
         <View style={styles.replyingTo}>
           <ThemedText type="small" themeColor="textSecondary" style={{ flex: 1 }}>
-            Replying to {replyTo.petName}
+            {t('post.reply.replyingTo', { name: replyTo.petName })}
           </ThemedText>
-          <Pressable onPress={() => setReplyTo(null)} hitSlop={10} accessibilityLabel="Cancel reply">
+          <Pressable onPress={() => setReplyTo(null)} hitSlop={10} accessibilityLabel={t('post.a11y.cancelReply')}>
             <Icon name="close" size={16} color={theme.textSecondary} />
           </Pressable>
         </View>
@@ -179,7 +182,9 @@ export function CommentComposer({ state }: { state: CommentThreadState }) {
         <TextInput
           value={draft}
           onChangeText={setDraft}
-          placeholder={replyTo ? `Reply to ${replyTo.petName}…` : 'Add a reply…'}
+          placeholder={
+            replyTo ? t('post.reply.placeholderTo', { name: replyTo.petName }) : t('post.reply.placeholder')
+          }
           placeholderTextColor={theme.textSecondary}
           multiline
           maxLength={500}
@@ -189,7 +194,7 @@ export function CommentComposer({ state }: { state: CommentThreadState }) {
           onPress={send}
           disabled={!draft.trim() || sending}
           accessibilityRole="button"
-          accessibilityLabel="Send reply"
+          accessibilityLabel={t('post.a11y.sendReply')}
           style={[
             styles.send,
             { backgroundColor: draft.trim() ? theme.primary : theme.backgroundElement, opacity: sending ? 0.6 : 1 },
@@ -211,7 +216,7 @@ function CommentRow({
   onReply: () => void;
 }) {
   const theme = useTheme();
-  const { timeAgo } = useT();
+  const { t, timeAgo } = useT();
   const author = comment.authoredByAgent ? comment.petName : (comment.ownerName?.trim() || comment.petName);
 
   return (
@@ -241,7 +246,7 @@ function CommentRow({
           {comment.content}
         </ThemedText>
         <View style={styles.rowActions}>
-          <Pressable onPress={() => onLike(comment)} hitSlop={8} style={styles.action} accessibilityLabel="Like reply">
+          <Pressable onPress={() => onLike(comment)} hitSlop={8} style={styles.action} accessibilityLabel={t('post.a11y.likeReply')}>
             <Icon name="heart" size={15} color={comment.likedByMe ? theme.red : theme.textSecondary} />
             {comment.likeCount > 0 && (
               <ThemedText type="small" themeColor="textSecondary">
@@ -249,9 +254,9 @@ function CommentRow({
               </ThemedText>
             )}
           </Pressable>
-          <Pressable onPress={onReply} hitSlop={8} accessibilityLabel="Reply">
+          <Pressable onPress={onReply} hitSlop={8} accessibilityLabel={t('post.reply.action')}>
             <ThemedText type="small" themeColor="textSecondary">
-              Reply
+              {t('post.reply.action')}
             </ThemedText>
           </Pressable>
         </View>

@@ -1,6 +1,7 @@
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { Platform, Pressable, StyleSheet, useColorScheme, View } from 'react-native';
 
+import { useT } from '@/lib/i18n';
 import { ThemedText } from '@/components/themed-text';
 import { Card } from '@/components/ui/controls';
 import { Icon } from '@/components/ui/icon';
@@ -10,11 +11,12 @@ import { formatBirthday, type BirthdayPickerProps } from '@/lib/birthday';
 
 function SelectedDate({ value }: { value: Date | null }) {
   const theme = useTheme();
+  const { t } = useT();
   return (
     <View style={styles.selected}>
       <Icon name="calendar" size={18} color={value ? theme.primaryInk : theme.textSecondary} />
       <ThemedText type="label" style={{ color: value ? theme.primaryInk : theme.textSecondary }}>
-        {value ? formatBirthday(value) : 'Scroll to select your birthday'}
+        {value ? formatBirthday(value) : t('onboarding.birthday.scroll')}
       </ThemedText>
     </View>
   );
@@ -25,6 +27,7 @@ function SelectedDate({ value }: { value: Date | null }) {
 // actually picks, so nobody "accepts" a default date by accident.
 export function BirthdayPicker({ value, onChange, initialDate, minimumDate, maximumDate }: BirthdayPickerProps) {
   const theme = useTheme();
+  const { t } = useT();
   const colorScheme = useColorScheme();
 
   if (Platform.OS === 'ios') {
@@ -72,11 +75,11 @@ export function BirthdayPicker({ value, onChange, initialDate, minimumDate, maxi
         ]}>
         <Icon name="calendar" size={20} color={value ? theme.primaryInk : theme.textSecondary} />
         <ThemedText style={{ color: value ? theme.text : theme.textSecondary }}>
-          {value ? formatBirthday(value) : 'Select your birthday'}
+          {value ? formatBirthday(value) : t('onboarding.birthday.select')}
         </ThemedText>
       </Pressable>
       <ThemedText type="small" themeColor="textSecondary">
-        Tip: tap the year at the top of the calendar to jump to your birth year.
+        {t('onboarding.birthday.yearTip')}
       </ThemedText>
     </View>
   );

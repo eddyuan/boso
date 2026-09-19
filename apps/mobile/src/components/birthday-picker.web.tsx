@@ -2,6 +2,7 @@ import { parseBirthday } from '@bsocial/shared';
 import { useRef, useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 
+import { useT } from '@/lib/i18n';
 import { Field } from '@/components/auth-form';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
@@ -9,6 +10,7 @@ import { formatBirthday, type BirthdayPickerProps } from '@/lib/birthday';
 
 // Web has no native wheel picker; typed fields work everywhere.
 export function BirthdayPicker({ value, onChange }: BirthdayPickerProps) {
+  const { t } = useT();
   const [month, setMonth] = useState('');
   const [day, setDay] = useState('');
   const [year, setYear] = useState('');
@@ -29,7 +31,7 @@ export function BirthdayPicker({ value, onChange }: BirthdayPickerProps) {
       <View style={styles.row}>
         <View style={styles.part}>
           <ThemedText type="small" themeColor="textSecondary">
-            Month
+            {t('onboarding.birthday.month')}
           </ThemedText>
           <Field
             placeholder="MM"
@@ -47,7 +49,7 @@ export function BirthdayPicker({ value, onChange }: BirthdayPickerProps) {
         </View>
         <View style={styles.part}>
           <ThemedText type="small" themeColor="textSecondary">
-            Day
+            {t('onboarding.birthday.day')}
           </ThemedText>
           <Field
             ref={dayRef}
@@ -66,7 +68,7 @@ export function BirthdayPicker({ value, onChange }: BirthdayPickerProps) {
         </View>
         <View style={[styles.part, styles.year]}>
           <ThemedText type="small" themeColor="textSecondary">
-            Year
+            {t('onboarding.birthday.year')}
           </ThemedText>
           <Field
             ref={yearRef}

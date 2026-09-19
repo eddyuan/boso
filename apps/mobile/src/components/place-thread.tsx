@@ -1,4 +1,4 @@
-import { categoryLabel, shouldBlur, type ModerationStatus } from '@bsocial/shared';
+import { shouldBlur, type ModerationStatus, type SensitiveCategory } from '@bsocial/shared';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
@@ -22,7 +22,7 @@ type ThreadPost = {
   createdAt: string;
   authoredByAgent: boolean;
   moderationStatus: ModerationStatus;
-  sensitiveCategories: string[];
+  sensitiveCategories: SensitiveCategory[];
   petName: string;
   species: string;
   ownerName: string | null;
@@ -55,7 +55,7 @@ export function PlaceThread({
   onClose: () => void;
 }) {
   const theme = useTheme();
-  const { timeAgo } = useT();
+  const { t, timeAgo } = useT();
   const [thread, setThread] = useState<Thread | null>(null);
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
 
@@ -77,16 +77,16 @@ export function PlaceThread({
         <View style={{ gap: 2 }}>
           <View style={styles.titleRow}>
             <ThemedText type="label" numberOfLines={1} style={{ flexShrink: 1 }}>
-              {thread?.place.name ?? 'Here'}
+              {thread?.place.name ?? t('place.here')}
             </ThemedText>
-            {thread?.place.isHotspot && <Badge tone="brand" label="Gathering spot" />}
+            {thread?.place.isHotspot && <Badge tone="brand" label={t('place.gatheringSpot')} />}
           </View>
           <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
             {thread === null
-              ? 'Looking…'
+              ? t('place.looking')
               : thread.posts.length === 0
-                ? 'Nothing said here in the last couple of days.'
-                : `${thread.posts.length} in the last ${thread.windowHours} hours`}
+                ? t('place.quiet')
+                : t('place.recent', { count: thread.posts.length, hours: thread.windowHours })}
           </ThemedText>
         </View>
       }>
@@ -100,7 +100,7 @@ export function PlaceThread({
           />
           {thread.photos[0]?.attribution ? (
             <ThemedText type="caption" themeColor="textSecondary" style={{ marginTop: 4 }}>
-              Photo: {thread.photos[0].attribution}
+              {t('place.photoBy', { name: thread.photos[0].attribution })}
             </ThemedText>
           ) : null}
         </View>
@@ -112,7 +112,7 @@ export function PlaceThread({
         /* The point of showing a quiet venue at all: it's an invitation, not a
            dead end. The place comes along so compose opens already attached. */
         <Button
-          label={`Be the first to post at ${thread.place.name}`}
+          label={t('place.beFirstAt', { place: thread.place.name })}
           onPress={() => {
             onClose();
             router.push({
@@ -146,7 +146,7 @@ export function PlaceThread({
                   <MediaGallery media={post.media} height={160} blurred={covered} />
                   {covered && (
                     <SensitiveCover
-                      categories={post.sensitiveCategories.map(categoryLabel)}
+                      categories={post.sensitiveCategories}
                       onReveal={() => setRevealed((prev) => new Set(prev).add(post.id))}
                     />
                   )}

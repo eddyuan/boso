@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
 
+import { useT } from '@/lib/i18n';
 import { FloatingTabBar } from '@/components/floating-tab-bar';
 import { PetSummaryProvider } from '@/components/pet-summary';
 import { TabBarVisibilityProvider } from '@/components/tab-bar-visibility';
@@ -14,19 +15,20 @@ import { TabBarVisibilityProvider } from '@/components/tab-bar-visibility';
  * daily, missions arrive three a day, the diary lands nightly.
  */
 const TABS = [
-  { name: 'index', title: 'Map' },
-  { name: 'feed', title: 'Feed' },
-  { name: 'pet', title: 'Your pet' },
-  { name: 'profile', title: 'You' },
-];
+  { name: 'index', key: 'tab.map' },
+  { name: 'feed', key: 'tab.feed' },
+  { name: 'pet', key: 'tab.pet' },
+  { name: 'profile', key: 'tab.you' },
+] as const;
 
 export default function TabsLayout() {
+  const { t } = useT();
   return (
     <TabBarVisibilityProvider>
       <PetSummaryProvider>
         <Tabs screenOptions={{ headerShown: false }} tabBar={(props) => <FloatingTabBar {...props} />}>
           {TABS.map((tab) => (
-          <Tabs.Screen key={tab.name} name={tab.name} options={{ title: tab.title }} />
+          <Tabs.Screen key={tab.name} name={tab.name} options={{ title: t(tab.key) }} />
           ))}
         </Tabs>
       </PetSummaryProvider>
