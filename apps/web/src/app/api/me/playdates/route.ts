@@ -7,6 +7,7 @@ import { existingProposal, expiryFrom, meetingPlace, playdateCandidates } from "
 import { sendPush } from "@/lib/push";
 import { recordInteraction } from "@/lib/relationships";
 import { requireSession } from "@/lib/session";
+import { translatorForUser } from "@/lib/locale";
 
 /** Who you could meet, and what's already been proposed either way. */
 export async function GET() {
@@ -104,11 +105,13 @@ export async function POST(req: Request) {
     .returning();
 
   if (them[0]) {
+    // The invitee's language, not the inviter's.
+    const t = await translatorForUser(them[0].userId);
     await sendPush(them[0].userId, {
       type: "pet_friend",
-      title: `${target.petName} has been invited out`,
-      body: `${myPet.name} is nearby and wants to meet up.`,
-      data: { screen: "activity", playdateId: row!.id },
+      title: t.t("push.playdate.title", { name: target.petName }),
+      body: t.t("push.playdate.body", { name: target.petName, other: myPet.name }),
+      data: { screen: "pet", playdateId: row!.id },
     }).catch(() => {});
   }
 

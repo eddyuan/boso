@@ -5,6 +5,7 @@ import { inArray } from "drizzle-orm";
 import { db, pets, posts, users, whiskers } from "@bsocial/db";
 import { enoughToTalkAbout, gatherLocalNews, writeWhiskersLine } from "@/lib/whiskers";
 import { requireSession } from "@/lib/session";
+import { localeFor } from "@/lib/locale";
 
 const querySchema = z.object({
   latitude: z.coerce.number().min(-90).max(90).optional(),
@@ -51,7 +52,9 @@ export async function GET(req: Request) {
   // to nothing, the feature stops being worth reading.
   if (!enoughToTalkAbout(sources)) return NextResponse.json({ whiskers: null });
 
-  const line = await writeWhiskersLine(pet.name, sources);
+  // Summarised in the reader's language even though the posts it draws on may
+  // be in several — the gossip is for them.
+  const line = await writeWhiskersLine(pet.name, sources, await localeFor(session.user.id));
   if (!line) return NextResponse.json({ whiskers: null });
 
   const sourcePostIds = sources.map((s) => s.id);

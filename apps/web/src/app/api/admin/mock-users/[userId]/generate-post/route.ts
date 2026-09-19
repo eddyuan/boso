@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db, mockProfiles } from "@bsocial/db";
 import { generateMockPost, petForMockUser } from "@/lib/mock-poster";
+import { localeFor } from "@/lib/locale";
 import { requireSession } from "@/lib/session";
 
 /** Preview a post in a persona's voice, for the admin compose dialog. */
@@ -22,6 +23,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ userId
     // Shared with the scheduled poster, so a preview sounds like the real thing.
     const { content, images } = await generateMockPost(profile, pet, {
       imageCount: 1 + Math.floor(Math.random() * 4),
+      locale: await localeFor(userId),
     });
     return NextResponse.json({ content, petId: pet.id, images });
   } catch (error) {

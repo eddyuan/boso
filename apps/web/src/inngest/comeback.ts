@@ -5,6 +5,7 @@ import { inngest } from "./client";
 import { sendPush } from "../lib/push";
 import { isPetsPaused } from "../lib/settings";
 import { tracked } from "@/lib/jobs";
+import { translatorForUser } from "@/lib/locale";
 
 /**
  * The one message that reaches someone who has stopped opening the app.
@@ -80,11 +81,15 @@ export const comebackNudges = inngest.createFunction(
         .limit(1);
       if (!latest) continue;
 
+      const t = await translatorForUser(candidate.userId);
       const result = await sendPush(candidate.userId, {
         type: "quiet_return",
-        title: `${candidate.petName} has been busy`,
-        body: latest.reasoning || `${candidate.petName} got up to something while you were away.`,
-        data: { screen: "activity" },
+        // Composed in the recipient's language: the server can't read their phone.
+        title: t.t("push.comeback.title", { name: candidate.petName }),
+        // The pet's own reasoning is already written in their language by the
+        // planner, so it's used as-is; the fallback is the translated one.
+        body: latest.reasoning || t.t("push.comeback.body", { name: candidate.petName }),
+        data: { screen: "pet" },
       });
       if (result.sent) sent += 1;
     }

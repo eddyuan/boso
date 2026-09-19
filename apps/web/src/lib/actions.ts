@@ -6,6 +6,7 @@ import { sendPush } from "@/lib/push";
 import { recordInteraction } from "@/lib/relationships";
 import { rollTreasure } from "@bsocial/shared";
 import { getConfig } from "./config";
+import { translatorForUser } from "./locale";
 // A concrete action ready to record: planner decisions (lib/pet-planner.ts),
 // with post text filled in by lib/agent.ts.
 export type PetAction =
@@ -56,11 +57,14 @@ export async function recordDecision(petId: string, decision: PetAction) {
   } else {
     // Otherwise it sits in Activity until answered, which nobody discovers by
     // chance — this is the whole reason "ask me first" felt like a dead end.
+    const t = await translatorForUser(pet.userId);
     await sendPush(pet.userId, {
       type: "pet_ask",
-      title: `${pet.name} is asking`,
-      body: reasoning || `${pet.name} wants to do something.`,
-      data: { screen: "activity", actionId: row!.id },
+      title: t.t("push.ask.title", { name: pet.name }),
+      // The reasoning is the pet's own words, already written in their language
+      // by the planner, so it's used as-is; only the fallback is translated.
+      body: reasoning || t.t("push.ask.body", { name: pet.name }),
+      data: { screen: "pet", actionId: row!.id },
     }).catch((error) => console.error("[actions] ask notification failed:", error));
   }
 
@@ -141,11 +145,13 @@ export async function executeAction(petId: string, decision: PetAction) {
           .where(eq(pets.id, decision.petId));
         if (follower && followed) {
           await recordInteraction(petId, decision.petId, "follow");
+          // Written in the recipient's language, not the acting pet owner's.
+          const t = await translatorForUser(followed.userId);
           await sendPush(followed.userId, {
             type: "pet_friend",
-            title: `${followed.name} made a friend`,
-            body: `${follower.name} started following ${followed.name}.`,
-            data: { screen: "activity" },
+            title: t.t("push.followed.title", { name: followed.name }),
+            body: t.t("push.followed.body", { name: followed.name, other: follower.name }),
+            data: { screen: "pet" },
           }).catch((error) => console.error("[actions] friend notification failed:", error));
         }
       }

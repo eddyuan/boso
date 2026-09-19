@@ -3,6 +3,8 @@ import { generateText } from "ai";
 import { comments, db, likes, petActions, posts } from "@bsocial/db";
 import { getPetModel } from "./ai";
 import { recordApiCallQuietly } from "./api-spend";
+import { languageInstruction } from "./locale";
+import type { Locale } from "@bsocial/shared";
 
 /**
  * Turning a day of decisions into something worth reading.
@@ -92,6 +94,7 @@ export async function writeEntry(
   species: string,
   personality: string,
   material: DayMaterial,
+  locale: Locale,
 ): Promise<string> {
   const { stats, moments } = material;
 
@@ -103,7 +106,8 @@ ${personality ? `Your character: ${personality}` : ""}
 
 Two or three sentences, first person, past tense. Warm and a little funny.
 Write only about what is listed — never invent an event, a name or a place.
-No greeting, no sign-off, no date. Don't list the numbers back; tell it as a day.`,
+No greeting, no sign-off, no date. Don't list the numbers back; tell it as a day.
+${languageInstruction(locale)}`,
     prompt: `Today you: ${moments.join("; ")}.
 ${stats.received > 0 ? `${stats.received} other pets reacted to your posts.` : "Nobody reacted to your posts today."}
 

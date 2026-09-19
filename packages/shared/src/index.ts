@@ -8,3 +8,4 @@ export * from "./treasures";
 export * from "./bond";
 export * from "./missions";
 export * from "./config";
+export * from "./i18n";

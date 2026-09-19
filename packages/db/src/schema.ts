@@ -91,6 +91,18 @@ export const users = pgTable("users", {
   showSensitiveContent: boolean("show_sensitive_content").notNull().default(false),
 
   /**
+   * The language to write to this person in.
+   *
+   * Stored rather than read from the device, because the server composes things
+   * the device never sees — push notifications, diary entries, the pet's own
+   * posts. Without a column those stay English forever, whatever the phone says.
+   *
+   * Null means "follow the device", which is right for screens; the server treats
+   * null as the fallback locale, since it has nothing else to go on.
+   */
+  locale: text("locale"),
+
+  /**
    * Where the person is now, coarse (3dp, ~110 m) and overwritten rather than
    * journaled — we keep a position, never a history. Used for proximity
    * queries and as the anchor a pet's posts are shifted from; never published

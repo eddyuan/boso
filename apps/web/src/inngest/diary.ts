@@ -6,6 +6,8 @@ import { petState } from "../lib/pet-mood";
 import { sendPush } from "../lib/push";
 import { isPetsPaused } from "../lib/settings";
 import { tracked } from "@/lib/jobs";
+import { translatorForUser } from "@/lib/locale";
+import { resolveLocale } from "@bsocial/shared";
 
 /**
  * The nightly diary, and the one morning message that carries it.
@@ -38,7 +40,14 @@ export const writeDiaries = inngest.createFunction(
     // manufactured one about nothing.
     const active = await step.run("find-active-pets", () =>
       db
-        .select({ petId: pets.id, name: pets.name, species: pets.species, personality: pets.personality, userId: pets.userId })
+        .select({
+          petId: pets.id,
+          name: pets.name,
+          species: pets.species,
+          personality: pets.personality,
+          userId: pets.userId,
+          locale: users.locale,
+        })
         .from(pets)
         .innerJoin(users, eq(users.id, pets.userId))
         .where(
@@ -62,7 +71,9 @@ export const writeDiaries = inngest.createFunction(
       if (!worthWriting(material)) continue;
 
       try {
-        const entry = await writeEntry(pet.name, pet.species, pet.personality, material);
+        // The diary is the pet writing to its owner, so it is written in the
+        // owner's language rather than translated after the fact.
+        const entry = await writeEntry(pet.name, pet.species, pet.personality, material, resolveLocale(pet.locale));
         if (!entry) continue;
         const { mood } = await petState(pet.petId, pet.userId, pet.name);
 
@@ -120,7 +131,7 @@ export const morningDigest = inngest.createFunction(
 
       const result = await sendPush(row.userId, {
         type: "quiet_return",
-        title: `${row.petName}'s day`,
+        title: (await translatorForUser(row.userId)).t("push.digest.title", { name: row.petName }),
         body: row.entry.length > 140 ? `${row.entry.slice(0, 139)}…` : row.entry,
         data: { screen: "activity", day },
       });

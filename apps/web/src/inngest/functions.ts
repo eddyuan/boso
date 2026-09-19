@@ -1,6 +1,6 @@
 import { and, desc, eq, gt, isNotNull, isNull } from "drizzle-orm";
 import { db, pets, posts, users } from "@bsocial/db";
-import { PET_OWNER_INACTIVE_DAYS } from "@bsocial/shared";
+import { PET_OWNER_INACTIVE_DAYS, resolveLocale } from "@bsocial/shared";
 import { inngest } from "./client";
 import { describePersonality, generateComment, generatePost } from "../lib/agent";
 import { recordDecision } from "../lib/actions";
@@ -79,7 +79,7 @@ export const runPetTick = inngest.createFunction(
 
     const pet = await step.run("load-pet", async () => {
       const [row] = await db
-        .select({ pet: pets, ownerInterests: users.interests })
+        .select({ pet: pets, ownerInterests: users.interests, ownerLocale: users.locale })
         .from(pets)
         .innerJoin(users, eq(users.id, pets.userId))
         // Re-checked here: the owner may have gone inactive since the fan-out.
@@ -111,6 +111,8 @@ export const runPetTick = inngest.createFunction(
           petName: pet.pet.name,
           personality: describePersonality(pet.pet, pet.ownerInterests),
           recentOwnPosts: recent.map((p) => p.content),
+          // The pet writes to its owner, so it writes in the owner's language.
+          locale: resolveLocale(pet.ownerLocale),
         });
       });
 
@@ -132,6 +134,8 @@ export const runPetTick = inngest.createFunction(
           personality: describePersonality(pet.pet, pet.ownerInterests),
           postAuthor: plan.postAuthor,
           postContent: plan.postContent,
+          // Only the tie-break: a reply follows the post's own language.
+          locale: resolveLocale(pet.ownerLocale),
         }),
       );
 

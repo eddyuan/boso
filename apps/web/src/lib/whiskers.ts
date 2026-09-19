@@ -4,6 +4,8 @@ import { db, pets, posts, users } from "@bsocial/db";
 import { getPetModel } from "./ai";
 import { amplifiedPosts } from "./visibility";
 import { recordApiCallQuietly } from "./api-spend";
+import { languageInstruction } from "./locale";
+import type { Locale } from "@bsocial/shared";
 
 /**
  * "A ramen feud is brewing on the Drive."
@@ -62,7 +64,11 @@ export function enoughToTalkAbout(sources: WhiskersSource[]): boolean {
   return sources.length >= MIN_POSTS;
 }
 
-export async function writeWhiskersLine(petName: string, sources: WhiskersSource[]): Promise<string> {
+export async function writeWhiskersLine(
+  petName: string,
+  sources: WhiskersSource[],
+  locale: Locale,
+): Promise<string> {
   recordApiCallQuietly({ provider: "gemini", kind: "text", meta: { site: "whiskers_line" } });
   const { text } = await generateText({
     model: getPetModel(),
@@ -71,7 +77,8 @@ export async function writeWhiskersLine(petName: string, sources: WhiskersSource
 ONE sentence, under 140 characters. Playful, a little conspiratorial.
 Base it ONLY on the posts below — never invent an event, a place or a name.
 Find the thread connecting several of them if there is one; otherwise pick the
-most interesting single thing. No hashtags, no greeting, no quotation marks.`,
+most interesting single thing. No hashtags, no greeting, no quotation marks.
+${languageInstruction(locale)} The posts below may be in other languages; summarise them in yours.`,
     prompt: `Posts from around the neighbourhood in the last day and a half:
 ${sources.map((s) => `- ${s.petName}: ${s.content}`).join("\n")}
 

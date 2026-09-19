@@ -7,6 +7,7 @@ import { resolvePetPostLocation } from "../lib/pet-location";
 import { alreadyPosted, dueSlot, parseSchedule } from "../lib/posting-schedule";
 import { isPetsPaused } from "../lib/settings";
 import { tracked } from "@/lib/jobs";
+import { localeFor } from "../lib/locale";
 
 /**
  * Seeded personas posting on their own schedule.
@@ -93,14 +94,17 @@ export const runMockPost = inngest.createFunction(
       const [profile] = await db.select().from(mockProfiles).where(eq(mockProfiles.userId, userId));
       if (!profile) return null;
       const pet = await petForMockUser(userId);
-      return pet ? { profile, pet } : null;
+      // A seeded neighbourhood is only convincing in its own language, and the
+      // persona's language is its user row's — no second place to set it.
+      const locale = await localeFor(userId);
+      return pet ? { profile, pet, locale } : null;
     });
     if (!context) return { skipped: "no persona or pet" };
 
     const imageCount = Math.random() < IMAGE_CHANCE ? 1 + Math.floor(Math.random() * MAX_IMAGES) : 0;
 
     const draft = await step.run("write-post", () =>
-      generateMockPost(context.profile, context.pet, { imageCount }),
+      generateMockPost(context.profile, context.pet, { imageCount, locale: context.locale }),
     );
 
     const at = await step.run("place-post", () => resolvePetPostLocation(userId));

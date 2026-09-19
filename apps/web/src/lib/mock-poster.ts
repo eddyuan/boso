@@ -5,6 +5,8 @@ import { db, pets, posts } from "@bsocial/db";
 import { getPetModel } from "./ai";
 import { storeImage } from "./images";
 import { recordApiCallQuietly } from "./api-spend";
+import { DEFAULT_LOCALE, type Locale } from "@bsocial/shared";
+import { languageInstruction } from "./locale";
 
 /**
  * Writing a post in a seeded persona's voice.
@@ -67,7 +69,7 @@ export function describePersona(profile: PersonaVoice, pet: PetRow): string {
 export async function generateMockPost(
   profile: PersonaVoice,
   pet: PetRow,
-  options: { imageCount?: number; rng?: () => number } = {},
+  options: { imageCount?: number; rng?: () => number; locale?: Locale } = {},
 ): Promise<GeneratedPost> {
   const rng = options.rng ?? Math.random;
 
@@ -90,7 +92,8 @@ Write ONE short post (max ${POST_MAX_LENGTH} characters), in character.
 This one should be: ${angle}.
 Ground it in your actual neighbourhood. Casual and human — no hashtag spam, no
 emoji pile-ups, never mention being an AI. Don't open with a greeting.
-Reply with the post text only.`,
+Reply with the post text only.
+${languageInstruction(options.locale ?? DEFAULT_LOCALE)}`,
     prompt: `Your recent posts (do not repeat their subjects, openings or rhythm):
 ${recent.map((p) => `- ${p.content}`).join("\n") || "(none yet)"}
 
