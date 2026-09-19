@@ -20,6 +20,9 @@ One self-contained page with all 67 artboards, grouped by canvas page, with a ju
 50/75/100% zoom. The shared kit is inlined once rather than per artboard, so it opens straight from
 disk with no server and no network beyond the Google Fonts link.
 
+`open design/app-ui/tielo-app-ui.html` opens the same set in the canvas editor instead, with its
+pages and positions.
+
 Individual artboards also open on their own (`open design/app-ui/RmMissions.dc.html`). That needs
 `support.js`, which is a small local shim — the canvas editor's own script was never committed, so
 without it `<x-dc>` and `<helmet>` fall back to unknown inline elements and the layout comes out
@@ -95,15 +98,32 @@ stopped describing the product.
   — the diary, the morning digest, the comeback nudge — has only ever been
   invoked directly.
 
-## Stale: the published bundles
+## The published bundles
 
-`tielo-app-ui.html` (3.5 MB, published 2026-09-18) and `bsocial-app-ui.html`
-(2.8 MB, 2026-09-15) are **self-contained canvas exports with the artboard
-content inlined**. They are snapshots, not sources, and they still contain the
-old drawings — the leaderboard, "Energy %", "3 of 20", the 15-mission prize.
+`tielo-app-ui.html` (3.6 MB) and `bsocial-app-ui.html` (2.7 MB) are self-contained canvas exports:
+the whole editor plus every artboard, inlined. Both are **up to date as of 2026-09-19**.
 
-They were not hand-patched on purpose: editing inlined copies inside a
-multi-megabyte editor bundle risks corrupting it, and the copies would drift from
-these files again at the next change. Re-publish them from the canvas editor to
-refresh; until then, **the `.dc.html` files and `canvas.json` are the source of
-truth.**
+They're regenerable rather than hand-maintained. Each holds a
+`<script type="application/json" id="appifact-doc">` payload with a filename → contents map, so
+refreshing one means replacing that map from disk and re-serialising — never editing the inlined
+copies by hand. Two details matter when doing it:
+
+- **`<` must be written `\u003c` throughout the payload.** A literal one lets an artboard's markup
+  terminate the `<script>` tag it lives in.
+- **Serialise with `ensure_ascii=False`.** The originals contain non-ASCII characters and escaping
+  them would needlessly rewrite every artboard.
+
+The two bundles differ on purpose:
+
+| | Artboards | Canvas pages |
+|---|---|---|
+| `tielo-app-ui.html` | all 67 | 12 — including the roadmap |
+| `bsocial-app-ui.html` | 25 | 5 — an earlier export, pre-roadmap |
+
+`bsocial-app-ui.html` keeps its own smaller canvas because that's the only one consistent with the
+25 artboards it carries; its contents were refreshed, its structure left alone. It's effectively
+superseded by the other bundle and could be deleted.
+
+**The `.dc.html` files and `canvas.json` remain the source of truth.** The bundles are exports of
+them, and `review.html` is a third view of the same content — all three need regenerating after an
+artboard changes.

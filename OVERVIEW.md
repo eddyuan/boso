@@ -451,8 +451,9 @@ Design system: `constants/theme.ts` (golden light/dark tokens), Fredoka + Nunito
 `components/ui/*` (button, field, chips, option cards, badges, cards/rows, progress, code input, SVG icons),
 `components/mascot/*` (cockatiel with 12 moods, bunny, cat, egg). Mockups: [design/app-ui](design/app-ui/README.md) —
 67 artboards; the `app` page holds the composed tabs, the `Rm*` artboards hold per-feature detail with the
-reasoning attached. Redrawn 2026-09-19 against what shipped; see that README for the drift log and for
-why the two published `*-app-ui.html` bundles are stale snapshots rather than sources.
+reasoning attached. Redrawn 2026-09-19 against what shipped; see that README for the drift log. `review.html` shows all
+67 on one page; the two published `*-app-ui.html` canvas bundles are regenerated from the same
+sources and are current.
 
 Feature cards live in `components/`: `missions-card`, `playdates-card`, `treasure-shelf`, `viewers-sheet`,
 `comment-sheet`, `sensitive-cover`. Each returns `null` when it has nothing to show, so a screen never
@@ -1211,4 +1212,5 @@ a person can supply, which is why `/admin/roadmap` now marks them **Needs you** 
 | 2026-09-18 | Import venues on demand for areas nobody has seeded, billed once per cell and capped |
 | 2026-09-18 | Venue photos (max 10 each) stored in our own bucket, with attribution; fixed an empty `S3_ENDPOINT` silently sending every upload to local disk |
 | 2026-09-19 | Design: redrew the canvas against what shipped — 67 artboards, 7 new, the leaderboard replaced by the neighbourhood goal, and 11 corrected where the drawings had stopped matching the code |
+| 2026-09-19 | Design: regenerated both published canvas bundles from the artboards, added `review.html` and the missing `support.js` |
 | 2026-09-18 | Backfill photo handles lazily via Place Details, so venues imported before the field-mask change can get photos too |
