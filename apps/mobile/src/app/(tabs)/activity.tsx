@@ -4,6 +4,8 @@ import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
 import { Screen } from '@/components/auth-form';
 import { EmptyState } from '@/components/empty-state';
+import { MissionsCard, type Mission } from '@/components/missions-card';
+import { PlaydatesCard, type Playdates } from '@/components/playdates-card';
 import { ThemedText } from '@/components/themed-text';
 import { Badge, Card, Divider, ErrorText, IconTile } from '@/components/ui/controls';
 import { Button } from '@/components/ui/button';
@@ -53,6 +55,16 @@ export default function ActivityTab() {
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [diary, setDiary] = useState<DiaryEntry[]>([]);
+  const [missions, setMissions] = useState<Mission[]>([]);
+  const [playdates, setPlaydates] = useState<Playdates | null>(null);
+
+  const loadPlaydates = useCallback(
+    () =>
+      apiFetch<Playdates>('/api/me/playdates')
+        .then(setPlaydates)
+        .catch(() => {}),
+    [],
+  );
 
   const load = useCallback(
     () =>
@@ -68,7 +80,11 @@ export default function ActivityTab() {
       apiFetch<{ entries: DiaryEntry[] }>('/api/me/diary?limit=7')
         .then((r) => setDiary(r.entries))
         .catch(() => {});
-    }, [load]),
+      apiFetch<{ missions: Mission[] }>('/api/me/missions')
+        .then((r) => setMissions(r.missions))
+        .catch(() => {});
+      loadPlaydates();
+    }, [load, loadPlaydates]),
   );
 
   const decide = async (action: PetAction, decision: 'approve' | 'reject') => {
@@ -94,6 +110,9 @@ export default function ActivityTab() {
       <ThemedText themeColor="textSecondary">Everything your pet did while you were away.</ThemedText>
       <ErrorText message={error} />
       {!actions && !error && <ActivityIndicator color={theme.primaryPress} />}
+
+      <MissionsCard missions={missions} />
+      {playdates && <PlaydatesCard data={playdates} onChange={loadPlaydates} />}
 
       {pending.length > 0 && (
         <Card style={[styles.pending, { borderColor: theme.primaryPress, backgroundColor: theme.primarySoft }]}>

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { and, arrayOverlaps, desc, eq, inArray, isNotNull, lt, notInArray, sql, type SQL } from "drizzle-orm";
 import { z } from "zod";
-import { comments, db, follows, likes, pets, posts, users } from "@bsocial/db";
+import { comments, db, follows, likes, pets, postViews, posts, users } from "@bsocial/db";
 import { mediaByPostId } from "@/lib/post-media";
 import { requireSession } from "@/lib/session";
 import { recordLocation } from "@/lib/location";
@@ -123,6 +123,9 @@ export async function GET(req: Request) {
       likeCount: sql<number>`(select count(*) from ${likes} where ${likes.postId} = ${posts.id})`.mapWith(Number),
       likedByMe: sql<boolean>`exists (select 1 from ${likes} where ${likes.postId} = ${posts.id} and ${likes.petId} = ${myPet.id})`,
       commentCount: sql<number>`(select count(*) from ${comments} where ${comments.postId} = ${posts.id})`.mapWith(Number),
+      /** Your own posts come through the feed too; only you get to see who looked. */
+      mine: sql<boolean>`${posts.petId} = ${myPet.id}`,
+      viewCount: sql<number>`(select count(*) from ${postViews} where ${postViews.postId} = ${posts.id})`.mapWith(Number),
     })
     .from(posts)
     .innerJoin(pets, eq(pets.id, posts.petId))

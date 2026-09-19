@@ -448,6 +448,10 @@ Design system: `constants/theme.ts` (golden light/dark tokens), Fredoka + Nunito
 `components/ui/*` (button, field, chips, option cards, badges, cards/rows, progress, code input, SVG icons),
 `components/mascot/*` (cockatiel with 12 moods, bunny, cat, egg). Mockups: design/app-ui (roadmap screens are the `Rm*` artboards on the "Roadmap ·" canvas pages).
 
+Feature cards live in `components/`: `missions-card`, `playdates-card`, `treasure-shelf`, `viewers-sheet`,
+`comment-sheet`, `sensitive-cover`. Each returns `null` when it has nothing to show, so a screen never
+carries an empty shell — an absent card is the empty state.
+
 | Route | Purpose |
 |---|---|
 | `sign-in`, `sign-up` | Email/password, Google, Apple, "Continue with phone" |
@@ -456,12 +460,12 @@ Design system: `constants/theme.ts` (golden light/dark tokens), Fredoka + Nunito
 | `verify-contact` | Gate for accounts without a verified contact |
 | `age-restricted` | Shown to under-18 accounts |
 | `onboarding/*` | The 9 onboarding steps (`index` resumes at the next step) |
-| `(tabs)/index` | **Map** tab (main): your pet in 3D, a blue dot for you, posts as photo markers. Tapping a post opens a detail panel — a draggable sheet on phones, a side card from tablet width up |
-| `(tabs)/feed` | Nearby / Following / Discover segments; posts by people and by pets, with distances |
+| `(tabs)/index` | **Map** tab (main): your pet in 3D, a blue dot for you, posts as photo markers. Tapping a post opens a detail panel — a draggable sheet on phones, a side card from tablet width up. Also today's **whiskers** line and the **Send them out** errand button, both of which need a location |
+| `(tabs)/feed` | Nearby / Following / Discover segments; posts by people and by pets, with distances. Your own posts carry an eye count that opens **who looked** |
 | `compose` | Write a post as yourself, optionally placed on the map |
 | `search` | Find people by name, or see who has posted near you |
-| `(tabs)/activity` | Your pet's diary, what it did, and what's waiting for your answer |
-| `(tabs)/profile` | You, your interests, your pet with its mood and daily care, links to account/devices, and the **Show sensitive content** switch |
+| `(tabs)/activity` | Today's three **missions**, open **playdate** invites and nearby pets to ask, your pet's diary, what it did, and what's waiting for your answer |
+| `(tabs)/profile` | You, your interests, your pet with its mood, bond level and daily care, the **treasure shelf**, its circle of friends, links to account/devices, and the **Show sensitive content** switch |
 | `account` | Contact info, linked sign-in methods (link/unlink) |
 | `devices` | Signed-in devices, sign out one / all others |
 | `dev-map` | Dev-only: the map on its own, full screen |
@@ -918,10 +922,23 @@ npx inngest-cli dev     # optional: run the pet loop locally (dashboard :8288)
 - Onboarding (9 steps) incl. age gate, nickname, pet creation, permissions
 - Map tab on web: real Mapbox map, animated 3D pet, posts as photo markers
 
+### Verified, but not proven in production
+
+Worth stating plainly, because "built" reads like "working":
+
+- **No scheduled job has ever run under a live Inngest scheduler.** The diary, morning digest,
+  comeback pushes, mock posting and classification have all been exercised by calling their
+  functions directly against the real database — never on a cron.
+- **No mobile screen has been looked at on a device.** Every surface below type-checks and binds to
+  a verified API shape, but layout, spacing and dark mode are unseen. That includes all six surfaces
+  added on 2026-09-18.
+- **Expo push delivery is unexercised.** The capping and quiet-hour rules are verified; an actual
+  push has never reached a handset.
+
 ### Known gaps
 - [x] ~~No approval endpoint for `pending` pet actions~~ — answerable from the app's Activity tab and from admin **Agent activity**. Approving replays the stored decision through `executeAction`.
 - [ ] Open question: should simple actions (like/visit/follow) also wait for approval when the pet is set to "Ask me first"? Currently all actions do.
-- [x] ~~Post views recorded but never surfaced~~ — `GET /api/posts/:postId/viewers` returns them to the author. No UI yet.
+- [x] ~~Post views recorded but never surfaced~~ — `GET /api/posts/:postId/viewers` returns them to the author, shown behind an eye count on your own posts in the feed. Author-only, enforced server-side; there is deliberately no "posts you looked at" view.
 - [x] ~~No automated moderation~~ — every post (human and agent) is classified for topics and safety, with an admin review queue. **Not yet covered:** videos aren't scored (left to human review rather than passed as safe), and there's no automated re-scan when thresholds change — an admin re-queues a batch from the Review page.
 - [x] ~~Pets don't set coordinates~~ — pet posts now anchor to the owner's home area, offset by the wander model and snapped to nearby venues.
 - [ ] Compose (the app screen) has no photo picker yet — `POST /api/posts` already accepts up to 20 `media[]` items, but only the admin tools (seeding, mock-user posts) attach any; needs an upload endpoint like the avatar one plus UI.
@@ -1000,3 +1017,4 @@ npx inngest-cli dev     # optional: run the pet loop locally (dashboard :8288)
 | 2026-09-17 | **Comment threading schema**: `comments` gained `parentId` (flat, one-level threading — always points at the thread's top-level comment) and `replyToPetId` (the "@Name" target), plus a new `comment_likes` table and `post_media.commentId` so replies can eventually carry photos too. No API/UI uses this yet |
 | 2026-09-18 | Design: roadmap mockups in design/app-ui: 27 `Rm*` artboards across six "Roadmap ·" canvas pages (overview + one per phase), following the plan-data principles (levels unlock expression only, bots never become friends, mood dips and levels never do) |
 | 2026-09-18 | Daily missions, derived from the bond ledger so reward and evidence are one table |
+| 2026-09-18 | UI for six features that had none: missions and playdates on Activity, treasure shelf on Profile, whiskers line and errands on the map, who-looked on your own posts |

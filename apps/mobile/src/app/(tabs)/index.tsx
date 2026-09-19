@@ -26,6 +26,8 @@ import { timeAgo } from '@/lib/time';
 import { FontFamily } from '@/constants/theme';
 
 type Pet = { id: string; name: string; species: string; autoApprove: boolean };
+type Whiskers = { line: string; sourcePostIds: string[] } | null;
+type ErrandResult = { posts: MapPost[]; foundNothing: boolean };
 
 // Main tab: the map, with your pet at your location and nearby posts shown
 // as their photo.
@@ -40,6 +42,9 @@ export default function MapTab() {
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [petAway, setPetAway] = useState<string | null>(null);
+  const [whiskers, setWhiskers] = useState<Whiskers>(null);
+  const [errand, setErrand] = useState<ErrandResult | null>(null);
+  const [sending, setSending] = useState(false);
   const { data: session } = authClient.useSession();
   const showSensitive = session?.user?.showSensitiveContent ?? false;
   const sheetCovered =
@@ -65,10 +70,35 @@ export default function MapTab() {
   async function locate() {
     try {
       const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      setLocation({ latitude: position.coords.latitude, longitude: position.coords.longitude });
+      const next = { latitude: position.coords.latitude, longitude: position.coords.longitude };
+      setLocation(next);
+      // Today's gossip is generated once server-side and cached for the day, so
+      // asking again on every focus is cheap and always returns the same line.
+      apiFetch<{ whiskers: Whiskers }>(
+        `/api/me/whiskers?latitude=${next.latitude}&longitude=${next.longitude}`,
+      )
+        .then((r) => setWhiskers(r.whiskers))
+        .catch(() => {});
     } catch {
       setError("Couldn't get your location.");
     }
+  }
+
+  /** Send the pet off to fetch what's been happening within a few streets. */
+  async function sendErrand() {
+    if (!location || sending) return;
+    setSending(true);
+    setError(null);
+    try {
+      const r = await apiFetch<ErrandResult>('/api/me/errand', {
+        method: 'POST',
+        body: JSON.stringify(location),
+      });
+      setErrand(r);
+    } catch {
+      setError("Couldn't send them out just now.");
+    }
+    setSending(false);
   }
 
   async function askForLocation() {
@@ -187,9 +217,32 @@ export default function MapTab() {
               )}
             </Card>
           ) : (
-            posts.length > 0 && (
-              <Badge tone="brand" label={`${posts.length} post${posts.length === 1 ? '' : 's'} around you`} />
-            )
+            <>
+              {/* One line of local news a day. Tappable through to the posts it
+                  came from, so it's never a claim you can't check. */}
+              {whiskers && (
+                <Card style={styles.whiskers}>
+                  <Icon name="sparkle" size={16} color={theme.primaryInk} />
+                  <ThemedText type="small" style={{ flex: 1 }}>
+                    {whiskers.line}
+                  </ThemedText>
+                </Card>
+              )}
+              <View style={styles.bottomRow} pointerEvents="box-none">
+                {posts.length > 0 && (
+                  <Badge tone="brand" label={`${posts.length} post${posts.length === 1 ? '' : 's'} around you`} />
+                )}
+                {pet && (
+                  <Button
+                    variant="secondary"
+                    label={sending ? 'Off they go…' : `Send ${pet.name} out`}
+                    onPress={sendErrand}
+                    disabled={sending}
+                    icon={<Icon name="shuffle" size={18} color={theme.primaryInk} />}
+                  />
+                )}
+              </View>
+            </>
           )}
         </View>
       </SafeAreaView>
@@ -254,6 +307,44 @@ export default function MapTab() {
           </>
         )}
       </BottomSheet>
+
+      <BottomSheet
+        open={errand !== null}
+        onClose={() => setErrand(null)}
+        header={
+          <View style={{ gap: 2 }}>
+            <ThemedText type="label">
+              {errand?.foundNothing ? 'Nothing doing' : `${errand?.posts.length} thing${errand?.posts.length === 1 ? '' : 's'} nearby`}
+            </ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              {errand?.foundNothing
+                ? `${pet?.name ?? 'Your pet'} had a good look around and came back empty-pawed.`
+                : `${pet?.name ?? 'Your pet'} brought these back from a few streets away.`}
+            </ThemedText>
+          </View>
+        }>
+        {/* Finding nothing is a real outcome, not an error — the pet still went. */}
+        {errand?.posts.map((post) => (
+          <View key={post.id} style={[styles.errandPost, { backgroundColor: theme.backgroundElement }]}>
+            <View style={styles.postHead}>
+              <View style={[styles.petAvatar, { backgroundColor: theme.primarySoft }]}>
+                <CompanionArt species={post.species} size={26} />
+              </View>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <ThemedText type="smallBold" numberOfLines={1}>
+                  {post.authoredByAgent ? post.petName : post.ownerName?.trim() || post.petName}
+                </ThemedText>
+                <ThemedText type="caption" themeColor="textSecondary" numberOfLines={1}>
+                  {[post.placeName, timeAgo(post.createdAt)].filter(Boolean).join(' · ')}
+                </ThemedText>
+              </View>
+            </View>
+            <ThemedText type="small" numberOfLines={4}>
+              {post.content}
+            </ThemedText>
+          </View>
+        ))}
+      </BottomSheet>
     </ThemedView>
   );
 }
@@ -282,6 +373,15 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   prompt: { padding: Spacing.lg, gap: Spacing.sm, alignSelf: 'stretch' },
+  whiskers: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    padding: Spacing.md,
+    alignSelf: 'stretch',
+  },
+  bottomRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, flexWrap: 'wrap' },
+  errandPost: { padding: Spacing.md, borderRadius: Radius.field, gap: Spacing.sm },
   postCard: { padding: Spacing.lg, gap: Spacing.sm, alignSelf: 'stretch' },
   postHead: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
   postNameRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },

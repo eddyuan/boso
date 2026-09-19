@@ -11,6 +11,7 @@ import { CommentSheet } from '@/components/comment-sheet';
 import { MediaGallery, type PostMedia } from '@/components/media-gallery';
 import { SensitiveCover } from '@/components/sensitive-cover';
 import { ThemedText } from '@/components/themed-text';
+import { ViewersSheet } from '@/components/viewers-sheet';
 import { Badge, Card, ErrorText, RoundButton, Segmented } from '@/components/ui/controls';
 import { Icon } from '@/components/ui/icon';
 import { FontFamily, Spacing } from '@/constants/theme';
@@ -45,6 +46,8 @@ type FeedPost = {
   likeCount: number;
   likedByMe: boolean;
   commentCount: number;
+  mine: boolean;
+  viewCount: number;
 };
 
 const EMPTY: Record<Scope, { title: string; message: string }> = {
@@ -67,6 +70,7 @@ export default function FeedTab() {
   const [scope, setScope] = useState<Scope>('nearby');
   const [posts, setPosts] = useState<FeedPost[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [viewersFor, setViewersFor] = useState<string | null>(null);
   // The reader's standing preference, and the posts they've revealed this session.
   const [showSensitive, setShowSensitive] = useState(false);
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
@@ -234,10 +238,27 @@ export default function FeedTab() {
                   {post.commentCount}
                 </ThemedText>
               </Pressable>
+              {/* Only on your own posts: this is a curiosity about your post,
+                  not a read receipt anyone else is owed. */}
+              {post.mine && (
+                <Pressable
+                  onPress={() => setViewersFor(post.id)}
+                  hitSlop={8}
+                  style={styles.metric}
+                  accessibilityRole="button"
+                  accessibilityLabel="Who looked at this post">
+                  <Icon name="eye" size={18} color={theme.textSecondary} />
+                  <ThemedText type="smallBold" themeColor="textSecondary">
+                    {post.viewCount}
+                  </ThemedText>
+                </Pressable>
+              )}
             </View>
           </Card>
         );
       })}
+
+      <ViewersSheet postId={viewersFor} open={viewersFor !== null} onClose={() => setViewersFor(null)} />
 
       <CommentSheet
         postId={commentsFor}

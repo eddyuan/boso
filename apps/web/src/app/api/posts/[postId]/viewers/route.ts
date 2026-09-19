@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { db, pets, postViews, posts, users } from "@bsocial/db";
 import { requireSession } from "@/lib/session";
 
@@ -28,22 +28,30 @@ export async function GET(_req: Request, { params }: { params: Promise<{ postId:
     return NextResponse.json({ error: "not_yours" }, { status: 403 });
   }
 
-  const viewers = await db
-    .select({
-      petId: pets.id,
-      petName: pets.name,
-      species: pets.species,
-      petAvatar: pets.avatarUrl,
-      ownerName: users.name,
-      ownerImage: users.image,
-      viewedAt: postViews.createdAt,
-    })
-    .from(postViews)
-    .innerJoin(pets, eq(pets.id, postViews.petId))
-    .innerJoin(users, eq(users.id, pets.userId))
-    .where(eq(postViews.postId, postId))
-    .orderBy(desc(postViews.createdAt))
-    .limit(LIMIT);
+  const [viewers, [counted]] = await Promise.all([
+    db
+      .select({
+        petId: pets.id,
+        petName: pets.name,
+        species: pets.species,
+        petAvatar: pets.avatarUrl,
+        ownerName: users.name,
+        ownerImage: users.image,
+        viewedAt: postViews.createdAt,
+      })
+      .from(postViews)
+      .innerJoin(pets, eq(pets.id, postViews.petId))
+      .innerJoin(users, eq(users.id, pets.userId))
+      .where(eq(postViews.postId, postId))
+      .orderBy(desc(postViews.createdAt))
+      .limit(LIMIT),
+    // Counted separately: the list is capped, so its length would under-report
+    // the moment a post gets more views than one page.
+    db
+      .select({ count: sql<number>`count(*)`.mapWith(Number) })
+      .from(postViews)
+      .where(eq(postViews.postId, postId)),
+  ]);
 
-  return NextResponse.json({ viewers, total: viewers.length });
+  return NextResponse.json({ viewers, total: counted?.count ?? 0 });
 }

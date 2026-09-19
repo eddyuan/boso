@@ -15,7 +15,12 @@
 export type Effort = "S" | "M" | "L";
 
 export type Status =
-  /** Done and live. */
+  /**
+   * Built, type-checked and verified against the real database. Not the same as
+   * proven in production: nothing scheduled has run under a live Inngest
+   * scheduler yet, and no mobile screen here has been looked at on a device.
+   * See "Known gaps" in OVERVIEW.md before treating one of these as done.
+   */
   | "shipped"
   /** Everything it depends on exists; can be picked up today. */
   | "ready"
@@ -170,7 +175,7 @@ export const PHASES: Phase[] = [
           "The single highest-leverage change on this board. It turns the map from empty to populated without acquiring one extra user, and every map feature below is dead without it.",
         effort: "S",
         impact: 5,
-        status: "ready",
+        status: "shipped",
         existing: [
           "posts.latitude/longitude exist and the map reads them",
           "The wander system already models where a pet roams (5 km leash)",
@@ -190,7 +195,7 @@ export const PHASES: Phase[] = [
           "A neighbourhood needs ambient activity before real users arrive, and this is the only lever that works at zero users. Phase 1 of the bot system shipped months of groundwork and stops one step short of the payoff.",
         effort: "M",
         impact: 5,
-        status: "blocked",
+        status: "shipped",
         needs: ["pet-coords"],
         existing: [
           "mock_profiles: background, tone, traits, interests, postingSchedule",
@@ -210,7 +215,7 @@ export const PHASES: Phase[] = [
         why: "Density in the few blocks where users actually are beats a thin scatter across a whole city.",
         effort: "S",
         impact: 3,
-        status: "ready",
+        status: "shipped",
         existing: ["/admin/map shows post density, places and stray homes", "Seeding tools and place import already exist"],
         todo: ["Pick launch neighbourhoods", "Seed to a target posts-per-km²", "Re-check coverage after each run"],
       },
@@ -251,7 +256,7 @@ export const PHASES: Phase[] = [
           "The core dopamine moment of any social app, and the payoff for the product's best trick: your pet wrote something charming and a stranger replied to it. Today the feed shows a like count nobody can increment.",
         effort: "M",
         impact: 5,
-        status: "ready",
+        status: "shipped",
         existing: [
           "likes and comment_likes tables shipped",
           "Flat one-level threading shipped: comments.parentId + replyToPetId",
@@ -271,7 +276,7 @@ export const PHASES: Phase[] = [
           "'Ask me first' is currently a dead end — pending actions pile up and count against the budget with no way to answer them. This is the product's trust ritual and its most distinctive interaction; it's also the natural thing to send a notification about.",
         effort: "M",
         impact: 5,
-        status: "ready",
+        status: "shipped",
         existing: [
           "pet_actions stores the full payload and plain-English reasoning",
           "Admins can already approve/reject; executeAction replays the stored decision",
@@ -291,7 +296,7 @@ export const PHASES: Phase[] = [
           "Pure curiosity, and the cheapest retention hook on the board — the data is already being written on every pet visit and shown to nobody. 'Three pets sniffed at your post' is a reason to open the app.",
         effort: "S",
         impact: 3,
-        status: "ready",
+        status: "shipped",
         existing: ["post_views records a unique row per pet/post on every visit action"],
         todo: ["Viewer list on the post detail sheet", "A weekly line in the diary once that exists"],
       },
@@ -317,7 +322,7 @@ export const PHASES: Phase[] = [
           "The re-engagement loop, and the only mechanism that reaches someone who has closed the app. Every message points at a real decision the pet made, so it reads as news rather than nagging.",
         effort: "M",
         impact: 5,
-        status: "blocked",
+        status: "shipped",
         needs: ["approvals"],
         existing: ["Expo push tokens registered per device", "pet_actions is a stream of real, describable events"],
         todo: [
@@ -334,7 +339,7 @@ export const PHASES: Phase[] = [
           "Turns an audit log into a story worth reading, and it's the most screenshot-able artifact the product can make — which is also how it gets shared. Built entirely from data already stored.",
         effort: "M",
         impact: 4,
-        status: "ready",
+        status: "shipped",
         existing: ["Every decision already carries human-readable reasoning", "12 mood art states exist for the illustrations"],
         todo: ["Nightly Inngest job summarising the day", "Shareable card", "Browsable timeline on Profile"],
       },
@@ -345,7 +350,7 @@ export const PHASES: Phase[] = [
         why: "The respectful default for people who don't want event-by-event pings, and it reuses the diary as its payload.",
         effort: "S",
         impact: 3,
-        status: "blocked",
+        status: "shipped",
         needs: ["diary", "comeback-push"],
         todo: ["One send at local morning", "Skip quiet nights", "Per-user choice between digest and live pings"],
       },
@@ -357,7 +362,7 @@ export const PHASES: Phase[] = [
           "The emotional pull for return visits, and the cheapest way to make the companion feel alive rather than mechanical. It must tug, never gate — a sad pet does not lock features.",
         effort: "M",
         impact: 4,
-        status: "ready",
+        status: "shipped",
         existing: ["12 mood art states already drawn", "Interaction history is all there in pet_actions"],
         todo: ["Derive mood from recent activity and time since check-in", "Overnight decay", "Show the reason, never just a face"],
       },
@@ -369,7 +374,7 @@ export const PHASES: Phase[] = [
           "A habit floor. Deliberately small: it should be a reason to open the app, not the thing you do once you're there, and it must never gate anything.",
         effort: "S",
         impact: 3,
-        status: "blocked",
+        status: "shipped",
         needs: ["mood"],
         todo: ["Once-daily actions resetting at midnight", "A short mascot animation each", "Small mood nudge, small XP"],
       },
@@ -395,7 +400,7 @@ export const PHASES: Phase[] = [
           "Nothing else on this board is hard to copy; this is. It generates stories people screenshot — 'my cockatiel and the dog down the street have a thing going' — entirely out of the decision log you already keep.",
         effort: "L",
         impact: 5,
-        status: "blocked",
+        status: "shipped",
         needs: ["like-comment", "pet-coords"],
         existing: ["Every interaction between two pets is already logged with a reason"],
         todo: [
@@ -412,7 +417,7 @@ export const PHASES: Phase[] = [
           "The moment the app stops being parallel play and becomes a reason to be in the same place as someone. Both-opt-in keeps it safe; friendly-pets-first means it's earned, not random.",
         effort: "L",
         impact: 4,
-        status: "blocked",
+        status: "shipped",
         needs: ["relationships"],
         todo: [
           "Proximity match on owner location plus affinity",
@@ -428,7 +433,7 @@ export const PHASES: Phase[] = [
         why: "Gives the map destinations instead of scatter, and concentrates thin activity where it reads as busy.",
         effort: "L",
         impact: 4,
-        status: "blocked",
+        status: "ready",
         needs: ["pet-coords"],
         existing: ["places table with categories, imported per area"],
         todo: ["Mark hotspots in admin", "Pets path toward them while wandering", "Place-scoped ephemeral thread"],
@@ -441,7 +446,7 @@ export const PHASES: Phase[] = [
           "Makes the fetch metaphor real. The pet already flies over and brings things back as pure decoration — this is the version you can actually press.",
         effort: "M",
         impact: 4,
-        status: "blocked",
+        status: "shipped",
         needs: ["pet-coords"],
         existing: ["Wander/flight animation and pathing already implemented on the web map"],
         todo: ["Pick a destination on the map", "Travel + return animation", "Results ranked by interest and topic overlap"],
@@ -453,7 +458,7 @@ export const PHASES: Phase[] = [
         why: "A daily reason to look, written from real nearby activity rather than invented.",
         effort: "M",
         impact: 3,
-        status: "blocked",
+        status: "shipped",
         needs: ["relationships"],
         todo: ["Nightly digest of local signals", "One AI-written line with its sources", "Tap through to the real posts"],
       },
@@ -479,7 +484,7 @@ export const PHASES: Phase[] = [
           "The spine for cosmetics, treasures and titles. Permanent and non-decaying, so a fortnight away is never punished. It must gate what your pet looks like and can carry, not who you can meet: the earlier draft locked playdates until day 3–4 and Whiskers until day 16, which charges new users for the social access that would have kept them.",
         effort: "L",
         impact: 4,
-        status: "blocked",
+        status: "shipped",
         needs: ["care", "approvals"],
         todo: [
           "bond_level + XP rules in @bsocial/shared",
@@ -507,7 +512,7 @@ export const PHASES: Phase[] = [
         why: "A reason to let the pet roam somewhere new, and a collection tied to actual places rather than abstract points.",
         effort: "M",
         impact: 3,
-        status: "blocked",
+        status: "shipped",
         needs: ["pet-coords"],
         todo: ["Weighted find per long trip", "Neighbourhood-tagged rarity", "Shelf on Profile"],
       },
@@ -518,7 +523,7 @@ export const PHASES: Phase[] = [
         why: "Orients a session for people who open the app without a reason. Only works once there are enough actions worth setting goals about.",
         effort: "M",
         impact: 3,
-        status: "blocked",
+        status: "shipped",
         needs: ["like-comment", "bond-level"],
         todo: ["Three a day, mixed fixed and random", "Progress from existing signals", "Rewards feed the cosmetic economy"],
       },
@@ -530,7 +535,7 @@ export const PHASES: Phase[] = [
           "Time-boxed reasons to return and the closest thing to a press hook. Weekly resets avoid permanent losers; seeded accounts can add texture but shouldn't be beatable rivals.",
         effort: "L",
         impact: 3,
-        status: "blocked",
+        status: "ready",
         needs: ["missions"],
         todo: ["Scheduled event config in admin", "Map decorations and event-only rewards", "Weekly per-area ranking with reset"],
       },

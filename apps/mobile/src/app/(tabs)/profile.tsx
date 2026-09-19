@@ -16,6 +16,7 @@ import { Pressable, StyleSheet, Switch, View } from 'react-native';
 import { Screen } from '@/components/auth-form';
 import { CompanionArt } from '@/components/mascot/companions';
 import { ThemedText } from '@/components/themed-text';
+import { TreasureShelf, type Treasure } from '@/components/treasure-shelf';
 import { Button } from '@/components/ui/button';
 import { Badge, Card, ChipGroup, Divider, IconTile, ListRow } from '@/components/ui/controls';
 import { Icon } from '@/components/ui/icon';
@@ -46,6 +47,7 @@ export default function ProfileTab() {
   const [caring, setCaring] = useState<CareKind | null>(null);
   const [friends, setFriends] = useState<Relationship[]>([]);
   const [bond, setBond] = useState<BondProgress | null>(null);
+  const [treasures, setTreasures] = useState<{ treasures: Treasure[]; counts: Record<string, number> } | null>(null);
   const [showSensitive, setShowSensitive] = useState(false);
   const [savingSensitive, setSavingSensitive] = useState(false);
 
@@ -61,6 +63,9 @@ export default function ProfileTab() {
         .catch(() => {});
       apiFetch<{ relationships: Relationship[] }>('/api/me/relationships')
         .then((r) => setFriends(r.relationships))
+        .catch(() => {});
+      apiFetch<{ treasures: Treasure[]; counts: Record<string, number> }>('/api/me/treasures')
+        .then(setTreasures)
         .catch(() => {});
     }, []),
   );
@@ -235,6 +240,14 @@ export default function ProfileTab() {
             })}
           </View>
         </Card>
+      )}
+
+      {treasures && (
+        <TreasureShelf
+          treasures={treasures.treasures}
+          counts={treasures.counts}
+          petName={pet?.name ?? 'Your pet'}
+        />
       )}
 
       {friends.length > 0 && (
