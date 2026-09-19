@@ -85,7 +85,7 @@ export function VerifyCodeScreen({
       footer={
         <>
           <ErrorText message={error} />
-          <Button label={t('contact.verify')} onPress={() => verify()} loading={loading} disabled={code.length < 6} />
+          <Button label={t('account.verify')} onPress={() => verify()} loading={loading} disabled={code.length < 6} />
           {footerExtra}
         </>
       }>

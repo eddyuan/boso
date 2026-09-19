@@ -19,9 +19,6 @@ export const en = {
   // ---------------------------------------------------------------- general
   "action.back": "Back",
   "action.close": "Close",
-  "action.retry": "Try again",
-  "action.seeAll": "See all",
-  "common.loading": "Just a moment…",
   "common.today": "Today",
   "common.yesterday": "Yesterday",
   "common.never": "never",
@@ -41,7 +38,6 @@ export const en = {
   "feed.scope.following": "Following",
   "feed.scope.discover": "Discover",
   "feed.byPet": "by pet",
-  "feed.yours": "Yours",
   "feed.empty.nearby.title": "Nothing around you yet",
   "feed.empty.nearby.body": "Posts within 5 km show up here. Be the first — tap + to post something.",
   "feed.empty.following.title": "You follow no one yet",
@@ -93,8 +89,6 @@ export const en = {
   "post.title": "Post",
   "post.unavailable": "This post isn’t available.",
   "post.openThread": "Open the thread",
-  "post.replies_one": "{count} reply",
-  "post.replies_other": "{count} replies",
   "post.noReplies": "No replies yet. Say something.",
   "post.reply.placeholder": "Add a reply…",
   "post.reply.placeholderTo": "Reply to {name}…",
@@ -120,7 +114,6 @@ export const en = {
   "place.here": "Here",
   "place.recent": "{count} in the last {hours} hours",
   "place.quiet": "Nothing said here in the last couple of days.",
-  "place.beFirst": "Be the first to post here",
   "place.beFirstAt": "Be the first to post at {place}",
   "place.looking": "Looking…",
   "place.photoBy": "Photo: {name}",
@@ -348,7 +341,6 @@ export const en = {
   "compose.usingPlaceAbove": "Using the place above",
   "compose.findingYou": "Finding you…",
   "compose.willShowOnMap": "This post will show on the map",
-  "compose.limits": "Up to {max} photos. A place puts the post on the map, where other people within 5 km can find it.",
   "compose.error.post": "Couldn’t post that. Try again.",
   "compose.error.photo": "Couldn’t add one of those photos.",
   "compose.error.photoPermission": "Photo access is off. Turn it on in Settings to add pictures.",
@@ -357,8 +349,6 @@ export const en = {
   "compose.a11y.removePlace": "Remove place",
 
   // ------------------------------------------------------- sensitive cover
-  "sensitive.marked": "Marked sensitive",
-  "sensitive.viewAnyway": "View anyway",
   "sensitive.title": "Sensitive content",
   "sensitive.tapToView": "Tap to view",
   "sensitive.show": "Show {what}",
@@ -377,7 +367,6 @@ export const en = {
   "search.error.load": "Couldn’t search just now.",
 
   // ------------------------------------------------------------ place picker
-  "placePicker.title": "Add a place",
   "placePicker.placeholder": "Search for a place",
   "placePicker.none": "No places mapped around you yet.",
   "placePicker.noMatch": "Nothing here called “{query}”.",
@@ -393,7 +382,6 @@ export const en = {
   "auth.appName": "Tielo",
   "auth.tagline": "Your pet keeps your social life going.",
   "auth.signIn": "Sign in",
-  "auth.signUp": "Sign up",
   "auth.createAccount": "Create an account",
   "auth.newHere": "New here?",
   "auth.haveAccount": "Already have an account?",
@@ -436,7 +424,6 @@ export const en = {
   "contact.code.sent": "We sent a code to {contact}.",
   "contact.code.title": "Enter your code",
   "contact.code.send": "Send code",
-  "contact.verify": "Verify",
   "contact.code.resend": "Resend code",
   "contact.code.resendIn": "Resend code in {seconds}s",
   "contact.error.send": "Couldn’t send the code. Try again.",
@@ -447,7 +434,6 @@ export const en = {
   "onboarding.step": "{index}/{total}",
   "onboarding.notNow": "Not now",
   "onboarding.finish": "Finish",
-  "onboarding.skip": "Skip",
   "onboarding.webOnly.contacts": "Finding friends from contacts is available in the mobile app.",
   "onboarding.webOnly.calendar": "Calendar access is available in the mobile app.",
 
@@ -517,14 +503,12 @@ export const en = {
   "onboarding.profile.addPhoto": "Add photo (optional)",
   "onboarding.profile.changePhoto": "Change photo",
 
-  "onboarding.pet.couldBeA": "It could be a",
   "onboarding.pet.notTheOne": "Not the one?",
   "onboarding.pet.change": "Change",
   "onboarding.pet.name": "Name",
   "onboarding.pet.loves": "{name} loves {interests}",
   "onboarding.pet.lovesWhatYouLove": "{name} loves what you love",
   "onboarding.pet.editLater": "Edit later",
-  "onboarding.pet.autoPost": "Posts on its own",
   "onboarding.pet.askFirst": "Asks you before posting",
 
   "onboarding.contacts.title": "Find your friends",
@@ -597,7 +581,6 @@ export const en = {
   // --------------------------------------------------------- shared dialogs
   "dialog.areYouSure": "Are you sure?",
   "dialog.cancel": "Cancel",
-  "dialog.confirm": "Confirm",
   "dialog.signOut": "Sign out",
 
   // ------------------------------------------------------------ push (server)

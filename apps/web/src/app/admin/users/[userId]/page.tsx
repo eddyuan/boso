@@ -3,7 +3,7 @@
 import { use } from "react";
 import Link from "next/link";
 import { ArrowLeft, Bot, EyeOff, FileText, KeyRound, Monitor, PawPrint, ShieldCheck, User } from "lucide-react";
-import { translatePhrase, type Phrase } from "@bsocial/shared";
+import { translate, translatePhrase, type Phrase, type TranslationKey } from "@bsocial/shared";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EmptyState, Loading, Muted, PageHeader, Panel, TimeAgo } from "../../_components/ui";
@@ -344,7 +344,9 @@ export default function UserDetailPage({ params }: { params: Promise<{ userId: s
               {data.game.mood ? (
                 <>
                   <div className="flex items-baseline gap-2">
-                    <span className="font-display text-2xl font-semibold capitalize">{data.game.mood.name}</span>
+                    <span className="font-display text-2xl font-semibold">
+                      {translate("en", `mood.name.${data.game.mood.name}` as TranslationKey)}
+                    </span>
                     <span className="text-[13px] tabular-nums text-muted-foreground">{data.game.mood.score}/100</span>
                   </div>
                   <ul className="mt-2 space-y-0.5">

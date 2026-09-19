@@ -62,12 +62,23 @@ export default function DevicesScreen() {
       await authClient.signOut();
       return;
     }
-    await apiFetch(`/api/me/sessions/${s.id}`, { method: 'DELETE' });
+    setError(null);
+    try {
+      await apiFetch(`/api/me/sessions/${s.id}`, { method: 'DELETE' });
+    } catch {
+      // Previously silent: the row stayed put and nothing said why.
+      setError(t('devices.error.signOut'));
+    }
     await load();
   }
 
   async function revokeOthers() {
-    await apiFetch('/api/me/sessions', { method: 'DELETE' });
+    setError(null);
+    try {
+      await apiFetch('/api/me/sessions', { method: 'DELETE' });
+    } catch {
+      setError(t('devices.error.signOut'));
+    }
     await load();
   }
 

@@ -10,6 +10,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useT } from '@/lib/i18n';
 import { CompanionArt } from '@/components/mascot/companions';
 import { usePetSummary } from '@/components/pet-summary';
 import { useTabBarVisibility } from '@/components/tab-bar-visibility';
@@ -80,6 +81,7 @@ type TabBarProps = {
  */
 export function FloatingTabBar({ state, descriptors, navigation }: TabBarProps) {
   const theme = useTheme();
+  const { t } = useT();
   const insets = useSafeAreaInsets();
   const { hidden } = useTabBarVisibility();
   const { species, pendingAsks } = usePetSummary();
@@ -177,7 +179,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: TabBarProps) 
       <Pressable
         onPress={() => router.push('/compose')}
         accessibilityRole="button"
-        accessibilityLabel="New post"
+        accessibilityLabel={t('tab.compose')}
         style={({ pressed }) => [
           styles.compose,
           { backgroundColor: theme.surface },
