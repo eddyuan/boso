@@ -1,6 +1,7 @@
 import { and, desc, eq, gt, inArray, isNotNull, isNull, ne, notInArray, sql } from "drizzle-orm";
 import { comments, db, follows, likes, pets, postViews, posts, users } from "@bsocial/db";
-import { INTERESTS } from "@bsocial/shared";
+import { INTERESTS, targetWeight } from "@bsocial/shared";
+import { affinityMap } from "./relationships";
 import { petCandidatePosts } from "./visibility";
 
 // Rule-based pet behaviour. Each hourly tick picks at most one action with
@@ -27,7 +28,7 @@ export type PetDecision =
   | { action: "visit"; postId: string; reasoning: string }
   | { action: "none"; reasoning: string };
 
-type Candidate = { id: string; name: string; sharedInterests: string[] };
+type Candidate = { id: string; name: string; sharedInterests: string[]; affinity?: number };
 
 type PostCandidate = Candidate & { postId: string; content: string };
 
@@ -48,9 +49,14 @@ function because(c: Candidate) {
     : "";
 }
 
-// Weighted random pick favouring candidates with more shared interests.
+/**
+ * Weighted pick: shared interests, then how much this pet already likes them.
+ * Affinity is what makes a pet return to the same few faces instead of
+ * scattering attention evenly — which is the whole reason a relationship is
+ * legible from the outside rather than just a number in a table.
+ */
 function pickCandidate<T extends Candidate>(list: T[], rng: () => number): T {
-  const weights = list.map((c) => 1 + c.sharedInterests.length * 2);
+  const weights = list.map((c) => (1 + c.sharedInterests.length * 2) * targetWeight(c.affinity ?? 0));
   let r = rng() * weights.reduce((a, b) => a + b, 0);
   for (let i = 0; i < list.length; i++) {
     r -= weights[i]!;
@@ -182,10 +188,14 @@ export async function loadPlannerCandidates(
     .orderBy(sql`random()`)
     .limit(CANDIDATE_LIMIT);
 
+  // One lookup for the whole tick; every candidate is weighted against it.
+  const affinity = await affinityMap(petId);
+
   const toCandidate = (r: { id: string; name: string; interests: string[] }): Candidate => ({
     id: r.id,
     name: r.name,
     sharedInterests: shared(r.interests),
+    affinity: affinity.get(r.id) ?? 0,
   });
 
   return {

@@ -17,6 +17,16 @@ import { authClient } from '@/lib/auth-client';
 
 type Pet = { id: string; name: string; species: string; autoApprove: boolean };
 type PetResponse = { pet: Pet | null; mood: Mood | null; careToday: CareKind[] };
+type Relationship = {
+  petId: string;
+  petName: string;
+  species: string;
+  ownerName: string | null;
+  tierLabel: string;
+  blurb: string;
+  affinity: number;
+  interactions: number;
+};
 
 export default function ProfileTab() {
   const theme = useTheme();
@@ -25,6 +35,7 @@ export default function ProfileTab() {
   const [mood, setMood] = useState<Mood | null>(null);
   const [careToday, setCareToday] = useState<CareKind[]>([]);
   const [caring, setCaring] = useState<CareKind | null>(null);
+  const [friends, setFriends] = useState<Relationship[]>([]);
   const [showSensitive, setShowSensitive] = useState(false);
   const [savingSensitive, setSavingSensitive] = useState(false);
 
@@ -36,6 +47,9 @@ export default function ProfileTab() {
           setMood(r.mood);
           setCareToday(r.careToday);
         })
+        .catch(() => {});
+      apiFetch<{ relationships: Relationship[] }>('/api/me/relationships')
+        .then((r) => setFriends(r.relationships))
         .catch(() => {});
     }, []),
   );
@@ -189,6 +203,28 @@ export default function ProfileTab() {
         </Card>
       )}
 
+      {friends.length > 0 && (
+        <Card style={styles.friendsCard}>
+          <ThemedText type="label">{pet?.name ?? 'Your pet'}&apos;s circle</ThemedText>
+          {friends.slice(0, 5).map((friend) => (
+            <View key={friend.petId} style={styles.friendRow}>
+              <View style={[styles.friendArt, { backgroundColor: theme.primarySoft }]}>
+                <CompanionArt species={friend.species} size={28} />
+              </View>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <ThemedText type="smallBold" numberOfLines={1}>
+                  {friend.petName}
+                </ThemedText>
+                <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+                  {friend.blurb} · {friend.interactions} together
+                </ThemedText>
+              </View>
+              <Badge tone={friend.affinity >= 12 ? 'brand' : 'muted'} label={friend.tierLabel} />
+            </View>
+          ))}
+        </Card>
+      )}
+
       <Card>
         <ListRow
           icon={
@@ -250,6 +286,9 @@ const styles = StyleSheet.create({
   petCard: { flexDirection: 'row', alignItems: 'center', gap: Spacing.lg, padding: Spacing.lg },
   petHalo: { width: 104, height: 104, borderRadius: 52, alignItems: 'center', justifyContent: 'center' },
   moodCard: { padding: Spacing.lg, gap: Spacing.sm },
+  friendsCard: { padding: Spacing.lg, gap: Spacing.md },
+  friendRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
+  friendArt: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
   moodHead: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   moodTrack: { height: 6, borderRadius: 3, overflow: 'hidden' },
   moodFill: { height: '100%', borderRadius: 3 },

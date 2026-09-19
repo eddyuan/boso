@@ -677,3 +677,40 @@ export const petDiary = pgTable(
   },
   (t) => [uniqueIndex("pet_diary_day_idx").on(t.petId, t.day)],
 );
+
+/**
+ * How two pets feel about each other, accumulated from what they actually did.
+ *
+ * Stored per ordered pair (a→b and b→a are separate rows) because affinity
+ * isn't always mutual — one pet can be far keener than the other, and that
+ * asymmetry is where the interesting stories come from.
+ *
+ * `score` rises with interaction and decays with silence, so a friendship that
+ * stops being fed fades rather than standing forever.
+ */
+export const petRelationships = pgTable(
+  "pet_relationships",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    petId: uuid("pet_id")
+      .notNull()
+      .references(() => pets.id, { onDelete: "cascade" }),
+    otherPetId: uuid("other_pet_id")
+      .notNull()
+      .references(() => pets.id, { onDelete: "cascade" }),
+    score: doublePrecision("score").notNull().default(0),
+    /** Interactions counted so far, for "you two have met 14 times". */
+    interactions: integer("interactions").notNull().default(0),
+    lastInteractionAt: timestamp("last_interaction_at"),
+    /** When the pair first crossed into being a named friendship. */
+    becameFriendsAt: timestamp("became_friends_at"),
+    updatedAt: timestamp("updated_at")
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [
+    uniqueIndex("pet_relationships_pair_idx").on(t.petId, t.otherPetId),
+    index("pet_relationships_rank_idx").on(t.petId, t.score),
+  ],
+);

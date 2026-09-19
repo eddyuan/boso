@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { inngest } from "@/inngest/client";
 import { resolvePetPostLocation } from "@/lib/pet-location";
 import { sendPush } from "@/lib/push";
+import { recordInteraction } from "@/lib/relationships";
 // A concrete action ready to record: planner decisions (lib/pet-planner.ts),
 // with post text filled in by lib/agent.ts.
 export type PetAction =
@@ -91,15 +92,23 @@ export async function executeAction(petId: string, decision: PetAction) {
       });
       return post;
     }
-    case "like":
-      return db.insert(likes).values({ petId, postId: decision.postId }).onConflictDoNothing();
-    case "comment":
-      return db.insert(comments).values({
-        petId,
-        postId: decision.postId,
-        content: decision.content,
-        authoredByAgent: true,
-      });
+    case "like": {
+      const inserted = await db
+        .insert(likes)
+        .values({ petId, postId: decision.postId })
+        .onConflictDoNothing()
+        .returning({ id: likes.id });
+      if (inserted.length > 0) await creditPostAuthor(petId, decision.postId, "like");
+      return inserted;
+    }
+    case "comment": {
+      const written = await db
+        .insert(comments)
+        .values({ petId, postId: decision.postId, content: decision.content, authoredByAgent: true })
+        .returning({ id: comments.id });
+      await creditPostAuthor(petId, decision.postId, "comment");
+      return written;
+    }
     case "follow": {
       const inserted = await db
         .insert(follows)
@@ -115,6 +124,7 @@ export async function executeAction(petId: string, decision: PetAction) {
           .from(pets)
           .where(eq(pets.id, decision.petId));
         if (follower && followed) {
+          await recordInteraction(petId, decision.petId, "follow");
           await sendPush(followed.userId, {
             type: "pet_friend",
             title: `${followed.name} made a friend`,
@@ -125,9 +135,33 @@ export async function executeAction(petId: string, decision: PetAction) {
       }
       return inserted;
     }
-    case "visit":
-      return db.insert(postViews).values({ petId, postId: decision.postId }).onConflictDoNothing();
+    case "visit": {
+      const viewed = await db
+        .insert(postViews)
+        .values({ petId, postId: decision.postId })
+        .onConflictDoNothing()
+        .returning({ id: postViews.id });
+      if (viewed.length > 0) await creditPostAuthor(petId, decision.postId, "visit");
+      return viewed;
+    }
     case "none":
       return;
   }
+}
+
+/**
+ * Credits the pair behind an interaction with a post. Relationships accumulate
+ * as a side effect of the loop behaving normally, rather than needing a system
+ * of their own.
+ */
+async function creditPostAuthor(
+  actorPetId: string,
+  postId: string,
+  event: "like" | "comment" | "visit",
+): Promise<void> {
+  const [post] = await db.select({ petId: posts.petId }).from(posts).where(eq(posts.id, postId));
+  if (!post) return;
+  await recordInteraction(actorPetId, post.petId, event).catch((error) =>
+    console.error("[actions] affinity update failed:", error),
+  );
 }
