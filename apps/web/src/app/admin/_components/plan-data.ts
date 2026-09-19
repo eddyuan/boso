@@ -433,7 +433,7 @@ export const PHASES: Phase[] = [
         why: "Gives the map destinations instead of scatter, and concentrates thin activity where it reads as busy.",
         effort: "L",
         impact: 4,
-        status: "ready",
+        status: "shipped",
         needs: ["pet-coords"],
         existing: ["places table with categories, imported per area"],
         todo: ["Mark hotspots in admin", "Pets path toward them while wandering", "Place-scoped ephemeral thread"],

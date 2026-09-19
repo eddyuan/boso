@@ -22,6 +22,7 @@ const base = {
   ownerImage: null,
   moderationStatus: 'approved' as const,
   sensitiveCategories: [] as string[],
+  placeId: null,
 };
 const POSTS: MapPost[] = [
   { ...base, id: '1', content: 'Ramen weather.', latitude: 43.6529, longitude: -79.3831, petName: 'Mochi', species: 'cockatiel', placeName: 'Sansotei Ramen' },

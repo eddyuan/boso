@@ -21,6 +21,7 @@
 5d5. [Bond level](#5d5-bond-level)
 5d6. [Playdates](#5d6-playdates)
 5d7. [Daily missions](#5d7-daily-missions)
+5d8. [Pet parks](#5d8-pet-parks)
 5e. [Notifications](#5e-notifications)
 6. [Mobile app screens](#6-mobile-app-screens)
 6a. [Location](#6a-location)
@@ -657,6 +658,29 @@ Nothing here is a streak — missing a day costs nothing and starts nothing over
 
 ---
 
+## 5d8. Pet parks
+
+Any place can be marked a **hotspot** in admin (`PATCH /api/admin/places`), which does one thing:
+it widens the distance from which a pet's post will settle on it, from the ordinary 150 m snap to
+900 m ([`lib/pet-location.ts`](apps/web/src/lib/pet-location.ts)).
+
+That is the whole of "pets path toward parks", and it's worth being exact about why. The wandering
+you see on the map is cosmetic and client-side — the pet's position is never stored — so the only
+place a preference can actually take effect is where posts come to rest. A wider catchment means a
+marked park collects posts from a whole neighbourhood's pets instead of one doorstep's worth, which
+is what makes it read as a gathering spot rather than another pin.
+
+Measured over 150 days against the real place table (1084 places): posts settled on a venue on 20
+days with nothing marked, and on 68 with a third of places marked. Hotspots get first refusal, so
+an ordinary venue only wins when no hotspot is in range.
+
+Each place has a thread — `GET /api/places/:placeId/posts`, opened by tapping the venue on a map
+post. It's a **48-hour window rather than an archive**: a park's thread is interesting because it's
+current, and kept forever it would open on a year-old post and read as abandoned. Visibility uses
+the same rule as the feed, so a place thread can't become a way to read what the feed would hide.
+
+---
+
 ## 5e. Notifications
 
 Push tokens have existed since onboarding shipped and nothing was ever sent. Now four things can
@@ -797,6 +821,7 @@ All under `apps/web/src/app/api`. Guard: `requireSession()` in [`lib/session.ts`
 | `GET /api/me/treasures` | onboarded | The shelf of what the pet has brought home |
 | `GET`/`POST`/`PATCH /api/me/playdates` | onboarded | Who you could meet · propose · accept or decline |
 | `GET /api/me/missions` | onboarded | Today's three goals and their progress |
+| `GET /api/places/:placeId/posts` | onboarded | The last 48 hours at one place |
 | `GET /api/me/diary` | onboarded | The diary, newest first; credits the read once a day |
 | `POST /api/uploads/post-media` | signed in | Multipart `file` → card + thumb WebP URLs for `media[]` |
 | `GET /api/posts/:postId/viewers` | onboarded | Which pets viewed your post (author only) |
@@ -1020,3 +1045,4 @@ Worth stating plainly, because "built" reads like "working":
 | 2026-09-18 | Daily missions, derived from the bond ledger so reward and evidence are one table |
 | 2026-09-18 | UI for six features that had none: missions and playdates on Activity, treasure shelf on Profile, whiskers line and errands on the map, who-looked on your own posts |
 | 2026-09-18 | Photo picker in compose, with a post-media upload endpoint that never stores the original |
+| 2026-09-18 | Pet parks: hotspots pull posts from 900 m instead of 150 m, and every place has a 48-hour thread |

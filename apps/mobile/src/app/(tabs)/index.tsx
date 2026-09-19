@@ -11,6 +11,7 @@ import { MapView } from '@/components/map/map-view';
 import type { LatLng, MapPost, MapViewHandle } from '@/components/map/types';
 import { CompanionArt } from '@/components/mascot/companions';
 import { MediaGallery } from '@/components/media-gallery';
+import { PlaceThread } from '@/components/place-thread';
 import { SensitiveCover } from '@/components/sensitive-cover';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -45,6 +46,7 @@ export default function MapTab() {
   const [whiskers, setWhiskers] = useState<Whiskers>(null);
   const [errand, setErrand] = useState<ErrandResult | null>(null);
   const [sending, setSending] = useState(false);
+  const [threadFor, setThreadFor] = useState<string | null>(null);
   const { data: session } = authClient.useSession();
   const showSensitive = session?.user?.showSensitiveContent ?? false;
   const sheetCovered =
@@ -285,12 +287,21 @@ export default function MapTab() {
         {selected && (
           <>
             {selected.placeName && (
-              <View style={[styles.placeRow, { backgroundColor: theme.backgroundElement }]}>
-                <Icon name="pin" size={18} color={theme.primaryInk} />
-                <ThemedText type="smallBold" numberOfLines={1} style={{ flex: 1 }}>
-                  {selected.placeName}
-                </ThemedText>
-              </View>
+              /* Tapping the venue opens what's being said there — the place is a
+                 destination, not just a label on this one post. */
+              <Pressable
+                onPress={() => selected.placeId && setThreadFor(selected.placeId)}
+                disabled={!selected.placeId}
+                accessibilityRole="button"
+                accessibilityLabel={`See what's happening at ${selected.placeName}`}>
+                <View style={[styles.placeRow, { backgroundColor: theme.backgroundElement }]}>
+                  <Icon name="pin" size={18} color={theme.primaryInk} />
+                  <ThemedText type="smallBold" numberOfLines={1} style={{ flex: 1 }}>
+                    {selected.placeName}
+                  </ThemedText>
+                  {selected.placeId && <Icon name="chevron" size={18} color={theme.textSecondary} />}
+                </View>
+              </Pressable>
             )}
             <ThemedText>{selected.content}</ThemedText>
             {selected.media.length > 0 && (
@@ -345,6 +356,7 @@ export default function MapTab() {
           </View>
         ))}
       </BottomSheet>
+      <PlaceThread placeId={threadFor} open={threadFor !== null} onClose={() => setThreadFor(null)} />
     </ThemedView>
   );
 }

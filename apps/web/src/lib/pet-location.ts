@@ -31,6 +31,17 @@ const SHIFT_RADIUS_M = 5_000;
 const JITTER_M = 250;
 /** Snap to a venue within this of the shifted point. */
 const PLACE_SNAP_M = 150;
+/**
+ * Hotspots pull from much further out than an ordinary venue.
+ *
+ * This is the whole of "pets path toward parks": the wandering you see on the
+ * map is cosmetic and client-side, so the only place a preference can actually
+ * show up is where posts come to rest. A wider catchment means a marked park or
+ * café accumulates posts from a whole neighbourhood's pets instead of one
+ * doorstep's worth, which is what makes it read as a gathering spot rather than
+ * another pin.
+ */
+const HOTSPOT_PULL_M = 900;
 
 const COORD_PRECISION = 3;
 const coarse = (value: number) => Number(value.toFixed(COORD_PRECISION));
@@ -120,20 +131,10 @@ export async function resolvePetPostLocation(
   const daily = shiftWithin(anchor, SHIFT_RADIUS_M, seeded(`${userId}:${day}`));
   const point = shiftWithin(daily, JITTER_M, Math.random);
 
-  // Bounding box first so the index does the work, then the true radius.
-  const latDelta = (PLACE_SNAP_M / EARTH_RADIUS_M) * (180 / Math.PI);
-  const lngDelta = latDelta / Math.max(Math.cos((point.latitude * Math.PI) / 180), 0.01);
-  const [place] = await db
-    .select({ id: places.id, latitude: places.latitude, longitude: places.longitude, category: places.category })
-    .from(places)
-    .where(
-      and(
-        sql`${places.latitude} between ${point.latitude - latDelta} and ${point.latitude + latDelta}`,
-        sql`${places.longitude} between ${point.longitude - lngDelta} and ${point.longitude + lngDelta}`,
-      ),
-    )
-    .orderBy(sql`random()`)
-    .limit(1);
+  // A hotspot gets first refusal from much further away; only if there's no
+  // marked gathering spot in range does an ordinary neighbour win.
+  const place =
+    (await nearestPlace(point, HOTSPOT_PULL_M, true)) ?? (await nearestPlace(point, PLACE_SNAP_M, false));
 
   if (place) {
     // Posts cluster on real venues, which reads far better on the map than a
@@ -147,4 +148,48 @@ export async function resolvePetPostLocation(
   }
 
   return { latitude: coarse(point.latitude), longitude: coarse(point.longitude), placeId: null };
+}
+
+/**
+ * A venue within `radiusM` of a point, or null.
+ *
+ * The bounding box is there so the index does the work; it's a square around a
+ * circle, so the true distance is checked afterwards rather than trusting the
+ * box — otherwise a hotspot diagonally 1.4x further than the radius would still
+ * win, and the pull distance would quietly mean something other than it says.
+ */
+async function nearestPlace(
+  point: { latitude: number; longitude: number },
+  radiusM: number,
+  hotspotOnly: boolean,
+) {
+  const latDelta = (radiusM / EARTH_RADIUS_M) * (180 / Math.PI);
+  const lngDelta = latDelta / Math.max(Math.cos((point.latitude * Math.PI) / 180), 0.01);
+
+  const rows = await db
+    .select({ id: places.id, latitude: places.latitude, longitude: places.longitude, category: places.category })
+    .from(places)
+    .where(
+      and(
+        sql`${places.latitude} between ${point.latitude - latDelta} and ${point.latitude + latDelta}`,
+        sql`${places.longitude} between ${point.longitude - lngDelta} and ${point.longitude + lngDelta}`,
+        ...(hotspotOnly ? [eq(places.isHotspot, true)] : []),
+      ),
+    )
+    .orderBy(sql`random()`)
+    .limit(20);
+
+  const within = rows.filter((r) => metresBetween(point, r) <= radiusM);
+  return within[0] ?? null;
+}
+
+function metresBetween(
+  a: { latitude: number; longitude: number },
+  b: { latitude: number; longitude: number },
+): number {
+  const dLat = ((b.latitude - a.latitude) * Math.PI) / 180;
+  const dLng = ((b.longitude - a.longitude) * Math.PI) / 180;
+  const lat = ((a.latitude + b.latitude) / 2) * (Math.PI / 180);
+  const x = dLng * Math.cos(lat);
+  return Math.sqrt(dLat * dLat + x * x) * EARTH_RADIUS_M;
 }

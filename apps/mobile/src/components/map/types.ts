@@ -22,6 +22,7 @@ export type MapPost = {
   ownerUsername: string | null;
   ownerImage: string | null;
   /** The venue the post is about, when it was attached to one. */
+  placeId: string | null;
   placeName: string | null;
 };
 

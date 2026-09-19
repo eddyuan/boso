@@ -45,6 +45,7 @@ export async function GET(req: Request) {
       ownerName: users.name,
       ownerUsername: users.username,
       ownerImage: users.image,
+      placeId: posts.placeId,
       placeName: places.name,
     })
     .from(posts)
