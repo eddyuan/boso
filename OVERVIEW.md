@@ -1375,4 +1375,5 @@ a person can supply, which is why `/admin/roadmap` now marks them **Needs you** 
 | 2026-09-19 | Game ops 3/5 — job visibility: every Inngest handler records its run, with overdue alarms and a manual trigger; confirms all eight have never run |
 | 2026-09-19 | Game ops 4/5 — player inspector: game state on the account page, with mood derived exactly as the app derives it and the bond ledger reconciled against the stored total |
 | 2026-09-19 | Game ops 5/5 — assets: storage reconciled against the database in both directions, scoped to our own prefixes because the bucket is shared with another product |
+| 2026-09-19 | Admin: denser sidebar (17 items, ~160px shorter, 32px narrower) and the platform UI font instead of the rounded display face — it's a tool, read at small sizes for hours |
 | 2026-09-18 | Backfill photo handles lazily via Place Details, so venues imported before the field-mask change can get photos too |

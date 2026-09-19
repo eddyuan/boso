@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 function Brand() {
   return (
     <Link href="/admin" className="flex items-center gap-2.5 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary font-display text-lg font-semibold text-primary-foreground shadow-[inset_0_-3px_0_rgb(0_0_0/0.12)]">
+      <span className="brand-mark flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-lg text-primary-foreground shadow-[inset_0_-3px_0_rgb(0_0_0/0.12)]">
         T
       </span>
       <span className="leading-tight">
@@ -32,23 +32,23 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const initial = (name || email || "A")[0]!.toUpperCase();
 
   return (
-    <div className="flex min-h-screen w-full bg-background">
+    <div className="admin-ui flex min-h-screen w-full bg-background">
       {/* Sidebar — large screens */}
-      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col bg-sidebar lg:flex">
-        <div className="px-6 pb-6 pt-6">
+      <aside className="sticky top-0 hidden h-screen w-52 shrink-0 flex-col bg-sidebar lg:flex">
+        <div className="px-4 pb-3 pt-4">
           <Brand />
         </div>
         <div className="flex-1 overflow-y-auto">
           <AdminNav />
         </div>
-        <div className="m-3 flex items-center gap-3 rounded-xl border border-border bg-card p-3">
-          <Avatar className="h-9 w-9">
+        <div className="m-2 flex items-center gap-2 rounded-lg border border-border bg-card p-2">
+          <Avatar className="h-7 w-7">
             <AvatarImage src={image ?? undefined} alt="" />
-            <AvatarFallback className="text-sm">{initial}</AvatarFallback>
+            <AvatarFallback className="text-xs">{initial}</AvatarFallback>
           </Avatar>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-bold">{name || "Admin"}</p>
-            <p className="truncate text-xs text-muted-foreground">{email}</p>
+            <p className="truncate text-[13px] font-bold leading-tight">{name || "Admin"}</p>
+            <p className="truncate text-[11px] leading-tight text-muted-foreground">{email}</p>
           </div>
           <SignOutButton />
         </div>

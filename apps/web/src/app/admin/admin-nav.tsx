@@ -29,8 +29,12 @@ import { cn } from "@/lib/utils";
 
 /**
  * Grouped so the list stays scannable as routes keep landing — a flat list was
- * already hard to navigate at eleven items. Groups are domains, not page types,
- * so a new route has an obvious home.
+ * already hard to navigate at eleven items, and there are seventeen now. Groups
+ * are domains, not page types, so a new route has an obvious home.
+ *
+ * Deliberately dense: this is an admin panel, so fitting the whole map on screen
+ * without scrolling beats generous spacing. Rows are 28px and groups are
+ * separated by 10px, which is the tightest the group labels stay legible at.
  */
 const NAV_GROUPS: { label: string; items: { href: string; label: string; icon: LucideIcon }[] }[] = [
   {
@@ -85,10 +89,10 @@ function useActive() {
 export function AdminNav() {
   const isActive = useActive();
   return (
-    <nav className="flex flex-col gap-4 px-3 pb-4">
+    <nav className="flex flex-col gap-2.5 px-2 pb-3">
       {NAV_GROUPS.map((group) => (
-        <div key={group.label} className="flex flex-col gap-0.5">
-          <p className="px-3.5 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground/70">
+        <div key={group.label} className="flex flex-col">
+          <p className="px-2.5 pb-1 text-[10px] font-extrabold uppercase leading-none tracking-wider text-muted-foreground/70">
             {group.label}
           </p>
           {group.items.map((item) => {
@@ -99,13 +103,13 @@ export function AdminNav() {
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex h-8 items-center gap-2.5 rounded-lg px-3.5 text-[13px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  "flex h-7 items-center gap-2.5 rounded-md px-2.5 text-[13px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   active
                     ? "bg-primary-soft text-primary-ink"
                     : "text-muted-foreground hover:bg-accent hover:text-foreground",
                 )}
               >
-                <item.icon className="h-4 w-4 shrink-0" strokeWidth={active ? 2.5 : 2} />
+                <item.icon className="h-3.5 w-3.5 shrink-0" strokeWidth={active ? 2.6 : 2} />
                 {item.label}
               </Link>
             );
@@ -120,9 +124,9 @@ export function AdminNav() {
 export function AdminNavStrip() {
   const isActive = useActive();
   return (
-    <nav className="-mx-4 flex gap-1 overflow-x-auto px-4 pb-3 [scrollbar-width:none]">
+    <nav className="-mx-4 flex gap-0.5 overflow-x-auto px-4 pb-2.5 [scrollbar-width:none]">
       {NAV_GROUPS.map((group, i) => (
-        <div key={group.label} className="flex shrink-0 items-center gap-1">
+        <div key={group.label} className="flex shrink-0 items-center gap-0.5">
           {i > 0 && <span aria-hidden className="mx-1 h-5 w-px shrink-0 bg-border" />}
           {group.items.map((item) => {
             const active = isActive(item.href);
@@ -132,11 +136,11 @@ export function AdminNavStrip() {
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex h-8 shrink-0 items-center gap-2 rounded-lg px-3 text-[13px] font-bold transition-colors",
+                  "flex h-7 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-[13px] font-bold transition-colors",
                   active ? "bg-primary-soft text-primary-ink" : "text-muted-foreground hover:bg-accent",
                 )}
               >
-                <item.icon className="h-4 w-4" />
+                <item.icon className="h-3.5 w-3.5" />
                 {item.label}
               </Link>
             );

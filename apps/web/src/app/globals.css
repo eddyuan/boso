@@ -121,3 +121,39 @@ body {
 ::selection {
   background: var(--primary-soft);
 }
+
+/* ---------------------------------------------------------------------------
+   Admin typography
+
+   The app is a product and uses its own voice — Fredoka for headings, Nunito
+   for everything else. The admin panel is a tool: it is read for hours, at small
+   sizes, in dense tables of numbers, by people who are working rather than
+   being charmed. A rounded display face costs legibility there for nothing.
+
+   Scoped to the admin subtree rather than changed globally, so the consumer app
+   keeps its brand. The second rule is not redundant: `font-display` resolves the
+   variable at the utility, so overriding the variable alone would not catch
+   elements that already carry that class.
+   --------------------------------------------------------------------------- */
+.admin-ui {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--font-sans);
+  /* Slightly tighter than the product's rounded face needs, which reads better
+     at 13px and stops dense tables looking airy. */
+  letter-spacing: -0.006em;
+}
+
+.admin-ui .font-display {
+  font-family: var(--font-display);
+  /* Fredoka's 600 reads as a heading; a system face needs a touch more. */
+  font-weight: 650;
+  letter-spacing: -0.014em;
+}
+
+/* The logo mark stays in the brand face — it's a mark, not text to be read. */
+.admin-ui .brand-mark {
+  font-family: var(--font-fredoka);
+  font-weight: 600;
+  letter-spacing: normal;
+}
