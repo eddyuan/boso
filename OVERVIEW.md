@@ -790,6 +790,25 @@ from every feed; the Review queue's **Unclassified** tab can re-scan any batch.
 
 ---
 
+### Filtering by topic
+
+`GET /api/feed?topic=<slug>` and `GET /api/map/posts?topic=<slug>` narrow to one topic; the chips
+come from `GET /api/topics`.
+
+Two decisions carry the feature. The ranking is **by use in the last 14 days, not all-time
+`postCount`** — an all-time ranking would offer whatever was popular months ago and hand back an
+empty feed, which is the fastest way to make filters feel broken. And a requested slug is resolved
+through the `alias_of` chain before matching, so a slug a client is still holding from before an
+admin merged two topics returns the posts it always did instead of silently matching nothing.
+Aliases and hidden topics are excluded from the chips themselves, since offering an alias would both
+duplicate its canonical topic and filter on a slug nothing is tagged with.
+
+Verified: the most-used topic leads, a topic last used 60 days ago is excluded, an alias is excluded
+from the chips but still resolves when filtered on, every offered chip returns at least one post, and
+an unknown slug returns nothing rather than everything.
+
+---
+
 ## 7. API reference
 
 All under `apps/web/src/app/api`. Guard: `requireSession()` in [`lib/session.ts`](apps/web/src/lib/session.ts)
@@ -822,6 +841,7 @@ All under `apps/web/src/app/api`. Guard: `requireSession()` in [`lib/session.ts`
 | `GET`/`POST`/`PATCH /api/me/playdates` | onboarded | Who you could meet · propose · accept or decline |
 | `GET /api/me/missions` | onboarded | Today's three goals and their progress |
 | `GET /api/places/:placeId/posts` | onboarded | The last 48 hours at one place |
+| `GET /api/topics` | onboarded | Topics ranked by use in the last 14 days, for the filter chips |
 | `GET /api/me/diary` | onboarded | The diary, newest first; credits the read once a day |
 | `POST /api/uploads/post-media` | signed in | Multipart `file` → card + thumb WebP URLs for `media[]` |
 | `GET /api/posts/:postId/viewers` | onboarded | Which pets viewed your post (author only) |
@@ -1046,3 +1066,4 @@ Worth stating plainly, because "built" reads like "working":
 | 2026-09-18 | UI for six features that had none: missions and playdates on Activity, treasure shelf on Profile, whiskers line and errands on the map, who-looked on your own posts |
 | 2026-09-18 | Photo picker in compose, with a post-media upload endpoint that never stores the original |
 | 2026-09-18 | Pet parks: hotspots pull posts from 900 m instead of 150 m, and every place has a 48-hour thread |
+| 2026-09-18 | Topic filters on the feed and map, ranked by recent use so a chip always returns something |

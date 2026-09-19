@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { and, desc, eq, gte, isNotNull, lte, sql } from "drizzle-orm";
 import { z } from "zod";
-import { comments, db, likes, pets, places, posts, users } from "@bsocial/db";
+import { comments, db, likes, pets, places, postTopics, posts, users } from "@bsocial/db";
 import { mediaByPostId } from "@/lib/post-media";
 import { requireSession } from "@/lib/session";
+import { resolveAlias } from "@/lib/topics";
 import { amplifiedPosts } from "@/lib/visibility";
 
 const MAX_POSTS = 120;
@@ -13,6 +14,8 @@ const boundsSchema = z.object({
   east: z.coerce.number().min(-180).max(180),
   south: z.coerce.number().min(-90).max(90),
   north: z.coerce.number().min(-90).max(90),
+  /** Narrow the map to one topic, same slugs as the feed. */
+  topic: z.string().trim().min(1).max(80).optional(),
 });
 
 // Posts with coordinates inside the visible map area, newest first.
@@ -25,7 +28,8 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const parsed = boundsSchema.safeParse(Object.fromEntries(url.searchParams));
   if (!parsed.success) return NextResponse.json({ error: "invalid_bounds" }, { status: 400 });
-  const { west, east, south, north } = parsed.data;
+  const { west, east, south, north, topic } = parsed.data;
+  const canonical = topic ? await resolveAlias(topic) : null;
 
   const rows = await db
     .select({
@@ -63,6 +67,9 @@ export async function GET(req: Request) {
         lte(posts.longitude, east),
         isNotNull(users.onboardingCompletedAt),
         amplifiedPosts(),
+        canonical
+          ? sql`exists (select 1 from ${postTopics} where ${postTopics.postId} = ${posts.id} and ${postTopics.topic} = ${canonical})`
+          : undefined,
       ),
     )
     .orderBy(desc(posts.createdAt))

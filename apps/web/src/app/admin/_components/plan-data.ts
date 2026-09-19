@@ -227,7 +227,7 @@ export const PHASES: Phase[] = [
           "Makes a thin feed feel deliberate instead of sparse — a person who cares about food sees a food map, not four random posts. Pure presentation over data already collected.",
         effort: "S",
         impact: 3,
-        status: "ready",
+        status: "shipped",
         existing: [
           "Every post is classified into topics automatically",
           "topics table ranks by popularity; post_topics is indexed for lookup",

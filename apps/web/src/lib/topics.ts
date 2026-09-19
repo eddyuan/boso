@@ -21,8 +21,14 @@ export async function knownTopicSlugs(limit = 120): Promise<string[]> {
   return rows.map((r) => r.slug);
 }
 
-/** Follows an alias chain to the topic that should actually be counted. */
-async function resolveAlias(slug: string): Promise<string> {
+/**
+ * Follows an alias chain to the topic that should actually be counted.
+ *
+ * Exported because filtering needs it too: a topic slug held by a client from
+ * before an admin merged two topics must still return the posts it used to,
+ * rather than silently matching nothing.
+ */
+export async function resolveAlias(slug: string): Promise<string> {
   let current = slug;
   for (let i = 0; i < 5; i++) {
     const [row] = await db.select({ aliasOf: topics.aliasOf }).from(topics).where(eq(topics.slug, current));

@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { and, arrayOverlaps, desc, eq, inArray, isNotNull, lt, notInArray, sql, type SQL } from "drizzle-orm";
 import { z } from "zod";
-import { comments, db, follows, likes, pets, postViews, posts, users } from "@bsocial/db";
+import { comments, db, follows, likes, pets, postTopics, postViews, posts, users } from "@bsocial/db";
 import { mediaByPostId } from "@/lib/post-media";
 import { requireSession } from "@/lib/session";
 import { recordLocation } from "@/lib/location";
-import { effectiveInterests, topicsByPostId } from "@/lib/topics";
+import { effectiveInterests, resolveAlias, topicsByPostId } from "@/lib/topics";
 import { amplifiedPosts, followedPosts, ownOrVisible } from "@/lib/visibility";
 
 const PAGE_SIZE = 20;
@@ -18,6 +18,8 @@ const querySchema = z.object({
   latitude: z.coerce.number().min(-90).max(90).optional(),
   longitude: z.coerce.number().min(-180).max(180).optional(),
   before: z.string().datetime().optional(),
+  /** Narrow to one topic. Aliases resolve server-side so a stale slug still works. */
+  topic: z.string().trim().min(1).max(80).optional(),
   limit: z.coerce.number().int().min(1).max(50).default(PAGE_SIZE),
 });
 
@@ -38,7 +40,7 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const parsed = querySchema.safeParse(Object.fromEntries(url.searchParams));
   if (!parsed.success) return NextResponse.json({ error: "invalid_query" }, { status: 400 });
-  const { scope, latitude, longitude, before, limit } = parsed.data;
+  const { scope, latitude, longitude, before, limit, topic } = parsed.data;
 
   const [myPet] = await db.select({ id: pets.id }).from(pets).where(eq(pets.userId, session.user.id));
   if (!myPet) return NextResponse.json({ posts: [], nextCursor: null });
@@ -100,6 +102,15 @@ export async function GET(req: Request) {
       const mine = await effectiveInterests(session.user.id, session.user.interests ?? []);
       if (mine.length > 0) filters.push(arrayOverlaps(users.interests, mine));
     }
+  }
+
+  if (topic) {
+    // Resolved through the alias chain, so a slug saved before an admin merged
+    // two topics still returns the posts it used to.
+    const canonical = await resolveAlias(topic);
+    filters.push(
+      sql`exists (select 1 from ${postTopics} where ${postTopics.postId} = ${posts.id} and ${postTopics.topic} = ${canonical})`,
+    );
   }
 
   const rows = await db

@@ -12,7 +12,7 @@ import { MediaGallery, type PostMedia } from '@/components/media-gallery';
 import { SensitiveCover } from '@/components/sensitive-cover';
 import { ThemedText } from '@/components/themed-text';
 import { ViewersSheet } from '@/components/viewers-sheet';
-import { Badge, Card, ErrorText, RoundButton, Segmented } from '@/components/ui/controls';
+import { Badge, Card, Chip, ChipGroup, ErrorText, RoundButton, Segmented } from '@/components/ui/controls';
 import { Icon } from '@/components/ui/icon';
 import { FontFamily, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -75,12 +75,15 @@ export default function FeedTab() {
   const [showSensitive, setShowSensitive] = useState(false);
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
   const [commentsFor, setCommentsFor] = useState<string | null>(null);
+  const [topics, setTopics] = useState<{ slug: string; label: string }[]>([]);
+  const [topic, setTopic] = useState<string | null>(null);
 
-  const load = useCallback(async (next: Scope) => {
+  const load = useCallback(async (next: Scope, forTopic: string | null) => {
     setPosts(null);
     setError(null);
     try {
       let query = `scope=${next}`;
+      if (forTopic) query += `&topic=${encodeURIComponent(forTopic)}`;
       if (next !== 'following') {
         // Nearby and Discover are answered relative to where you are.
         const permission = await Location.getForegroundPermissionsAsync();
@@ -134,8 +137,12 @@ export default function FeedTab() {
 
   useFocusEffect(
     useCallback(() => {
-      load(scope);
-    }, [load, scope]),
+      load(scope, topic);
+      // Ranked by recent use server-side, so a chip always returns something.
+      apiFetch<{ topics: { slug: string; label: string }[] }>('/api/topics?limit=12')
+        .then((r) => setTopics(r.topics))
+        .catch(() => {});
+    }, [load, scope, topic]),
   );
 
   return (
@@ -156,9 +163,36 @@ export default function FeedTab() {
       }>
       <Segmented options={SCOPES} value={scope} onChange={setScope} />
 
+      {/* Only offered once there's a vocabulary to offer; an empty filter row
+          is worse than none. Tapping the selected chip clears it. */}
+      {topics.length > 0 && (
+        <ChipGroup gap={8}>
+          {topics.map((t) => (
+            <Chip
+              key={t.slug}
+              label={t.label}
+              selected={topic === t.slug}
+              onPress={() => setTopic((prev) => (prev === t.slug ? null : t.slug))}
+            />
+          ))}
+        </ChipGroup>
+      )}
+
       <ErrorText message={error} />
       {!posts && <ActivityIndicator color={theme.primaryPress} />}
-      {posts?.length === 0 && !error && <EmptyState mood="thinking" {...EMPTY[scope]} />}
+      {posts?.length === 0 &&
+        !error &&
+        // With a filter on, the scope's empty copy would blame the wrong thing:
+        // the neighbourhood isn't quiet, the topic is.
+        (topic ? (
+          <EmptyState
+            mood="thinking"
+            title={`Nothing about ${topics.find((t) => t.slug === topic)?.label ?? 'that'} yet`}
+            message="Tap the topic again to see everything."
+          />
+        ) : (
+          <EmptyState mood="thinking" {...EMPTY[scope]} />
+        ))}
 
       {posts?.map((post) => {
         const distance = post.distanceM === null ? null : formatDistance(post.distanceM);
