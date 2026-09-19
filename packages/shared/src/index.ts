@@ -4,3 +4,4 @@ export * from "./moderation";
 export * from "./topics";
 export * from "./mood";
 export * from "./relationships";
+export * from "./treasures";

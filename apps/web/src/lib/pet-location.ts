@@ -36,7 +36,13 @@ const COORD_PRECISION = 3;
 const coarse = (value: number) => Number(value.toFixed(COORD_PRECISION));
 const EARTH_RADIUS_M = 6_371_000;
 
-export type PetPostLocation = { latitude: number; longitude: number; placeId: string | null };
+export type PetPostLocation = {
+  latitude: number;
+  longitude: number;
+  placeId: string | null;
+  /** The venue's category, when it snapped to one — treasure finds key off it. */
+  placeCategory?: string | null;
+};
 
 /** Deterministic [0,1) stream from a string — same seed, same offset all day. */
 function seeded(seed: string): () => number {
@@ -118,7 +124,7 @@ export async function resolvePetPostLocation(
   const latDelta = (PLACE_SNAP_M / EARTH_RADIUS_M) * (180 / Math.PI);
   const lngDelta = latDelta / Math.max(Math.cos((point.latitude * Math.PI) / 180), 0.01);
   const [place] = await db
-    .select({ id: places.id, latitude: places.latitude, longitude: places.longitude })
+    .select({ id: places.id, latitude: places.latitude, longitude: places.longitude, category: places.category })
     .from(places)
     .where(
       and(
@@ -132,7 +138,12 @@ export async function resolvePetPostLocation(
   if (place) {
     // Posts cluster on real venues, which reads far better on the map than a
     // scatter, and matches how a person's own placed post behaves.
-    return { latitude: coarse(place.latitude), longitude: coarse(place.longitude), placeId: place.id };
+    return {
+      latitude: coarse(place.latitude),
+      longitude: coarse(place.longitude),
+      placeId: place.id,
+      placeCategory: place.category,
+    };
   }
 
   return { latitude: coarse(point.latitude), longitude: coarse(point.longitude), placeId: null };

@@ -716,6 +716,9 @@ All under `apps/web/src/app/api`. Guard: `requireSession()` in [`lib/session.ts`
 | `POST /api/me/pet-care` | onboarded | Feed, groom or play — once each per day |
 | `GET /api/me/diary` | onboarded | Your pet's diary, newest first |
 | `GET /api/me/relationships` | onboarded | Who your pet is closest to |
+| `GET /api/me/whiskers` | onboarded | Today's line of local gossip, cached per day |
+| `POST /api/me/errand` | onboarded | Send the pet to a map point; returns a ranked bundle |
+| `GET /api/me/treasures` | onboarded | The shelf of what the pet has brought home |
 | `GET /api/posts/:postId/viewers` | onboarded | Which pets viewed your post (author only) |
 | `POST /api/posts` | onboarded | Write a post as yourself: content, optional place/coordinates, and up to 20 photos/videos (`media[]`, already uploaded) |
 | `GET /api/places/search?q=&latitude=&longitude=` | onboarded | Places near you, or by name |
@@ -779,6 +782,8 @@ Schema: [`packages/db/src/schema.ts`](packages/db/src/schema.ts). Apply with `pn
 | `pet_care` | Daily feed/groom/play, one row per action |
 | `pet_diary` | One auto-written entry per pet per day, with the counts behind it |
 | `pet_relationships` | Affinity per ordered pet pair — score, interaction count, friends-since |
+| `pet_treasures` | What a pet has brought home, and where it turned up |
+| `whiskers` | One cached line of local gossip per user per day, with its sources |
 | `pet_actions` | Every pet decision: type (`post`/`like`/`comment`/`follow`/`visit`/`none`), status, payload, reasoning |
 | `app_settings` | Key/value runtime switches an admin can flip without a redeploy — currently `petsPaused`, the pet-loop kill switch |
 | `topics` | The fine layer under the 20 interests: slug, label, parent `interest`, `status` (`auto` until it hits 5 posts, then `approved`), `aliasOf` for merging duplicates, `postCount` for ranking. Grown by the classifier |

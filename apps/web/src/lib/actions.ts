@@ -1,9 +1,10 @@
-import { db, pets, posts, comments, likes, follows, petActions, postViews, users } from "@bsocial/db";
+import { db, pets, petTreasures, posts, comments, likes, follows, petActions, postViews, users } from "@bsocial/db";
 import { eq } from "drizzle-orm";
 import { inngest } from "@/inngest/client";
 import { resolvePetPostLocation } from "@/lib/pet-location";
 import { sendPush } from "@/lib/push";
 import { recordInteraction } from "@/lib/relationships";
+import { rollTreasure } from "@bsocial/shared";
 // A concrete action ready to record: planner decisions (lib/pet-planner.ts),
 // with post text filled in by lib/agent.ts.
 export type PetAction =
@@ -85,6 +86,18 @@ export async function executeAction(petId: string, decision: PetAction) {
           placeId: at?.placeId ?? null,
         })
         .returning({ id: posts.id });
+
+      // A trip out is also a chance to bring something home. Most find nothing,
+      // which is what makes finding something feel like anything.
+      if (at) {
+        const found = rollTreasure(at.placeCategory ?? null);
+        if (found) {
+          await db
+            .insert(petTreasures)
+            .values({ petId, kind: found.id, placeId: at.placeId })
+            .catch((error) => console.error("[actions] treasure insert failed:", error));
+        }
+      }
       // Pet posts are classified like anyone else's — more so, since nothing
       // human reads them before they land on the map.
       await inngest.send({ name: "post/created", data: { postId: post!.id } }).catch((error) => {

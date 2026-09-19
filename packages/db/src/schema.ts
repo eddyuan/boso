@@ -714,3 +714,43 @@ export const petRelationships = pgTable(
     index("pet_relationships_rank_idx").on(t.petId, t.score),
   ],
 );
+
+/**
+ * One playful line of local intel a day, grounded in real nearby activity.
+ *
+ * Cached per user per day rather than generated on read: it's the same line all
+ * day, and regenerating it on every app open would both cost a model call each
+ * time and let the "news" change under someone mid-morning.
+ */
+export const whiskers = pgTable(
+  "whiskers",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    day: date("day", { mode: "string" }).notNull(),
+    line: text("line").notNull(),
+    /** Post ids behind the line, so it can be tapped through to the truth. */
+    sourcePostIds: uuid("source_post_ids").array().notNull().default(sql`'{}'::uuid[]`),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("whiskers_day_idx").on(t.userId, t.day)],
+);
+
+/** What a pet has brought home. One row per find. */
+export const petTreasures = pgTable(
+  "pet_treasures",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    petId: uuid("pet_id")
+      .notNull()
+      .references(() => pets.id, { onDelete: "cascade" }),
+    /** A TREASURES id from @bsocial/shared. */
+    kind: text("kind").notNull(),
+    /** Where it turned up, so the shelf can say "found near Kits Beach". */
+    placeId: uuid("place_id").references(() => places.id, { onDelete: "set null" }),
+    foundAt: timestamp("found_at").notNull().defaultNow(),
+  },
+  (t) => [index("pet_treasures_pet_idx").on(t.petId, t.foundAt)],
+);
