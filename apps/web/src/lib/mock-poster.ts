@@ -4,6 +4,7 @@ import { google } from "@ai-sdk/google";
 import { db, pets, posts } from "@bsocial/db";
 import { getPetModel } from "./ai";
 import { storeImage } from "./images";
+import { recordApiCallQuietly } from "./api-spend";
 
 /**
  * Writing a post in a seeded persona's voice.
@@ -79,6 +80,7 @@ export async function generateMockPost(
 
   const angle = ANGLES[Math.floor(rng() * ANGLES.length)]!;
 
+  recordApiCallQuietly({ provider: "gemini", kind: "text", meta: { site: "mock_post" } });
   const { text } = await generateText({
     model: getPetModel(),
     system: `You are ${pet.name}, a real person posting on a local, map-based social app.
@@ -104,6 +106,7 @@ Write your next post.`,
   const wanted = options.imageCount ?? 0;
   for (let i = 0; i < wanted; i++) {
     try {
+      recordApiCallQuietly({ provider: "gemini", kind: "image", meta: { site: "mock_image" } });
       const { image } = await generateImage({
         model: google.image(IMAGE_MODEL),
         prompt: buildImagePrompt(content, profile),

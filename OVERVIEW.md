@@ -988,6 +988,7 @@ Admin-only (all `requireAdmin`, under `/api/admin`):
 | `GET /api/admin/stats`, `/users`, `/posts`, `/places`, `/strays` | Dashboard and list views |
 | `PATCH /api/admin/users` | Set a user's password |
 | `GET /api/admin/users/:userId` | One account in full: profile, pet, sign-in methods, devices, login history, push tokens, recent posts and pet decisions |
+| `GET /api/admin/telemetry` | Economy figures and API spend over a window |
 | `PATCH /api/admin/places` | Mark a place as a hotspot |
 | `GET`/`POST`/`DELETE /api/admin/events` | Schedule collective events; see the running one's progress |
 | `PATCH /api/admin/posts` · `DELETE /api/admin/posts?id=` | Hide/unhide a post (`posts.hiddenAt`) · delete it permanently |
@@ -1081,6 +1082,50 @@ npx inngest-cli dev     # optional: run the pet loop locally (dashboard :8288)
 - On a physical phone, set `EXPO_PUBLIC_API_URL` to your machine's LAN IP.
 - Google/Apple sign-in on a physical phone needs a public HTTPS URL (e.g. ngrok) as `BETTER_AUTH_URL`.
 - Native Apple sign-in and push tokens require a development build (not Expo Go).
+
+---
+
+## 10b. Game operations
+
+Tielo behaves like a game, so it needs a game's instruments. `/admin/telemetry` is the first of them.
+
+### Spend
+
+Every billed call to somebody else's API is recorded in `api_calls` — Places search, Details and
+photos, each Gemini call, each push batch. Nothing tracked this before: a place import's request
+count lived in one cell's ledger row and nothing aggregated it, so the first sign of a runaway would
+have been the invoice.
+
+`cost_micros` is stamped at call time from a local rate table
+([`lib/api-spend.ts`](apps/web/src/lib/api-spend.ts)) rather than computed on read — prices change,
+and a cost recalculated later against today's rates would misreport history. The rates are indicative
+list prices, not a billing feed; they exist so a chart can say "about $14 yesterday" instead of
+"1,900 calls". **A retry is recorded separately from the call it retries**, because each attempt is
+billed, and a failure still records its cost.
+
+Recording can never break what it measures: every write is swallowed on error. A lost row is a gap in
+a chart; a thrown error would be a failed place import.
+
+### Economy
+
+Everything else on the page is derived from rows that already exist — the bond ledger, treasure
+finds, posts, `place_imports`. No counters, because a counter is a second source of truth that drifts
+from the first.
+
+The page's job is to put the **configured** number next to the **actual** one:
+
+- Treasure drop rate and per-rarity shares against `FIND_CHANCE` and the rarity weights. A find rate
+  set to 18% that pays out at 31% is a bug nobody finds by reading the constant.
+- XP per award against `XP_VALUES`, flagged red when the ledger disagrees — which would mean rows
+  were written under a different rate.
+- Mission completions, where a zero means either unreachable or not worth reaching. Both matter and
+  the code cannot tell them apart.
+- Level distribution, real accounts only, computed through the same `progressFor` players see.
+- People against pets per day: bots filling the room is the intent, bots being the only thing in it
+  is the failure mode.
+
+Where a figure has no denominator it shows "—" rather than 0%: with no errands returned, a find rate
+is unknowable, and 0% would be a claim.
 
 ---
 
@@ -1213,4 +1258,5 @@ a person can supply, which is why `/admin/roadmap` now marks them **Needs you** 
 | 2026-09-18 | Venue photos (max 10 each) stored in our own bucket, with attribution; fixed an empty `S3_ENDPOINT` silently sending every upload to local disk |
 | 2026-09-19 | Design: redrew the canvas against what shipped — 67 artboards, 7 new, the leaderboard replaced by the neighbourhood goal, and 11 corrected where the drawings had stopped matching the code |
 | 2026-09-19 | Design: regenerated both published canvas bundles from the artboards, added `review.html` and the missing `support.js` |
+| 2026-09-19 | Game ops 1/5 — telemetry: `api_calls` spend ledger across every paid provider, plus an economy page putting actual drop rates, XP and mission completions next to their configured values |
 | 2026-09-18 | Backfill photo handles lazily via Place Details, so venues imported before the field-mask change can get photos too |

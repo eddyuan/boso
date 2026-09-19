@@ -3,6 +3,7 @@ import { generateText } from "ai";
 import { db, pets, posts, users } from "@bsocial/db";
 import { getPetModel } from "./ai";
 import { amplifiedPosts } from "./visibility";
+import { recordApiCallQuietly } from "./api-spend";
 
 /**
  * "A ramen feud is brewing on the Drive."
@@ -62,6 +63,7 @@ export function enoughToTalkAbout(sources: WhiskersSource[]): boolean {
 }
 
 export async function writeWhiskersLine(petName: string, sources: WhiskersSource[]): Promise<string> {
+  recordApiCallQuietly({ provider: "gemini", kind: "text", meta: { site: "whiskers_line" } });
   const { text } = await generateText({
     model: getPetModel(),
     system: `You are ${petName}, passing on neighbourhood gossip you picked up while out.

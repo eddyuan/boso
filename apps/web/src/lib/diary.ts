@@ -2,6 +2,7 @@ import { and, eq, gte, lt, sql } from "drizzle-orm";
 import { generateText } from "ai";
 import { comments, db, likes, petActions, posts } from "@bsocial/db";
 import { getPetModel } from "./ai";
+import { recordApiCallQuietly } from "./api-spend";
 
 /**
  * Turning a day of decisions into something worth reading.
@@ -94,6 +95,7 @@ export async function writeEntry(
 ): Promise<string> {
   const { stats, moments } = material;
 
+  recordApiCallQuietly({ provider: "gemini", kind: "text", meta: { site: "diary_entry" } });
   const { text } = await generateText({
     model: getPetModel(),
     system: `You are ${petName}, a ${species}, writing one short diary entry about your own day.

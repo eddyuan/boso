@@ -1,4 +1,5 @@
 import type { Bbox, FetchedPlace, PlaceCategory } from "./places";
+import { recordApiCallQuietly } from "./api-spend";
 
 /**
  * Places from the Google Places API (New).
@@ -89,6 +90,12 @@ export async function fetchPlacePhotoRefs(sourceId: string): Promise<PhotoRef[] 
     const res = await fetch(`${DETAILS_URL}${sourceId}`, {
       headers: { "X-Goog-Api-Key": apiKey, "X-Goog-FieldMask": "photos" },
     });
+    recordApiCallQuietly({
+      provider: "google_places",
+      kind: "place_details",
+      ok: res.ok || res.status === 404,
+      meta: { sourceId, status: res.status },
+    });
     if (!res.ok) {
       // A 404 means the id is stale (a venue can be removed). That's still an
       // answer: an empty list, so we stop asking.
@@ -98,6 +105,7 @@ export async function fetchPlacePhotoRefs(sourceId: string): Promise<PhotoRef[] 
     }
     return photoRefsOf((await res.json()) as { photos?: GooglePhoto[] });
   } catch (error) {
+    recordApiCallQuietly({ provider: "google_places", kind: "place_details", ok: false, meta: { sourceId } });
     console.error("[places] details threw:", sourceId, error);
     return null;
   }
@@ -117,12 +125,19 @@ export async function fetchPhotoBytes(photoName: string): Promise<Uint8Array | n
   const url = `${MEDIA_URL}${photoName}/media?maxWidthPx=${PHOTO_WIDTH_PX}&key=${apiKey}`;
   try {
     const res = await fetch(url);
+    recordApiCallQuietly({
+      provider: "google_places",
+      kind: "place_photo",
+      ok: res.ok,
+      meta: { photoName, status: res.status },
+    });
     if (!res.ok) {
       console.error("[places] photo fetch failed:", res.status, photoName);
       return null;
     }
     return new Uint8Array(await res.arrayBuffer());
   } catch (error) {
+    recordApiCallQuietly({ provider: "google_places", kind: "place_photo", ok: false, meta: { photoName } });
     console.error("[places] photo fetch threw:", photoName, error);
     return null;
   }
@@ -180,8 +195,11 @@ async function searchNearby(
   let lastError: unknown;
   for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
     try {
-      return await searchNearbyOnce(apiKey, center, radiusM, includedTypes);
+      const found = await searchNearbyOnce(apiKey, center, radiusM, includedTypes);
+      recordApiCallQuietly({ provider: "google_places", kind: "nearby_search", meta: { attempt, radiusM } });
+      return found;
     } catch (error) {
+      recordApiCallQuietly({ provider: "google_places", kind: "nearby_search", ok: false, meta: { attempt } });
       lastError = error;
       const retryable = (error as { retryable?: boolean }).retryable ?? true;
       if (!retryable || attempt === RETRY_DELAYS_MS.length) break;

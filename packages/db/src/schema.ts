@@ -924,3 +924,42 @@ export const placeImports = pgTable(
   },
   (t) => [index("place_imports_created_idx").on(t.createdAt)],
 );
+
+export const apiProviderEnum = pgEnum("api_provider", ["google_places", "gemini", "expo_push"]);
+
+/**
+ * Every billed call to somebody else's API.
+ *
+ * Nothing recorded what these cost. A place import, a venue photo, a diary
+ * entry, a classification and a whisper are all charged per call, and the only
+ * trace was a request count buried in one cell's ledger row — so the first
+ * anyone would learn of a runaway was the invoice.
+ *
+ * One row per call rather than a counter, because the useful questions are
+ * shaped per-call ("what did we spend on photos yesterday", "which pet is
+ * expensive") and a counter answers none of them. `cost_micros` is stored at
+ * call time from the rate table in config: prices change, and a cost recomputed
+ * later against today's rates would misreport history.
+ */
+export const apiCalls = pgTable(
+  "api_calls",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    provider: apiProviderEnum("provider").notNull(),
+    /** What was called: "nearby_search", "place_details", "place_photo", "text", "image", "object". */
+    kind: text("kind").notNull(),
+    /** Billed units — usually 1, but a batched call can be worth more. */
+    units: integer("units").notNull().default(1),
+    /** Millionths of a dollar, so a $0.007 photo is an integer. */
+    costMicros: integer("cost_micros").notNull().default(0),
+    /** Whether the call came back usable, so failures can be counted separately. */
+    ok: boolean("ok").notNull().default(true),
+    /** Free-form: the model id, the cell, the place id — whatever helps later. */
+    meta: jsonb("meta"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    index("api_calls_day_idx").on(t.createdAt),
+    index("api_calls_provider_idx").on(t.provider, t.createdAt),
+  ],
+);

@@ -7,6 +7,7 @@ import {
   type SensitiveCategory,
 } from "@bsocial/shared";
 import { getPetModel } from "./ai";
+import { recordApiCallQuietly } from "./api-spend";
 
 /**
  * One model, two jobs: what a post is about, and whether it's safe. Both come
@@ -70,6 +71,7 @@ export async function classifyText(
   interests: readonly string[],
   knownTopics: string[],
 ): Promise<TextClassification> {
+  recordApiCallQuietly({ provider: "gemini", kind: "object", meta: { site: "classify_text" } });
   const { object } = await generateObject({
     model: getPetModel(),
     schema: textSchema,
@@ -95,6 +97,7 @@ a restaurant review that says "this sauce is a crime" is not illegal content.`,
 export async function classifyImages(urls: string[]): Promise<ModerationScores[]> {
   if (urls.length === 0) return [];
 
+  recordApiCallQuietly({ provider: "gemini", kind: "object", meta: { site: "classify_image" } });
   const { object } = await generateObject({
     model: getPetModel(),
     schema: imageSchema,

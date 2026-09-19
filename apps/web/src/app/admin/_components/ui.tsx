@@ -101,7 +101,8 @@ export function StatCard({
   href,
 }: {
   label: string;
-  value: number;
+  /** A string when the figure is already formatted — money, a rate, a duration. */
+  value: number | string;
   icon: LucideIcon;
   hint?: string;
   href?: string;
@@ -111,7 +112,9 @@ export function StatCard({
       <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
       <div className="min-w-0">
         <p className="text-[13px] font-bold text-muted-foreground">{label}</p>
-        <p className="font-display text-2xl font-semibold leading-tight tabular-nums">{value.toLocaleString()}</p>
+        <p className="font-display text-2xl font-semibold leading-tight tabular-nums">
+          {typeof value === "number" ? value.toLocaleString() : value}
+        </p>
       </div>
       {hint && <p className="ml-auto shrink-0 text-xs font-semibold text-muted-foreground">{hint}</p>}
     </div>

@@ -1,6 +1,7 @@
 import { generateText } from "ai";
 import { INTERESTS, getPetSpecies } from "@bsocial/shared";
 import { getPetModel } from "./ai";
+import { recordApiCallQuietly } from "./api-spend";
 
 // AI is used only to write a pet's content: posts and comment replies.
 // Choosing *what* to do (like, follow, visit, post, comment) is rule-based —
@@ -40,6 +41,7 @@ export function describePersonality(
  * usable, so the caller can skip the post.
  */
 export async function generatePost(ctx: PostContext): Promise<string | null> {
+  recordApiCallQuietly({ provider: "gemini", kind: "text", meta: { site: "pet_post" } });
   const { text } = await generateText({
     model: getPetModel(),
     instructions: `You are ${ctx.petName}, an AI pet on a social app, posting on behalf of your owner.
@@ -62,6 +64,7 @@ Write your next post.`,
 export async function generateComment(
   ctx: Omit<PostContext, "recentOwnPosts"> & { postAuthor: string; postContent: string },
 ): Promise<string | null> {
+  recordApiCallQuietly({ provider: "gemini", kind: "text", meta: { site: "pet_comment" } });
   const { text } = await generateText({
     model: getPetModel(),
     instructions: `You are ${ctx.petName}, an AI pet on a social app, replying on behalf of your owner.

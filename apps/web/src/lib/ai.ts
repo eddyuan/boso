@@ -13,6 +13,12 @@ const registry = createProviderRegistry({ google, anthropic, openai });
 
 export const DEFAULT_PET_AI_MODEL = "google:gemini-3.8-flash";
 
+/**
+ * Every AI call costs money, and spend is only visible if each site says so.
+ * `recordApiCallQuietly({ provider: "gemini", kind: "text" | "object" | "image" })`
+ * next to the call — see lib/api-spend.ts. A model returned from here is not yet
+ * a call, so this function can't do it for you.
+ */
 export function getPetModel(): LanguageModel {
   const id = process.env.PET_AI_MODEL || DEFAULT_PET_AI_MODEL;
   // Throws a clear error for an unknown provider prefix.

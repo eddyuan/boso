@@ -1,5 +1,6 @@
 import { and, eq, gt, inArray, sql } from "drizzle-orm";
 import { db, notifications, pushTokens, users } from "@bsocial/db";
+import { recordApiCallQuietly } from "./api-spend";
 
 /**
  * Sending a push, and — more importantly — deciding not to.
@@ -130,6 +131,14 @@ async function deliver(tokens: string[], message: PushMessage): Promise<boolean>
           sound: "default",
         })),
       ),
+    });
+    // Free, but counted: a spike here means the caps aren't doing their job.
+    recordApiCallQuietly({
+      provider: "expo_push",
+      kind: "send",
+      units: tokens.length,
+      ok: res.ok,
+      meta: { type: message.type, status: res.status },
     });
     if (!res.ok) {
       console.error("[push] expo rejected the batch:", res.status, await res.text());

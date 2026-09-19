@@ -8,6 +8,7 @@ import { getPetModel } from "./ai";
 import { storeImage } from "./images";
 import { attachPostMedia } from "./post-media";
 import type { Bbox } from "./places";
+import { recordApiCallQuietly } from "./api-spend";
 
 /**
  * Seed data: "stray" pets and the posts they write about nearby places.
@@ -110,6 +111,7 @@ export async function writePlacePost(
   place: { name: string; category: string | null; address: string | null },
 ): Promise<string | null> {
   const species = PET_SPECIES.find((s) => s.value === pet.species)?.label.toLowerCase() ?? "pet";
+  recordApiCallQuietly({ provider: "gemini", kind: "text", meta: { site: "seed_post" } });
   const { text } = await generateText({
     model: getPetModel(),
     instructions: `You are ${pet.name}, a stray ${species} wandering a city in a social app, posting about places you pass.
@@ -140,6 +142,7 @@ export async function makePlaceImage(
   place: { name: string; category: string | null },
 ): Promise<{ url: string; thumbUrl: string } | null> {
   try {
+    recordApiCallQuietly({ provider: "gemini", kind: "image", meta: { site: "seed_image" } });
     const { image } = await generateImage({
       model: google.image(SEED_IMAGE_MODEL),
       prompt:

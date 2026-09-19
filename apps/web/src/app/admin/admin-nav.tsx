@@ -16,6 +16,7 @@ import {
   Network,
   Smartphone,
   Sparkles,
+  TrendingUp,
   ShieldAlert,
   Sprout,
   Users,
@@ -34,6 +35,7 @@ const NAV_GROUPS: { label: string; items: { href: string; label: string; icon: L
     items: [
       { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
       { href: "/admin/map", label: "Coverage", icon: Globe2 },
+      { href: "/admin/telemetry", label: "Telemetry", icon: TrendingUp },
     ],
   },
   {
