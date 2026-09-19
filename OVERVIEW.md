@@ -731,6 +731,28 @@ Each pin is an invitation rather than decoration: tapping one opens the place's 
 with nothing in it offers **"Be the first to post at …"**, which opens compose with that venue
 already attached. Empty map → pin → thread → post → the map now has a post.
 
+### Filling an area nobody has imported
+
+Showing places only helps where places exist, and the table only held areas someone had imported by
+hand — so a user outside those areas saw exactly as much as with no fallback at all. When a viewport
+turns up fewer than 8 venues, the client calls `POST /api/map/places/fill`, which imports that area
+from Google and lets the map refetch
+([`lib/places-autofill.ts`](apps/web/src/lib/places-autofill.ts)).
+
+**Every one of those requests is billed**, and `fetchPlacesGoogle` bills once per category per search
+circle — five per circle — so the guards are the design, not a precaution:
+
+| Guard | Why |
+|---|---|
+| A cell is asked about **once, ever** | The row is claimed *before* the first call, so two simultaneous map loads can't both pay, and a failed import doesn't invite a retry that spends again |
+| A coarse **~2.2 km grid** | No two viewports are alike; a cache keyed on viewports would never hit |
+| **20 requests per cell** (4 circles) | Bounds what one new neighbourhood can cost |
+| **30 cells per 24 h** | Bounds a bug, or someone panning across a continent |
+| `PLACES_AUTOFILL=off` | An off switch that doesn't need a deploy |
+
+It declines with a *reason* rather than a bare false, because "we looked and there's genuinely nothing
+here" and "we refused to spend more today" are not the same answer and only one is worth retrying.
+
 Ordering is hotspots first, then anywhere that has been posted about, then by id. That last tiebreak
 is load-bearing: ordering randomly would reshuffle which venues survive the 40-place cap on every
 pan, so pins would flicker in and out as the map moved. Verified stable across repeated fetches, and
@@ -901,6 +923,7 @@ All under `apps/web/src/app/api`. Guard: `requireSession()` in [`lib/session.ts`
 | `GET /api/topics` | onboarded | Topics ranked by use in the last 14 days, for the filter chips |
 | `GET /api/me/event` | onboarded | The running event, the shared total and your own contribution |
 | `GET /api/map/places` | onboarded | Venues in the viewport, for when no posts are nearby |
+| `POST /api/map/places/fill` | onboarded | Import venues for a sparse area — billed, capped, once per cell |
 | `GET /api/me/diary` | onboarded | The diary, newest first; credits the read once a day |
 | `POST /api/uploads/post-media` | signed in | Multipart `file` → card + thumb WebP URLs for `media[]` |
 | `GET /api/posts/:postId/viewers` | onboarded | Which pets viewed your post (author only) |
@@ -1143,3 +1166,4 @@ a person can supply, which is why `/admin/roadmap` now marks them **Needs you** 
 | 2026-09-18 | Neighbourhood events: a shared collective goal instead of the planned leaderboard, with bots excluded from the count |
 | 2026-09-18 | Roadmap board reconciled with the code: a `needs-input` status for what no developer can unblock |
 | 2026-09-18 | Show places when no posts are nearby, each one a thread you can start |
+| 2026-09-18 | Import venues on demand for areas nobody has seeded, billed once per cell and capped |

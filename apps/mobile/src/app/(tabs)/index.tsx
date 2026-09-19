@@ -53,6 +53,9 @@ export default function MapTab() {
   const sheetCovered =
     selected !== null && shouldBlur(selected.moderationStatus, showSensitive) && !revealed.has(selected.id);
   const lastBounds = useRef<string>('');
+  // Cells we've already asked the server to fill this session, so panning around
+  // a genuinely empty area doesn't ask again and again.
+  const filled = useRef<Set<string>>(new Set());
   const mapRef = useRef<MapViewHandle>(null);
 
   useFocusEffect(
@@ -128,6 +131,25 @@ export default function MapTab() {
       if (r.posts.length === 0) {
         const p = await apiFetch<{ places: MapPlace[] }>(`/api/map/places?${area}`);
         setPlaces(p.places);
+
+        // Nothing posted *and* almost nothing to post about: this neighbourhood
+        // has never been imported. Ask the server to fill it, then show what came
+        // back. Billed and capped server-side, and only ever tried once per area.
+        if (p.places.length < 8) {
+          const centre = { latitude: (b.south + b.north) / 2, longitude: (b.west + b.east) / 2 };
+          const key = `${centre.latitude.toFixed(2)},${centre.longitude.toFixed(2)}`;
+          if (!filled.current.has(key)) {
+            filled.current.add(key);
+            const outcome = await apiFetch<{ filled: boolean }>('/api/map/places/fill', {
+              method: 'POST',
+              body: JSON.stringify(centre),
+            });
+            if (outcome.filled) {
+              const again = await apiFetch<{ places: MapPlace[] }>(`/api/map/places?${area}`);
+              setPlaces(again.places);
+            }
+          }
+        }
       } else {
         setPlaces([]);
       }

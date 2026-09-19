@@ -442,7 +442,7 @@ export const PHASES: Phase[] = [
         impact: 4,
         status: "shipped",
         needs: ["pet-coords"],
-        existing: ["places table with categories, imported per area"],
+        existing: ["places table with categories, imported per area", "on-demand import for sparse areas (lib/places-autofill.ts)"],
         todo: ["Mark hotspots in admin", "Pets path toward them while wandering", "Place-scoped ephemeral thread"],
       },
       {

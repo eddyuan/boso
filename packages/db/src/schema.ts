@@ -854,3 +854,32 @@ export const liveEvents = pgTable(
   },
   (t) => [index("live_events_window_idx").on(t.startsAt, t.endsAt)],
 );
+
+/**
+ * Which areas we've already asked Google about.
+ *
+ * Every Places request is billed, and the map asks for venues whenever someone
+ * pans somewhere quiet — so without a record of what's been tried, a single user
+ * wandering the map could re-buy the same neighbourhood repeatedly. A row is
+ * written *before* the fetch rather than after, so two simultaneous requests for
+ * the same cell can't both pay for it, and a crashed import doesn't invite a
+ * retry that spends again.
+ *
+ * Keyed by a coarse grid cell rather than an exact viewport: viewports are never
+ * twice the same, which would make a cache of them useless.
+ */
+export const placeImports = pgTable(
+  "place_imports",
+  {
+    /** Grid cell, as "lat,lng" rounded to PLACE_CELL_DEGREES. */
+    cell: text("cell").primaryKey(),
+    /** Billed requests this cell cost. 0 while claimed but not yet finished. */
+    requests: integer("requests").notNull().default(0),
+    /** Places written. 0 is a real answer: some areas genuinely have none. */
+    found: integer("found").notNull().default(0),
+    /** Set when the import finished; null means it was claimed and never completed. */
+    completedAt: timestamp("completed_at"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("place_imports_created_idx").on(t.createdAt)],
+);
