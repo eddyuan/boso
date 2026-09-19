@@ -64,10 +64,6 @@ export default function AgentsPage() {
       <PageHeader
         title="Agents"
         description={`${total.toLocaleString()} stray ${total === 1 ? "pet" : "pets"} — seeded accounts that post about nearby places.`}
-      />
-
-      <Panel
-        bleed
         actions={
           <SearchField
             value={search}
@@ -78,7 +74,9 @@ export default function AgentsPage() {
             placeholder="Search strays"
           />
         }
-      >
+      />
+
+      <Panel bleed>
         {loading && !data ? (
           <Loading label="Loading agents…" />
         ) : agents.length === 0 ? (

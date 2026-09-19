@@ -21,7 +21,7 @@ export function PageHeader({
   return (
     <header className="flex flex-wrap items-end justify-between gap-4">
       <div className="min-w-0">
-        <h1 className="font-display text-[28px] font-semibold leading-tight tracking-tight">{title}</h1>
+        <h1 className="font-display text-xl font-semibold leading-tight tracking-tight">{title}</h1>
         {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
@@ -48,24 +48,29 @@ export function Panel({
   bleed?: boolean;
 }) {
   return (
-    <section className={cn("rounded-2xl bg-card shadow-card", className)}>
+    <section className={cn("rounded-xl border border-border bg-card", className)}>
       {(title || actions) && (
-        <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-5 sm:px-6">
-          <div className="min-w-0">
-            {title && (
-              <h2 className="flex items-center gap-2 font-display text-lg font-semibold leading-tight">
-                {Icon && <Icon className="h-[18px] w-[18px] text-primary-ink" />}
-                {title}
-              </h2>
-            )}
-            {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
-          </div>
+        <div
+          className={cn(
+            "flex flex-wrap items-center gap-3 px-4 pt-4",
+            (title || description) && "justify-between",
+          )}
+        >
+          {(title || description) && (
+            <div className="min-w-0">
+              {title && (
+                <h2 className="flex items-center gap-2 font-display text-base font-semibold leading-tight">
+                  {Icon && <Icon className="h-4 w-4 text-primary-ink" />}
+                  {title}
+                </h2>
+              )}
+              {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
+            </div>
+          )}
           {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
         </div>
       )}
-      <div className={cn(bleed ? "p-2 sm:p-3" : "p-5 sm:p-6", (title || actions) && (bleed ? "pt-3" : "pt-4"))}>
-        {children}
-      </div>
+      <div className={cn(bleed ? "p-2" : "p-4", (title || actions) && "pt-3")}>{children}</div>
     </section>
   );
 }
@@ -91,30 +96,28 @@ export function IconTile({ icon: Icon, tone = "gold", className }: { icon: Lucid
 export function StatCard({
   label,
   value,
-  icon,
-  tone = "gold",
+  icon: Icon,
   hint,
   href,
 }: {
   label: string;
   value: number;
   icon: LucideIcon;
-  tone?: Tone;
   hint?: string;
   href?: string;
 }) {
   const body = (
-    <div className="flex h-full items-start gap-4 rounded-2xl bg-card p-5 shadow-card transition-shadow group-hover:shadow-float">
-      <IconTile icon={icon} tone={tone} />
+    <div className="flex h-full items-center gap-3 rounded-xl border border-border bg-card p-4 transition-colors group-hover:border-foreground/25">
+      <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
       <div className="min-w-0">
         <p className="text-[13px] font-bold text-muted-foreground">{label}</p>
-        <p className="font-display text-[28px] font-semibold leading-tight tabular-nums">{value.toLocaleString()}</p>
-        {hint && <p className="mt-0.5 text-xs font-semibold text-muted-foreground">{hint}</p>}
+        <p className="font-display text-2xl font-semibold leading-tight tabular-nums">{value.toLocaleString()}</p>
       </div>
+      {hint && <p className="ml-auto shrink-0 text-xs font-semibold text-muted-foreground">{hint}</p>}
     </div>
   );
   return href ? (
-    <Link href={href} className="group block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+    <Link href={href} className="group block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
       {body}
     </Link>
   ) : (

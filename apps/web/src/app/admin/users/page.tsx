@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, KeyRound, Loader2, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -65,10 +66,6 @@ export default function UsersPage() {
       <PageHeader
         title="Users"
         description={`${total.toLocaleString()} real ${total === 1 ? "person" : "people"} — stray pets are under Agents.`}
-      />
-
-      <Panel
-        bleed
         actions={
           <SearchField
             value={search}
@@ -79,7 +76,9 @@ export default function UsersPage() {
             placeholder="Search name, email, username"
           />
         }
-      >
+      />
+
+      <Panel bleed>
         {loading && !data ? (
           <Loading label="Loading users…" />
         ) : users.length === 0 ? (
@@ -101,7 +100,7 @@ export default function UsersPage() {
               {users.map((u) => (
                 <TableRow key={u.id}>
                   <TableCell>
-                    <div className="flex items-center gap-3">
+                    <Link href={`/admin/users/${u.id}`} className="flex items-center gap-3 hover:underline">
                       <Avatar className="h-9 w-9">
                         <AvatarImage src={u.image ?? undefined} alt="" />
                         <AvatarFallback className="text-sm">{u.name[0]?.toUpperCase()}</AvatarFallback>
@@ -116,7 +115,7 @@ export default function UsersPage() {
                           {u.email}
                         </div>
                       </div>
-                    </div>
+                    </Link>
                   </TableCell>
                   <TableCell>
                     {u.petName ? (

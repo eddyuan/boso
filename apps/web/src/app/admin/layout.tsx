@@ -41,7 +41,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <div className="flex-1 overflow-y-auto">
           <AdminNav />
         </div>
-        <div className="m-3 flex items-center gap-3 rounded-2xl bg-card p-3 shadow-card">
+        <div className="m-3 flex items-center gap-3 rounded-xl border border-border bg-card p-3">
           <Avatar className="h-9 w-9">
             <AvatarImage src={image ?? undefined} alt="" />
             <AvatarFallback className="text-sm">{initial}</AvatarFallback>

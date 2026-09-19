@@ -5,6 +5,7 @@ import { ArrowRight, Bot, FileText, MapPin, PawPrint, Users } from "lucide-react
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { EmptyState, PageHeader, Panel, StatCard, TimeAgo } from "./_components/ui";
+import { PetSwitch } from "./_components/pet-switch";
 import { mediaByPostId } from "@/lib/post-media";
 
 export const dynamic = "force-dynamic";
@@ -82,11 +83,13 @@ export default async function AdminDashboard() {
     <div className="space-y-8">
       <PageHeader title="Dashboard" description="How Tielo is doing right now." />
 
+      <PetSwitch />
+
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Real users" value={s.totalUsers} icon={Users} tone="blue" hint={`+${s.usersThisWeek} this week`} href="/admin/users" />
-        <StatCard label="Posts" value={s.totalPosts} icon={FileText} tone="gold" hint={`+${s.postsThisWeek} this week`} href="/admin/posts" />
-        <StatCard label="Pets" value={s.totalPets} icon={PawPrint} tone="green" hint={`${s.mockUsers} are strays`} href="/admin/agents" />
-        <StatCard label="Places" value={s.totalPlaces} icon={MapPin} tone="red" hint="From Google Places" href="/admin/places" />
+        <StatCard label="Real users" value={s.totalUsers} icon={Users} hint={`+${s.usersThisWeek} this week`} href="/admin/users" />
+        <StatCard label="Posts" value={s.totalPosts} icon={FileText} hint={`+${s.postsThisWeek} this week`} href="/admin/posts" />
+        <StatCard label="Pets" value={s.totalPets} icon={PawPrint} hint={`${s.mockUsers} are strays`} href="/admin/agents" />
+        <StatCard label="Places" value={s.totalPlaces} icon={MapPin} hint="From Google Places" href="/admin/places" />
       </div>
 
       <Panel title="Content mix" description="Where the posts on the map come from.">

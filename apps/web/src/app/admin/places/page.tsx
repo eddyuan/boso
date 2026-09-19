@@ -56,10 +56,6 @@ export default function PlacesPage() {
       <PageHeader
         title="Places"
         description={`${total.toLocaleString()} venues imported from Google Places. Posts attach to these.`}
-      />
-
-      <Panel
-        bleed
         actions={
           <SearchField
             value={search}
@@ -70,7 +66,9 @@ export default function PlacesPage() {
             placeholder="Search name, address, category"
           />
         }
-      >
+      />
+
+      <Panel bleed>
         {loading && !data ? (
           <Loading label="Loading places…" />
         ) : places.length === 0 ? (

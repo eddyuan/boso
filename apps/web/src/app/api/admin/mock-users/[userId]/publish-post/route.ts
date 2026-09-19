@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db, pets, posts, users } from "@bsocial/db";
 import { requireSession } from "@/lib/session";
+import { inngest } from "@/inngest/client";
 import { attachPostMedia, MAX_POST_MEDIA } from "@/lib/post-media";
 
 const mediaSchema = z.object({
@@ -54,6 +55,10 @@ export async function POST(
     .returning();
 
   await attachPostMedia(post!.id, media);
+  // Agent posts get classified too — nothing human reviews them before they land.
+  await inngest.send({ name: "post/created", data: { postId: post!.id } }).catch((error) => {
+    console.error("[publish-post] failed to queue classification:", error);
+  });
   await db.update(users).set({ lastActiveAt: new Date() }).where(eq(users.id, userId));
 
   return NextResponse.json({ post: { ...post, media } }, { status: 201 });

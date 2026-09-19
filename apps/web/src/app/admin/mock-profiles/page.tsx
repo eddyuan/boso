@@ -16,8 +16,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { EmptyState, Loading, Notice, PageHeader, Pagination, SearchField } from "../_components/ui";
+import { EmptyState, Loading, Muted, Notice, PageHeader, Pagination, Panel, SearchField } from "../_components/ui";
 import { useAdminData } from "../_components/use-admin-data";
 import { useDebounced } from "../_components/use-debounced";
 
@@ -202,33 +203,29 @@ export default function MockProfilesPage() {
     <div className="space-y-6">
       <PageHeader
         title="Personas"
-        description="Who each stray is when it writes: background, voice, interests and when it posts."
+        description={`${total.toLocaleString()} ${total === 1 ? "persona" : "personas"} — who each stray is when it writes.`}
         actions={
-          <Button onClick={openCreateDialog}>
-            <Plus />
-            New persona
-          </Button>
+          <>
+            <SearchField
+              value={search}
+              onChange={(v) => {
+                setSearch(v);
+                setPage(1);
+              }}
+              placeholder="Search name, email, location"
+            />
+            <Button onClick={openCreateDialog}>
+              <Plus />
+              New persona
+            </Button>
+          </>
         }
       />
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <SearchField
-          value={search}
-          onChange={(v) => {
-            setSearch(v);
-            setPage(1);
-          }}
-          placeholder="Search name, email, location"
-        />
-        <p className="text-[13px] font-semibold text-muted-foreground">
-          {total} {total === 1 ? "persona" : "personas"}
-        </p>
-      </div>
-
-      {loading && !data ? (
-        <Loading label="Loading personas…" />
-      ) : profiles.length === 0 ? (
-        <div className="rounded-2xl bg-card shadow-card">
+      <Panel bleed>
+        {loading && !data ? (
+          <Loading label="Loading personas…" />
+        ) : profiles.length === 0 ? (
           <EmptyState
             icon={Sparkles}
             title={query ? "No personas match" : "No personas yet"}
@@ -242,90 +239,114 @@ export default function MockProfilesPage() {
               )
             }
           />
-        </div>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {profiles.map((profile) => (
-            <article key={profile.id} className="flex flex-col gap-4 rounded-2xl bg-card p-5 shadow-card">
-              <div className="flex items-start gap-3">
-                <Avatar className="h-11 w-11">
-                  <AvatarImage src={profile.userImage ?? undefined} alt="" />
-                  <AvatarFallback>{profile.userName[0]?.toUpperCase()}</AvatarFallback>
-                </Avatar>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-display text-lg font-semibold leading-tight">{profile.userName}</p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {[profile.age && `${profile.age}`, profile.gender && profile.gender.replaceAll("_", " ")]
-                      .filter(Boolean)
-                      .join(" · ") || profile.userEmail}
-                  </p>
-                </div>
-                <div className="flex shrink-0 gap-1">
-                  <Button variant="ghost" size="icon-sm" onClick={() => openEditDialog(profile)} aria-label="Edit persona">
-                    <Pencil />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={() => setDeleting(profile)}
-                    aria-label="Delete persona"
-                    className="hover:bg-destructive-soft hover:text-destructive"
-                  >
-                    <Trash2 />
-                  </Button>
-                </div>
-              </div>
-
-              {profile.background && (
-                <p className="line-clamp-3 text-sm leading-relaxed text-muted-foreground">{profile.background}</p>
-              )}
-
-              {(profile.tone || profile.personalityTraits.length > 0) && (
-                <div className="flex flex-wrap gap-1.5">
-                  {profile.tone && (
-                    <Badge className="min-w-0 max-w-full" title={profile.tone}>
-                      <span className="min-w-0 truncate">{profile.tone}</span>
-                    </Badge>
-                  )}
-                  {profile.personalityTraits.map((t) => (
-                    <Badge key={t} variant="secondary">
-                      {t}
-                    </Badge>
-                  ))}
-                </div>
-              )}
-
-              {profile.interests.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {profile.interests.slice(0, 5).map((i) => (
-                    <Badge key={i} variant="outline">
-                      {i}
-                    </Badge>
-                  ))}
-                  {profile.interests.length > 5 && <Badge variant="outline">+{profile.interests.length - 5}</Badge>}
-                </div>
-              )}
-
-              <div className="mt-auto flex flex-wrap gap-x-4 gap-y-1 rounded-xl bg-background px-3 py-2.5 text-xs font-semibold text-muted-foreground">
-                <span className="inline-flex items-center gap-1.5">
-                  <MapPin className="h-3.5 w-3.5" />
-                  {profile.location ?? "No location"}
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <Clock className="h-3.5 w-3.5" />
-                  {profile.postingSchedule
-                    ? `${profile.postingSchedule.frequency}, ${profile.postingSchedule.times.join(" · ")}`
-                    : "No schedule"}
-                </span>
-              </div>
-            </article>
-          ))}
-        </div>
-      )}
-
-      <div className="rounded-2xl bg-card px-2 shadow-card empty:hidden">
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Persona</TableHead>
+                <TableHead>Traits</TableHead>
+                <TableHead>Interests</TableHead>
+                <TableHead>Location</TableHead>
+                <TableHead>Schedule</TableHead>
+                <TableHead className="w-20" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {profiles.map((profile) => (
+                <TableRow key={profile.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-9 w-9">
+                        <AvatarImage src={profile.userImage ?? undefined} alt="" />
+                        <AvatarFallback className="text-sm">{profile.userName[0]?.toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0">
+                        <div className="truncate font-extrabold">{profile.userName}</div>
+                        <div className="truncate text-xs text-muted-foreground">
+                          {[profile.age && `${profile.age}`, profile.gender && profile.gender.replaceAll("_", " ")]
+                            .filter(Boolean)
+                            .join(" · ") || profile.userEmail}
+                        </div>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="max-w-48">
+                    {profile.tone || profile.personalityTraits.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {profile.tone && (
+                          <Badge className="min-w-0 max-w-full" title={profile.tone}>
+                            <span className="min-w-0 truncate">{profile.tone}</span>
+                          </Badge>
+                        )}
+                        {profile.personalityTraits.map((t) => (
+                          <Badge key={t} variant="secondary">
+                            {t}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <Muted />
+                    )}
+                  </TableCell>
+                  <TableCell className="max-w-48">
+                    {profile.interests.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {profile.interests.slice(0, 3).map((i) => (
+                          <Badge key={i} variant="outline">
+                            {i}
+                          </Badge>
+                        ))}
+                        {profile.interests.length > 3 && <Badge variant="outline">+{profile.interests.length - 3}</Badge>}
+                      </div>
+                    ) : (
+                      <Muted />
+                    )}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {profile.location ? (
+                      <span className="inline-flex min-w-0 items-center gap-1">
+                        <MapPin className="h-3 w-3 shrink-0 text-muted-foreground" />
+                        <span className="truncate">{profile.location}</span>
+                      </span>
+                    ) : (
+                      <Muted />
+                    )}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {profile.postingSchedule ? (
+                      <span className="inline-flex min-w-0 items-center gap-1">
+                        <Clock className="h-3 w-3 shrink-0 text-muted-foreground" />
+                        <span className="truncate capitalize">
+                          {profile.postingSchedule.frequency}, {profile.postingSchedule.times.join(" · ")}
+                        </span>
+                      </span>
+                    ) : (
+                      <Muted />
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex justify-end gap-1">
+                      <Button variant="ghost" size="icon-sm" onClick={() => openEditDialog(profile)} aria-label="Edit persona">
+                        <Pencil />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => setDeleting(profile)}
+                        aria-label="Delete persona"
+                        className="hover:bg-destructive-soft hover:text-destructive"
+                      >
+                        <Trash2 />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
         <Pagination page={page} pageSize={PAGE_SIZE} total={total} onPage={setPage} />
-      </div>
+      </Panel>
 
       {/* Create / edit */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
