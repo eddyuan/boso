@@ -194,7 +194,11 @@ export default function ProfileTab() {
           ))}
 
           {bond && (
-            <View style={styles.bondRow}>
+            <Pressable
+              onPress={() => router.push('/bond')}
+              accessibilityRole="button"
+              accessibilityLabel="Bond level and unlocks"
+              style={styles.bondRow}>
               <ThemedText type="smallBold" themeColor="textSecondary">
                 Bond {bond.level}
               </ThemedText>
@@ -212,7 +216,8 @@ export default function ProfileTab() {
               <ThemedText type="small" themeColor="textSecondary" numberOfLines={1} style={{ flexShrink: 1 }}>
                 {bond.next ? `${bond.xpToNext} to ${bond.next.unlock.toLowerCase()}` : 'Elder bond'}
               </ThemedText>
-            </View>
+              <Icon name="chevron" size={16} color={theme.textSecondary} />
+            </Pressable>
           )}
 
           <View style={styles.careRow}>
@@ -242,12 +247,14 @@ export default function ProfileTab() {
         </Card>
       )}
 
-      {treasures && (
-        <TreasureShelf
-          treasures={treasures.treasures}
-          counts={treasures.counts}
-          petName={pet?.name ?? 'Your pet'}
-        />
+      {treasures && treasures.treasures.length > 0 && (
+        <Pressable onPress={() => router.push('/shelf')} accessibilityRole="button" accessibilityLabel="The whole shelf">
+          <TreasureShelf
+            treasures={treasures.treasures}
+            counts={treasures.counts}
+            petName={pet?.name ?? 'Your pet'}
+          />
+        </Pressable>
       )}
 
       {friends.length > 0 && (

@@ -1,4 +1,4 @@
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
@@ -116,7 +116,11 @@ export default function ActivityTab() {
       <ErrorText message={error} />
       {!actions && !error && <ActivityIndicator color={theme.primaryPress} />}
 
-      <EventCard data={liveEvent} />
+      {liveEvent && (
+        <Pressable onPress={() => router.push('/event')} accessibilityRole="button" accessibilityLabel="Open the event">
+          <EventCard data={liveEvent} />
+        </Pressable>
+      )}
       <MissionsCard missions={missions} />
       {playdates && <PlaydatesCard data={playdates} onChange={loadPlaydates} />}
 
@@ -131,8 +135,17 @@ export default function ActivityTab() {
 
       {diary.length > 0 && (
         <>
-          <ThemedText type="label">Diary</ThemedText>
-          {diary.map((day) => (
+          <View style={styles.sectionRow}>
+            <ThemedText type="label" style={{ flex: 1 }}>
+              Diary
+            </ThemedText>
+            <Pressable onPress={() => router.push('/diary')} hitSlop={8} accessibilityRole="button">
+              <ThemedText type="smallBold" style={{ color: theme.primaryInk }}>
+                See all
+              </ThemedText>
+            </Pressable>
+          </View>
+          {diary.slice(0, 1).map((day) => (
             <Card key={day.id} style={styles.diary}>
               <View style={styles.diaryHead}>
                 <ThemedText type="smallBold" themeColor="textSecondary" style={{ flex: 1 }}>
@@ -235,6 +248,7 @@ function formatDay(day: string): string {
 const styles = StyleSheet.create({
   pending: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: Spacing.lg },
   diary: { padding: Spacing.lg, gap: Spacing.xs },
+  sectionRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   diaryHead: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: Spacing.lg, paddingVertical: 14 },
   rowText: { flex: 1, minWidth: 0, gap: 2 },

@@ -49,6 +49,10 @@ export default function RootLayout() {
         <Stack.Protected guard={onboarded}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="post/[postId]" />
+        <Stack.Screen name="diary" />
+        <Stack.Screen name="event" />
+        <Stack.Screen name="shelf" />
+        <Stack.Screen name="bond" />
         <Stack.Screen name="account" />
           <Stack.Screen name="devices" />
         </Stack.Protected>

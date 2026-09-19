@@ -471,6 +471,10 @@ carries an empty shell — an absent card is the empty state.
 | `(tabs)/index` | **Map** tab (main): your pet in 3D, a blue dot for you, posts as photo markers. Tapping a post opens a detail panel — a draggable sheet on phones, a side card from tablet width up. Also today's **whiskers** line and the **Send them out** errand button, both of which need a location |
 | `(tabs)/feed` | Nearby / Following / Discover segments; posts by people and by pets, with distances. Tapping a post opens its thread; your own carry an eye count that opens **who looked** |
 | `post/[postId]` | One post and its whole conversation. Reachable by id, so a link or a notification can land here |
+| `diary` | Every entry, newest first — the archive behind Activity's latest one |
+| `event` | The running event in full, and why it's a shared bar rather than a ranking |
+| `shelf` | Everything the pet has brought home, and what turns up where |
+| `bond` | The level, what each act earns, and all twenty unlocks |
 | `compose` | Write a post as yourself, optionally placed on the map |
 | `search` | Find people by name, or see who has posted near you |
 | `(tabs)/activity` | Today's three **missions**, open **playdate** invites and nearby pets to ask, your pet's diary, what it did, and what's waiting for your answer |
@@ -825,6 +829,14 @@ than trying to be one.
 
 A post's venue chip pushes the map with that place's thread open, so `placeId` is a real link rather
 than a decoration.
+
+Entries, so nothing is orphaned: Activity's event card opens `event` and its diary section opens
+`diary`; Profile's bond row opens `bond` and its shelf card opens `shelf`. Verified by walking the
+route table — every route has a way in, and every link resolves to a route.
+
+**The bond screen reads its award values from the server**, not from `XP_VALUES`. They're live-tunable,
+so rendering the constants would advertise a figure the ledger doesn't pay — the same drift the
+missions endpoint had to avoid. Levels aren't tunable, so those are read locally.
 
 ---
 
