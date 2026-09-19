@@ -115,7 +115,7 @@ export default function MapTab() {
   }
 
   const fetchPhotos = useCallback(async (visible: MapPlace[]) => {
-    const need = visible.filter((p) => p.hasPhotoRefs && !p.photo).map((p) => p.id);
+    const need = visible.filter((p) => p.mayHavePhotos && !p.photo).map((p) => p.id);
     if (need.length === 0) return;
     try {
       const r = await apiFetch<{ photos: Record<string, MapPlace['photo'][]> }>('/api/map/places/photos', {

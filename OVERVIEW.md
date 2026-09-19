@@ -759,14 +759,25 @@ Places carry up to **10 photos**, re-encoded and held in our own bucket
 ([`lib/place-photos.ts`](apps/web/src/lib/place-photos.ts)). They appear as a small thumbnail inside
 the map pill and full-size at the top of the place's thread.
 
-Fetching is split in two, because the two halves are billed differently:
+Fetching happens in stages, because each is billed differently and all of it is driven by what's on
+somebody's screen — so the table fills in through ordinary use rather than one paid sweep:
 
-- **Handles** (`places.photo_refs`) arrive inside the Nearby Search response that was already paid
-  for, so they're captured for every venue at import time for nothing.
-- **Images** are a separate charge per photo, so they're fetched only for venues someone is actually
-  looking at — the client posts the ids on screen to `POST /api/map/places/photos`, which fills at
-  most 3 venues per call. Ten photos each across a freshly imported area would otherwise cost about
-  a hundred times the import itself, mostly for venues nobody opens.
+- **Handles** (`places.photo_refs`) arrive free inside the Nearby Search response that was already
+  paid for, so venues imported since the field mask asked for them have handles for nothing.
+- **Handles for older venues** come from Place Details, one billed request each, keyed on the
+  `source_id` we already store. Without this, everything imported before the field mask change had
+  no handles and would have waited forever on data that was never coming — 1218 of 1238 venues.
+- **Images** are charged per photo and fetched last, at most 3 venues per call.
+
+`photo_refs` carries three distinct states, and the middle one is what keeps this cheap:
+
+| State | Meaning |
+|---|---|
+| `null` | Never asked — worth a Details lookup |
+| `[]` | Asked, and the venue genuinely has no photos — never ask again |
+| `[…]` | Handles held, images still to fetch |
+
+A failed lookup writes nothing, so a transient error can't permanently mark a venue as photoless.
 
 `photos_fetched_at` is stamped **before** the downloads, so a venue is attempted once: a crash
 partway through doesn't leave something that gets re-billed on every later view, and "this place has
@@ -1196,3 +1207,4 @@ a person can supply, which is why `/admin/roadmap` now marks them **Needs you** 
 | 2026-09-18 | Show places when no posts are nearby, each one a thread you can start |
 | 2026-09-18 | Import venues on demand for areas nobody has seeded, billed once per cell and capped |
 | 2026-09-18 | Venue photos (max 10 each) stored in our own bucket, with attribution; fixed an empty `S3_ENDPOINT` silently sending every upload to local disk |
+| 2026-09-18 | Backfill photo handles lazily via Place Details, so venues imported before the field-mask change can get photos too |

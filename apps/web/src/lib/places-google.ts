@@ -54,6 +54,7 @@ type GooglePlace = {
 export const MAX_PHOTOS_PER_PLACE = 10;
 
 const MEDIA_URL = "https://places.googleapis.com/v1/";
+const DETAILS_URL = "https://places.googleapis.com/v1/places/";
 /** Wide enough for a full-bleed card; storeImage re-encodes down from here. */
 const PHOTO_WIDTH_PX = 1200;
 
@@ -65,6 +66,41 @@ export function photoRefsOf(place: { photos?: GooglePhoto[] }): PhotoRef[] {
     name: photo.name,
     attribution: photo.authorAttributions?.[0]?.displayName ?? null,
   }));
+}
+
+/**
+ * Photo handles for a venue we already hold, via Place Details.
+ *
+ * Nearby Search only returns handles for venues fetched *after* the field mask
+ * asked for them, which leaves everything imported earlier permanently without
+ * any — waiting on data that would never arrive. Details takes the provider's own
+ * place id, which we store as `sourceId`, so this fills the gap for one venue at
+ * a time without re-running a search or risking duplicates.
+ *
+ * One billed request per venue. Returns an empty array when the venue genuinely
+ * has no photos, which callers must persist as distinct from "not yet asked" —
+ * otherwise it gets asked again on every view.
+ */
+export async function fetchPlacePhotoRefs(sourceId: string): Promise<PhotoRef[] | null> {
+  const apiKey = process.env.GOOGLE_PLACES_API_KEY;
+  if (!apiKey) return null;
+
+  try {
+    const res = await fetch(`${DETAILS_URL}${sourceId}`, {
+      headers: { "X-Goog-Api-Key": apiKey, "X-Goog-FieldMask": "photos" },
+    });
+    if (!res.ok) {
+      // A 404 means the id is stale (a venue can be removed). That's still an
+      // answer: an empty list, so we stop asking.
+      if (res.status === 404) return [];
+      console.error("[places] details failed:", res.status, sourceId);
+      return null;
+    }
+    return photoRefsOf((await res.json()) as { photos?: GooglePhoto[] });
+  } catch (error) {
+    console.error("[places] details threw:", sourceId, error);
+    return null;
+  }
 }
 
 /**

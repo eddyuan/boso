@@ -44,8 +44,13 @@ export async function GET(req: Request) {
       latitude: places.latitude,
       longitude: places.longitude,
       isHotspot: places.isHotspot,
-      /** Whether photos could be fetched, so the client knows to ask. */
-      hasPhotoRefs: sql<boolean>`${places.photoRefs} is not null and jsonb_array_length(${places.photoRefs}) > 0`,
+      /**
+       * True unless we've established this venue has no photos. Covers both
+       * "never asked" and "has handles waiting", because the client's job is the
+       * same in each case: ask. Only a confirmed-empty venue is excluded, which
+       * is what stops it being re-queried forever.
+       */
+      mayHavePhotos: sql<boolean>`${places.photoRefs} is null or jsonb_array_length(${places.photoRefs}) > 0`,
       postCount: sql<number>`(select count(*) from ${posts} where ${posts.placeId} = ${places.id})`.mapWith(Number),
     })
     .from(places)

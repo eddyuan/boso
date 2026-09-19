@@ -43,8 +43,8 @@ export type MapPlace = {
   /** First stored photo, once one has been fetched. */
   photo: { url: string; thumbUrl: string; attribution: string | null } | null;
   photoCount: number;
-  /** The provider offered photos, so they can still be fetched. */
-  hasPhotoRefs: boolean;
+  /** False only once the venue is known to have no photos; ask otherwise. */
+  mayHavePhotos: boolean;
 };
 
 /** Zoom used when the map is asked to focus on the pet. */
