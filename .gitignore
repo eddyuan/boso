@@ -13,3 +13,11 @@ dist/
 .vscode/
 ios/
 android/
+
+# Scratch space for one-off tooling runs (img2threejs working files etc.)
+tmp/
+
+# Agent tooling: installed skills are reproducible from skills-lock.json
+# (`npx skills add …`), so the vendored copies don't belong in the repo.
+.agents/
+.claude/

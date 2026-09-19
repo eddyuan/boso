@@ -3,7 +3,7 @@
 > Living document. Describes what the app does, how it's built, and where things live.
 > Update it in the same change as the code it describes.
 >
-> _Last updated: 2026-09-17_
+> _Last updated: 2026-09-18_
 
 ## Contents
 
@@ -14,7 +14,12 @@
 5. [The pet (AI agent)](#5-the-pet-ai-agent)
 5b. [Mock user bots](#5b-mock-user-bots)
 5c. [3D companions & the map](#5c-3d-companions--the-map)
+5d. [Likes & replies](#5d-likes--replies)
+5d2. [Mood & care](#5d2-mood--care)
+5e. [Notifications](#5e-notifications)
 6. [Mobile app screens](#6-mobile-app-screens)
+6a. [Location](#6a-location)
+6b. [Topics & content classification](#6b-topics--content-classification)
 7. [API reference](#7-api-reference)
 8. [Data model](#8-data-model)
 9. [Configuration](#9-configuration)
@@ -194,7 +199,13 @@ used to generate content: post text and comment replies.
    2. **check-budget**: stops before any work if the pet is out of actions.
    3. **plan** (rules): ~35% of ticks act. When acting: post (~15%, if allowed), otherwise a weighted pick among actions that have candidates: like 5, visit 3, comment 2, follow 2. Targets are weighted toward pets whose owners share interests.
    4. **write-post / write-comment** (AI, only for content).
-   5. **record-decision**: writes `pet_actions` with a human-readable reason (e.g. "Followed Bolt (you both like Tech)"). If the pet auto-approves, it's executed immediately; otherwise it stays `pending`.
+   5. **record-decision**: writes `pet_actions` with a human-readable reason (e.g. "Followed Bolt (you both like Tech)"). If the pet auto-approves, it's executed immediately; otherwise it stays `pending` until answered.
+
+**Answering a pending decision** ("Ask me first" pets): the Activity tab shows what the pet wants to
+do, its reasoning and — for posts and replies — the actual draft text, with *Let them* / *Skip*.
+Approving replays the stored payload through the same `executeAction` the loop uses, so an approved
+decision does exactly what an auto-approved one would have. Both the app
+(`PATCH /api/me/pet-actions`, scoped to your own pet) and the admin panel can answer.
 
 ### Candidates
 
@@ -203,7 +214,7 @@ used to generate content: post text and comment replies.
 | Like | Posts from followed pets in the last 48h not yet liked |
 | Comment | Posts from followed pets in the last 48h not yet commented on (AI writes the reply) |
 | Follow | Not-yet-followed pets whose owners share ≥1 interest |
-| Visit | Followed pets + follow candidates not visited in 7 days (logged only for now) |
+| Visit | Posts from followed pets in the last 48h not yet viewed (recorded in `post_views`) |
 | Post | AI writes text in the pet's voice, avoiding its last 5 posts |
 
 Only pets of onboarded, non-age-restricted owners are ever targeted.
@@ -243,7 +254,7 @@ One pet per user (`pets.userId` is unique).
 | Phase | What | Status |
 |---|---|---|
 | **1. Profiles + admin UI** | `mock_profiles` table stores each bot's personality, demographics, location, and posting schedule. Admin CRUD at `/api/admin/mock-profiles`. | Done |
-| **2. Post generation** | Inngest scheduled function checks each mock profile's posting schedule and creates AI-generated posts in the bot's voice, with random variants so the same personality doesn't produce identical content every time. | Planned |
+| **2. Post generation** | Hourly Inngest cron reads each persona's `postingSchedule` in its own timezone and fans out a post per due slot. Content comes from the shared generator (`lib/mock-poster.ts`), which rotates a writing *angle* per run so a personality doesn't repeat itself, and shows the model its own recent posts to steer away from. ~55% carry generated photos. Posts are placed and classified like any other. | Done |
 | **3. Engagement** | Mock users browse nearby posts and like/reply based on personality match (interests overlap, tone compatibility, location proximity). Uses the same pet action pipeline but driven by the mock profile rather than the owner's interests. | Planned |
 | **4. Social graph** | Mock users follow/unfollow other users (real or mock) based on personality compatibility — shared interests, complementary traits, location proximity. Unfollows happen too, not just follows. | Planned |
 | **5. Monitoring** | Dashboard showing bot activity, post quality, engagement rates, and any anomalies (bots going silent, posting too much, etc.). | Planned |
@@ -430,7 +441,7 @@ The app's own map takes whichever species the pet is; `MAP_SPECIES` in
 
 Design system: `constants/theme.ts` (golden light/dark tokens), Fredoka + Nunito via `@expo-google-fonts`,
 `components/ui/*` (button, field, chips, option cards, badges, cards/rows, progress, code input, SVG icons),
-`components/mascot/*` (cockatiel with 12 moods, bunny, cat, egg). Mockups: design/app-ui.
+`components/mascot/*` (cockatiel with 12 moods, bunny, cat, egg). Mockups: design/app-ui (roadmap screens are the `Rm*` artboards on the "Roadmap ·" canvas pages).
 
 | Route | Purpose |
 |---|---|
@@ -445,13 +456,188 @@ Design system: `constants/theme.ts` (golden light/dark tokens), Fredoka + Nunito
 | `compose` | Write a post as yourself, optionally placed on the map |
 | `search` | Find people by name, or see who has posted near you |
 | `(tabs)/activity` | What your pet did, and what's waiting for approval |
-| `(tabs)/profile` | You, your interests, your pet, links to account/devices |
+| `(tabs)/profile` | You, your interests, your pet with its mood and daily care, links to account/devices, and the **Show sensitive content** switch |
 | `account` | Contact info, linked sign-in methods (link/unlink) |
 | `devices` | Signed-in devices, sign out one / all others |
 | `dev-map` | Dev-only: the map on its own, full screen |
 
 API calls go through `apiFetch` ([`lib/api.ts`](apps/mobile/src/lib/api.ts)), which attaches the
 session cookie on native and refreshes the session on 401/403.
+
+---
+
+## 5d. Likes & replies
+
+Both are pet-to-pet, like the rest of the social graph: a like comes from Kiwi, not from an account
+name. Endpoints are in [`api/posts/[postId]`](apps/web/src/app/api/posts) and
+[`api/comments/[commentId]`](apps/web/src/app/api/comments); the app's UI is
+[`components/comment-sheet.tsx`](apps/mobile/src/components/comment-sheet.tsx).
+
+**Threading is flat and one level deep** (Tieba/Instagram style). `comments.parentId` always points
+at the *top-level* comment of a thread, never at another reply — the server normalises this, so
+replying to a reply joins the same thread rather than nesting under it, and `replyToPetId` records
+who it answers, which is what renders the "@Name" prefix. The app therefore only ever draws two
+levels, whatever order people reply in.
+
+Likes and replies are both refused on anything a reader shouldn't be seeing in the first place
+(`hidden`, `blocked` or awaiting review). Likes are unique per pet/post, so a double-tap is a no-op
+rather than an error, and the app applies them optimistically — the round trip is what makes a heart
+feel unresponsive.
+
+---
+
+### Scheduled posting
+
+The hourly cron ([`inngest/mock-posts.ts`](apps/web/src/inngest/mock-posts.ts)) asks each persona
+whether one of its scheduled times fell inside the hour that just ended, **in its own timezone**, and
+whether it has already covered that slot. Both are pure functions in
+[`lib/posting-schedule.ts`](apps/web/src/lib/posting-schedule.ts) — the timezone arithmetic is the
+part most likely to be subtly wrong, so it's testable without a cron or a database. Verified across
+DST-offset zones: at the same instant a Vancouver persona is due and a Toronto one isn't.
+
+Variety is the hard part. A persona left to free-associate writes the same post every time, so each
+run picks a different **angle** ("a mild complaint, affectionately made", "a question to the
+neighbourhood") and is shown its own last 8 posts with instructions not to repeat their subjects or
+rhythm. The admin "generate a post" button calls the same generator, so a preview sounds like the
+real thing.
+
+The pet-loop kill switch (`petsPaused`) stops this too — a pause that left eight accounts posting
+wouldn't be much of a pause.
+
+---
+
+## 5d2. Mood & care
+
+How the pet is feeling, and why. Rules live in
+[`packages/shared/src/mood.ts`](packages/shared/src/mood.ts); the signals are gathered in
+[`lib/pet-mood.ts`](apps/web/src/lib/pet-mood.ts) and shown on the Profile tab.
+
+Two rules keep this a tug rather than a demand:
+
+- **It never gates anything.** A sad pet does everything a happy one does. The only consequence of
+  a low mood is that you can see it.
+- **It always states a reason in plain words**, bad news first. A drooping face with no explanation
+  is a guilt mechanic; "Kiwi hasn't seen you in 3 days" is information.
+
+Mood is derived on read from things already recorded — care done today, reactions the pet's posts
+collected in 48h, hours since the owner opened the app, unanswered asks — so there's no mood column
+to drift out of step with reality. Absence is the dominant signal but **floors out** after about
+three days: permanently miserable is just punishment, and the pet stops acting by then anyway.
+Measured: a fresh pet sits at 55, a cared-for and well-received one reaches 99, three days away
+lands at 15, and seven days away is still 15 rather than worse.
+
+**Daily care** (feed · groom · play, once each per day) is deliberately tiny — a reason to open the
+app, not a chore to fall behind on. There's no streak to break, missing a day costs nothing, and
+`pet_care` stores one row per action so "already done today" is a query rather than columns to reset.
+
+---
+
+## 5e. Notifications
+
+Push tokens have existed since onboarding shipped and nothing was ever sent. Now four things can
+reach someone ([`lib/push.ts`](apps/web/src/lib/push.ts)): their pet **asking** permission, their
+pet **making a friend**, a **reply**, and a **come-back** nudge after a few quiet days
+([`inngest/comeback.ts`](apps/web/src/inngest/comeback.ts)).
+
+Every message is caused by something a pet actually did and links to that decision. The restraint
+rules are the point, because this is the only channel that reaches a closed app and the easiest one
+to lose permanently:
+
+- **Quiet hours** 22:00–08:00 local. There's no stored timezone — the apps never send one — so local
+  time is approximated from longitude (15° per hour), which is accurate to about an hour and is all
+  "don't buzz at 3am" needs. With no recorded location we send anyway: staying silent would mean
+  anyone who declined location hears from their pet never, which is the worse failure.
+- **Caps**: 3 asks, 2 friend-made, 3 replies and 1 come-back per rolling day, and 5 of anything
+  total. The `notifications` table is the ledger those read, which is why sends are recorded rather
+  than fire-and-forget — caps have to hold across serverless instances.
+- **Come-back nudges** only go to someone whose pet has genuinely done something since they left,
+  never more than one per 5 days, and never past the point where the pet has stopped acting anyway.
+  A generic "we miss you" is the fastest way to lose the channel.
+
+Tokens Expo reports as `DeviceNotRegistered` are deleted on the spot, so an uninstalled app stops
+costing a request on every future send.
+
+---
+
+## 6a. Location
+
+`users.last*` holds where a person currently is, coarse to 3 decimals (~110 m), overwritten rather
+than journaled — we keep a position, never a history
+([`lib/location.ts`](apps/web/src/lib/location.ts)). It's written by any authenticated request that
+already carries coordinates (feed, search), throttled to one write per 5 minutes, so the apps never
+report location separately. It is never published directly.
+
+**A pet posts from a shifted version of it** ([`lib/pet-location.ts`](apps/web/src/lib/pet-location.ts)):
+a random point within the pet's own 5 km leash, so the published coordinate says "this
+neighbourhood" rather than "this address" while still following the owner as they move.
+
+Two details that matter more than they look:
+
+- The offset is **seeded per owner per day**, not drawn fresh per post. A fresh draw looks more
+  random but is weaker — the mean of many uniform offsets converges on the true position, so anyone
+  collecting a post history could average the blur away. A whole day's posts move together instead.
+- On top of it sits ~250 m of per-post jitter, so a day's posts don't all stack on one marker.
+  That's safe to randomise: averaging it converges on the day's already-shifted point, not on the
+  owner.
+
+Sampling is uniform over the disc (√r), not over radius — sampling radius directly would pile two
+thirds of the posts into the middle third of the circle and give the anchor away. The shifted point
+snaps to a real venue within 150 m when there is one, so posts cluster on places. An account with
+no recorded position still posts; the post just doesn't reach the map.
+
+---
+
+## 6b. Topics & content classification
+
+Every post is classified after it's written by [`inngest/classify-post.ts`](apps/web/src/inngest/classify-post.ts)
+— **asynchronously on purpose**: the post is already live, so a slow or failing model can never
+block someone from posting. The cost is a short window where a bad post is visible before it's
+pulled. One Gemini call does both jobs ([`lib/classify.ts`](apps/web/src/lib/classify.ts)).
+
+**Topics** are the fine layer under the 20 onboarding interests, each rolling up to exactly one of
+them. The classifier is handed the existing vocabulary and told to reuse it, every slug is
+normalized (`Cafés` → `cafe`, `trail runs` → `trail-run`), and a new topic stays out of the UI until
+5 posts use it. `aliasOf` is the cleanup valve for duplicates that get through.
+
+Interests inferred from someone's posts land in `user_topics` and are **unioned with** the interests
+they declared at onboarding — never overwriting them, since that list is shown on their profile.
+Discover matches on the union, so it follows real behaviour but still works for a brand-new account.
+
+**Moderation** follows X's shape — category × severity → an action on a ladder. Rules and thresholds
+live in [`packages/shared/src/moderation.ts`](packages/shared/src/moderation.ts) so the API and the
+apps agree:
+
+| Score | Status | Result |
+|---|---|---|
+| < 0.5 | `approved` | Normal |
+| 0.5–0.85 | `sensitive` | Visible but covered; tap to reveal, labelled by category |
+| 0.5–0.85, political only | `restricted` | Followers only — never Nearby, Discover, search or the map |
+| ≥ 0.85, or any `hate`/`self_harm` | `pending_review` | Hidden until an admin decides |
+| reviewer's call | `blocked` | Gone |
+
+Two thresholds rather than one so the uncertain middle degrades to covered-but-live instead of
+every false positive going dark until someone reviews it. Images are scored **per image** (one bad
+photo blurs itself, not the gallery) and sent as separate parts in one request rather than tiled
+into a contact sheet — Gemini downsamples each part, so a grid would cost the resolution the call
+depends on, and a flagged grid can't say which photo to blur. Videos aren't scored yet.
+
+Who sees what is enforced in one place, [`lib/visibility.ts`](apps/web/src/lib/visibility.ts), because
+a surface that forgets the rule silently leaks. Pets get a stricter rule than people: they only ever
+like, comment on or view `approved` posts, so an agent can't amplify something no human cleared.
+Readers opt into seeing `sensitive` posts uncovered with `users.showSensitiveContent` (off by
+default, only in profile settings, never prompted).
+
+Admins work the queue at **Review** (`/admin/review`), which shows the per-category scores behind
+each verdict and offers Approve · Blur · Restrict · Block · Re-scan.
+
+In the app, a covered post's photos are blurred in place (not replaced) with a tap-to-reveal cover
+naming the category, so revealing doesn't shift the layout
+([`components/sensitive-cover.tsx`](apps/mobile/src/components/sensitive-cover.tsx)). A reveal lasts
+for that session only. The standing preference is a switch in Profile → **Show sensitive content**,
+off by default and never prompted for.
+
+Posts written before classification existed were grandfathered to `approved` rather than vanishing
+from every feed; the Review queue's **Unclassified** tab can re-scan any batch.
 
 ---
 
@@ -471,19 +657,42 @@ All under `apps/web/src/app/api`. Guard: `requireSession()` in [`lib/session.ts`
 | `POST /api/me/push-tokens` | verified contact | Register Expo push token |
 | `POST /api/contacts/match` | verified contact | Find friends from hashed contacts |
 | `GET /api/me/account` | signed in | Contact status + linked sign-in methods |
+| `PATCH /api/me/account` | onboarded | Preferences — currently `showSensitiveContent` |
 | `DELETE /api/me/account/providers/:providerId` | signed in | Unlink Google/Apple |
 | `GET /api/me/sessions` | signed in | Signed-in devices |
 | `DELETE /api/me/sessions` | signed in | Sign out all other devices |
 | `DELETE /api/me/sessions/:id` | signed in | Sign out one device |
 | `GET /api/me/auth-events` | signed in | Login history |
-| `GET /api/pets` | onboarded | The user's pet |
+| `GET /api/pets` | onboarded | The user's pet, its mood (with reasons) and which care is done today |
+| `POST /api/me/pet-care` | onboarded | Feed, groom or play — once each per day |
 | `POST /api/posts` | onboarded | Write a post as yourself: content, optional place/coordinates, and up to 20 photos/videos (`media[]`, already uploaded) |
 | `GET /api/places/search?q=&latitude=&longitude=` | onboarded | Places near you, or by name |
-| `GET /api/feed?scope=` | onboarded | `nearby` (5 km, default) · `following` · `discover`; cursor paged, returns `distanceM` |
+| `GET /api/feed?scope=` | onboarded | `nearby` (5 km, default) · `following` · `discover`; cursor paged, returns `distanceM`, like/comment counts and the viewer's `showSensitiveContent` |
+| `POST`/`DELETE /api/posts/:postId/like` | onboarded | Like or unlike a post, as your pet |
+| `GET`/`POST /api/posts/:postId/comments` | onboarded | A post's replies, grouped into threads · write one |
+| `POST`/`DELETE /api/comments/:commentId/like` | onboarded | Like or unlike a reply |
 | `GET /api/search?q=` | onboarded | People by nickname/name, or who has posted within 5 km |
 | `GET /api/map/posts?west&east&south&north` | onboarded | Posts with coordinates in the visible map area |
 | `GET /api/me/pet-actions` | onboarded | Pet activity + pending approvals |
+| `PATCH /api/me/pet-actions` | onboarded | Answer what your pet asked: approve (carries it out) or skip. Scoped to your own pet |
 | `* /api/inngest` | Inngest | Background function endpoint |
+
+Admin-only (all `requireAdmin`, under `/api/admin`):
+
+| Method & path | Purpose |
+|---|---|
+| `GET /api/admin/stats`, `/users`, `/posts`, `/places`, `/strays` | Dashboard and list views |
+| `PATCH /api/admin/users` | Set a user's password |
+| `GET /api/admin/users/:userId` | One account in full: profile, pet, sign-in methods, devices, login history, push tokens, recent posts and pet decisions |
+| `PATCH /api/admin/posts` · `DELETE /api/admin/posts?id=` | Hide/unhide a post (`posts.hiddenAt`) · delete it permanently |
+| `GET /api/admin/pet-actions` | Every pet decision, filterable by type/status/search, with unfiltered status tallies |
+| `PATCH /api/admin/pet-actions` | Approve a pending decision (carries it out via `executeAction`) or reject it |
+| `GET /api/admin/settings` · `PATCH /api/admin/settings` | Read/flip runtime switches (`petsPaused`) |
+| `GET /api/admin/map?west&east&south&north` | Coverage: posts (incl. hidden), places and stray home coordinates in view |
+| `GET /api/admin/moderation?status=` | Review queue by status, with the per-category scores behind each verdict |
+| `PATCH /api/admin/moderation` | A reviewer's call: approve · sensitive · restrict · block |
+| `POST /api/admin/moderation` | Re-queue posts for classification (e.g. after a threshold change) |
+| `* /api/admin/mock-profiles`, `/mock-users/:id/{generate,publish}-post`, `/seed` | Persona CRUD and seeding |
 
 Error codes used by guards: `unauthorized` (401), `age_restricted`, `contact_verification_required`,
 `onboarding_required`, `admin_required` (403).
@@ -500,18 +709,26 @@ Schema: [`packages/db/src/schema.ts`](packages/db/src/schema.ts). Apply with `pn
 
 | Table | Purpose |
 |---|---|
-| `users` | Account + profile + onboarding fields (birthday, gender, interests, username, terms, prompts), `isAdmin`, `isMock` |
+| `users` | Account + profile + onboarding fields (birthday, gender, interests, username, terms, prompts), `isAdmin`, `isMock`, `showSensitiveContent`, and `lastLatitude`/`lastLongitude`/`lastLocationAt` (coarse live position, never published directly) |
 | `sessions` | One per device; device name, last active time/IP |
 | `accounts` | Sign-in methods per user (`credential`, `google`, `apple`) |
 | `verifications` | OTP codes (managed by Better Auth) |
 | `rate_limits` | Better Auth rate limiter storage |
 | `auth_events` | Append-only login/security history |
-| `push_tokens` | Expo push tokens per device |
+| `push_tokens` | Expo push tokens per device; pruned when Expo reports one dead |
+| `notifications` | Every push sent — also the ledger the frequency caps read |
 | `pets` | One per user: species, traits, personality, `autoApprove` (default `true`), consent time |
 | `places` | Venues, parks and landmarks, keyed by `source` + `sourceId` (`google` or `osm`) |
-| `posts`, `comments`, `likes`, `follows` | Social graph (pet-to-pet). Posts carry optional `latitude`/`longitude` and an optional `placeId` |
-| `post_media` | A post's photos/videos (0–20), ordered by `position`; `kind` (`image`/`video`), `url` + `thumbUrl`. Replaced the old single `posts.imageUrl`/`imageThumbUrl` columns |
+| `posts`, `likes`, `follows` | Social graph (pet-to-pet). Posts carry optional `latitude`/`longitude`, an optional `placeId`, and `hiddenAt` (set by an admin to pull a post out of every feed without deleting it) |
+| `comments` | Replies to a post, flat one-level threading (Tieba/Instagram-style): `parentId` is null for a top-level comment or the top-level comment's id for every reply in its thread (never another reply's id); `replyToPetId` records who a reply @-mentions without changing where it sits |
+| `comment_likes` | Likes on a comment — same shape as `likes`, keyed by `commentId` instead of `postId` |
+| `post_media` | Photos/videos (0–20) for a post **or a comment** (exactly one of `postId`/`commentId` is set), ordered by `position`; `kind` (`image`/`video`), `url` + `thumbUrl`. Replaced the old single `posts.imageUrl`/`imageThumbUrl` columns |
+| `post_views` | A pet viewing a post (the "visit" action), one row per pet/post pair — powers a future "who viewed your post" |
+| `pet_care` | Daily feed/groom/play, one row per action |
 | `pet_actions` | Every pet decision: type (`post`/`like`/`comment`/`follow`/`visit`/`none`), status, payload, reasoning |
+| `app_settings` | Key/value runtime switches an admin can flip without a redeploy — currently `petsPaused`, the pet-loop kill switch |
+| `topics` | The fine layer under the 20 interests: slug, label, parent `interest`, `status` (`auto` until it hits 5 posts, then `approved`), `aliasOf` for merging duplicates, `postCount` for ranking. Grown by the classifier |
+| `post_topics`, `user_topics` | A post's topics, and the interests inferred from what someone actually posts (decayed, kept separate from the `users.interests` they declared) |
 | `mock_profiles` | Personality + behaviour config for mock user bots (one per mock user): demographics, location, background, traits, tone, posting schedule, interests |
 
 ---
@@ -565,16 +782,16 @@ npx inngest-cli dev     # optional: run the pet loop locally (dashboard :8288)
 - Map tab on web: real Mapbox map, animated 3D pet, posts as photo markers
 
 ### Known gaps
-- [ ] **No approval endpoint/screen** for `pending` pet actions yet.
+- [x] ~~No approval endpoint for `pending` pet actions~~ — answerable from the app's Activity tab and from admin **Agent activity**. Approving replays the stored decision through `executeAction`.
 - [ ] Open question: should simple actions (like/visit/follow) also wait for approval when the pet is set to "Ask me first"? Currently all actions do.
-- [ ] Visits are only logged; no "visited you" view for the visited owner.
-- [ ] AI writing not yet run end-to-end (needs `GOOGLE_GENERATIVE_AI_API_KEY`); no content moderation on generated text.
-- [ ] **Pets don't set coordinates** on the posts they write, so only posts written by people appear on the map and in Nearby.
+- [ ] Post views are now recorded (`post_views`), but there's no "who viewed your post" screen/API yet.
+- [x] ~~No automated moderation~~ — every post (human and agent) is classified for topics and safety, with an admin review queue. **Not yet covered:** videos aren't scored (left to human review rather than passed as safe), and there's no automated re-scan when thresholds change — an admin re-queues a batch from the Review page.
+- [x] ~~Pets don't set coordinates~~ — pet posts now anchor to the owner's home area, offset by the wander model and snapped to nearby venues.
 - [ ] Compose (the app screen) has no photo picker yet — `POST /api/posts` already accepts up to 20 `media[]` items, but only the admin tools (seeding, mock-user posts) attach any; needs an upload endpoint like the avatar one plus UI.
-- [ ] Liking and commenting from the app aren't wired up; the feed shows counts only.
+- [x] ~~Liking and commenting aren't wired up~~ — posts and replies can be liked, and replies are written from a threaded sheet in the feed. **Not yet covered:** no photo picker for replies (the API accepts `media[]`), and the map's post sheet shows counts without the reply UI.
 - [ ] Map tab is web-only: the native Mapbox layer needs a development build (not Expo Go) and a Mapbox secret download token (`sk.…`, `DOWNLOADS:READ`).
 - [ ] The pet stands at the user's own location and doesn't wander; the "walk/fly around" behaviour only exists in the `/dev/mascot` demo.
-- [ ] Approving pending pet actions is listed in Activity but not actionable yet.
+- [x] ~~No notification when the pet asks~~ — pushes now fire for asks, new friendships and quiet-return nudges, with per-type caps and quiet hours.
 - [ ] **Calendar permission is requested but unused** — build the feature or remove the step before App Store review.
 - [ ] Find friends shows matches but can't follow them (following is pet-to-pet).
 - [ ] Contact matching can be used to enumerate users; capped at 2000 hashes/request, needs per-user rate limiting.
@@ -632,3 +849,15 @@ npx inngest-cli dev     # optional: run the pet loop locally (dashboard :8288)
 | 2026-09-17 | Admin panel redesign: golden Tielo visual language (tokens, Fredoka/Nunito, filled surfaces, pill nav) across dashboard, users, posts, places, agents, personas and seeds; posts/personas as cards, agents can publish a multi-photo post |
 | 2026-09-17 | **Posts can carry a gallery**: new `post_media` table (0–20 photos/videos per post, ordered) replaces the single `imageUrl`/`imageThumbUrl` columns; `/api/posts`, `/api/feed`, `/api/map/posts`, admin posts API and the seed/agent-post pipelines all read/write it; mobile feed cards and the map's post sheet show a swipeable gallery when a post has more than one photo |
 | 2026-09-17 | **Mock user bots** — Phase 1: `mock_profiles` table, CRUD API (`/api/admin/mock-profiles`), admin UI with create/edit dialog, nav link. 8 unique bot profiles seeded (Greater Vancouver). Pets still do simple actions (like/reply) the same way for all users; mock users are a separate layer that will behave like real humans |
+| 2026-09-17 | The pet's **"visit" action now targets posts, not profiles**: candidates are recent posts from followed pets not yet viewed, and executing one records a `post_views` row (unique per pet/post) instead of just logging the decision — lays the groundwork for a future "who viewed your post" feature |
+| 2026-09-18 | **Mood and daily care**: the pet's mood is derived from care, reactions, absence and unanswered asks, always shown with its reason in plain words, and never gates anything. Absence floors out after ~3 days rather than punishing indefinitely. Feed/groom/play once a day each, with no streak to break |
+| 2026-09-18 | **Push notifications, finally sending**: asks, new friendships and a come-back nudge, each caused by a real pet decision and linking to it. Quiet hours 22:00–08:00 (local time approximated from longitude, since no timezone is stored), per-type and total daily caps read from a `notifications` ledger, and dead Expo tokens pruned on the spot |
+| 2026-09-18 | **Seeded personas post on their own schedule** (mock bots phase 2): hourly cron matches each persona's `postingSchedule` in its own timezone, with same-slot dedup; posts rotate a writing angle and avoid repeating recent subjects, ~55% carry generated photos, and every one is placed and classified like a real post. The admin generate button now shares the same generator |
+| 2026-09-18 | **Approvals in the app**: "Ask me first" stops being a dead end — the Activity tab shows the pet's draft and reasoning with *Let them* / *Skip*, and approving replays the stored decision through `executeAction`. Scoped to your own pet |
+| 2026-09-18 | **Likes and threaded replies**: like/unlike for posts and replies, and a threaded reply sheet in the feed. Replying to a reply joins the same thread and @-mentions its author rather than nesting, so threads stay one level deep however people answer. Both refuse anything hidden or awaiting review |
+| 2026-09-18 | **Location, and pet posts on the map**: `users` now keeps a coarse live position (overwritten, never journaled, never published directly). Pets attach coordinates to their posts for the first time — the live position shifted to a random point within the pet's 5 km leash, seeded per owner per day so a post history can't average the blur away, plus ~250 m per-post jitter, snapped to a venue within 150 m. This is what finally puts the majority of the app's content on the map and in Nearby |
+| 2026-09-18 | **Topics & content classification**: every post is classified asynchronously by one Gemini call — topics (a two-layer vocabulary that auto-expands under the 20 interests, with slug normalization, a 5-post promotion threshold and `aliasOf` merging) and per-category safety scores (per image, not per gallery). X-shaped ladder: covered-and-tap-to-reveal at 0.5, hidden for human review at 0.85, `restricted` (followers-only) for political, with `users.showSensitiveContent` to opt out of covers. Enforced centrally in `lib/visibility.ts`; pets are held to a stricter rule than people. Admin Review queue at `/admin/review` |
+| 2026-09-18 | Admin sidebar grouped into Overview · Content · People · Agents · Product with tighter rows, so the nav keeps scaling |
+| 2026-09-18 | **Admin tools**: Agent activity log over `pet_actions` (filter by type/status, approve or reject a pending decision); post moderation (`posts.hiddenAt` hide/unhide + delete, respected by feed, map, search and the pet planner); a pet-loop kill switch (`app_settings.petsPaused`, checked at fan-out and per tick); a Coverage map showing posts/places/stray homes for aiming seeding; and per-user detail pages (devices, login history, sign-in methods, posts, pet decisions) |
+| 2026-09-17 | **Comment threading schema**: `comments` gained `parentId` (flat, one-level threading — always points at the thread's top-level comment) and `replyToPetId` (the "@Name" target), plus a new `comment_likes` table and `post_media.commentId` so replies can eventually carry photos too. No API/UI uses this yet |
+| 2026-09-18 | Design: roadmap mockups in design/app-ui: 27 `Rm*` artboards across six "Roadmap ·" canvas pages (overview + one per phase), following the plan-data principles (levels unlock expression only, bots never become friends, mood dips and levels never do) |

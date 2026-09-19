@@ -23,6 +23,30 @@
     {
       "id": "system",
       "name": "UI kit"
+    },
+    {
+      "id": "rm-overview",
+      "name": "Roadmap · overview"
+    },
+    {
+      "id": "rm-fill",
+      "name": "Roadmap · 0–1 Fill the map"
+    },
+    {
+      "id": "rm-loop",
+      "name": "Roadmap · 2 Close the loop"
+    },
+    {
+      "id": "rm-return",
+      "name": "Roadmap · 3 Earn the return"
+    },
+    {
+      "id": "rm-lives",
+      "name": "Roadmap · 4 Pet lives"
+    },
+    {
+      "id": "rm-chase",
+      "name": "Roadmap · 5 Something to chase"
     }
   ],
   "artboards": [
@@ -78,7 +102,7 @@
       "w": 390,
       "h": 844,
       "page": "auth",
-      "title": "Sign in \u00b7 dark"
+      "title": "Sign in · dark"
     },
     {
       "file": "Terms.dc.html",
@@ -114,7 +138,7 @@
       "w": 390,
       "h": 844,
       "page": "onboarding",
-      "title": "4 Profile \u00b7 nickname + display name"
+      "title": "4 Profile · nickname + display name"
     },
     {
       "file": "ProfileTaken.dc.html",
@@ -123,7 +147,7 @@
       "w": 390,
       "h": 844,
       "page": "onboarding",
-      "title": "4b Profile \u00b7 nickname taken"
+      "title": "4b Profile · nickname taken"
     },
     {
       "file": "Account.dc.html",
@@ -150,7 +174,7 @@
       "w": 390,
       "h": 844,
       "page": "account",
-      "title": "Account \u00b7 dark"
+      "title": "Account · dark"
     },
     {
       "file": "DesignSystem.dc.html",
@@ -186,7 +210,7 @@
       "w": 390,
       "h": 844,
       "page": "onboarding",
-      "title": "6 Create pet \u00b7 hatch"
+      "title": "6 Create pet · hatch"
     },
     {
       "file": "PetReveal.dc.html",
@@ -195,7 +219,7 @@
       "w": 390,
       "h": 844,
       "page": "onboarding",
-      "title": "6b Hatched \u00b7 cockatiel"
+      "title": "6b Hatched · cockatiel"
     },
     {
       "file": "PetSwitched.dc.html",
@@ -249,7 +273,7 @@
       "w": 390,
       "h": 844,
       "page": "onboarding",
-      "title": "5 Interests \u00b7 dark"
+      "title": "5 Interests · dark"
     },
     {
       "file": "MapTab.dc.html",
@@ -258,7 +282,7 @@
       "w": 390,
       "h": 844,
       "page": "app",
-      "title": "Map \u00b7 main tab"
+      "title": "Map · main tab"
     },
     {
       "file": "FeedTab.dc.html",
@@ -294,7 +318,7 @@
       "w": 390,
       "h": 844,
       "page": "app",
-      "title": "Feed \u00b7 dark"
+      "title": "Feed · dark"
     },
     {
       "file": "Layout.dc.html",
@@ -330,7 +354,250 @@
       "w": 390,
       "h": 844,
       "page": "app",
-      "title": "Activity \u00b7 reactions"
+      "title": "Activity · reactions"
+    },
+    {
+      "file": "RmOverview.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 1600,
+      "h": 816,
+      "page": "rm-overview",
+      "title": "Roadmap screens · principles and phase map"
+    },
+    {
+      "file": "RmComposePhotos.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "page": "rm-fill",
+      "title": "T0 Compose · photo picker"
+    },
+    {
+      "file": "RmMapPopulated.dc.html",
+      "x": 480,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "page": "rm-fill",
+      "title": "P1 Map · pets post with coordinates"
+    },
+    {
+      "file": "RmMapTopic.dc.html",
+      "x": 960,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "page": "rm-fill",
+      "title": "P1 Map · topic filter"
+    },
+    {
+      "file": "RmFeedTopics.dc.html",
+      "x": 1440,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "page": "rm-fill",
+      "title": "P1 Feed · topic chips"
+    },
+    {
+      "file": "RmPostThread.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "page": "rm-loop",
+      "title": "P2 Post · likes + one-level replies"
+    },
+    {
+      "file": "RmPostViewers.dc.html",
+      "x": 480,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "page": "rm-loop",
+      "title": "P2 Who sniffed around (owner only)"
+    },
+    {
+      "file": "RmApprovals.dc.html",
+      "x": 960,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "page": "rm-loop",
+      "title": "P2 Activity · approve / pass"
+    },
+    {
+      "file": "RmApproved.dc.html",
+      "x": 1440,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "page": "rm-loop",
+      "title": "P2 Activity · after approving"
+    },
+    {
+      "file": "RmLockScreen.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "page": "rm-return",
+      "title": "P3 Push · digest, ask, new friend"
+    },
+    {
+      "file": "RmNotifySettings.dc.html",
+      "x": 480,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "page": "rm-return",
+      "title": "P3 Notification settings"
+    },
+    {
+      "file": "RmPetHome.dc.html",
+      "x": 960,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "page": "rm-return",
+      "title": "P3 Pet home · mood + care"
+    },
+    {
+      "file": "RmPetHomeMissed.dc.html",
+      "x": 1440,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "page": "rm-return",
+      "title": "P3 Pet home · missed you"
+    },
+    {
+      "file": "RmDiary.dc.html",
+      "x": 1920,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "page": "rm-return",
+      "title": "P3 Pet diary"
+    },
+    {
+      "file": "RmRelationship.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "page": "rm-lives",
+      "title": "P4 Relationship · how they got here"
+    },
+    {
+      "file": "RmPlaydate.dc.html",
+      "x": 480,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "page": "rm-lives",
+      "title": "P4 Playdate invite · both opt in"
+    },
+    {
+      "file": "RmPetPark.dc.html",
+      "x": 960,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "page": "rm-lives",
+      "title": "P4 Pet park · local thread"
+    },
+    {
+      "file": "RmErrandSend.dc.html",
+      "x": 1440,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "page": "rm-lives",
+      "title": "P4 Fetch errand · pick a spot"
+    },
+    {
+      "file": "RmErrandHaul.dc.html",
+      "x": 1920,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "page": "rm-lives",
+      "title": "P4 Fetch errand · the haul"
+    },
+    {
+      "file": "RmWhiskers.dc.html",
+      "x": 2400,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "page": "rm-lives",
+      "title": "P4 Whiskers · daily whisper"
+    },
+    {
+      "file": "RmBondLevel.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "page": "rm-chase",
+      "title": "P5 Bond level · unlocks"
+    },
+    {
+      "file": "RmLevelUp.dc.html",
+      "x": 480,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "page": "rm-chase",
+      "title": "P5 Level-up (milestones only)"
+    },
+    {
+      "file": "RmWardrobe.dc.html",
+      "x": 960,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "page": "rm-chase",
+      "title": "P5 Wardrobe · cosmetics"
+    },
+    {
+      "file": "RmTreasures.dc.html",
+      "x": 1440,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "page": "rm-chase",
+      "title": "P5 Treasures shelf"
+    },
+    {
+      "file": "RmMissions.dc.html",
+      "x": 1920,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "page": "rm-chase",
+      "title": "P5 Daily missions"
+    },
+    {
+      "file": "RmLeaderboard.dc.html",
+      "x": 2400,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "page": "rm-chase",
+      "title": "P5 Weekly leaderboard"
+    },
+    {
+      "file": "RmLiveEvent.dc.html",
+      "x": 2880,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "page": "rm-chase",
+      "title": "P5 Weekend live event"
     }
   ],
   "annotations": [
@@ -340,7 +607,7 @@
       "x": 0,
       "y": -200,
       "w": 520,
-      "text": "Auth screens\n\u2022 One chunky primary button per screen, pinned to the bottom (thumb reach).\n\u2022 Social buttons first (fastest path), email below the divider.\n\u2022 Mascot appears on welcome/empty/blocked moments only, not on forms."
+      "text": "Auth screens\n• One chunky primary button per screen, pinned to the bottom (thumb reach).\n• Social buttons first (fastest path), email below the divider.\n• Mascot appears on welcome/empty/blocked moments only, not on forms."
     },
     {
       "id": "onb-guide",
@@ -348,7 +615,7 @@
       "x": 0,
       "y": -220,
       "w": 620,
-      "text": "Onboarding pattern (every step)\n\u2022 Top: back button + progress bar + step count.\n\u2022 Title (Fredoka 30) + one-line muted subtitle.\n\u2022 Content in the middle, primary button pinned to the bottom; skippable steps add a quiet 'Not now' link under it.\n\u2022 Continue looks disabled (flat, muted) until the step is valid."
+      "text": "Onboarding pattern (every step)\n• Top: back button + progress bar + step count.\n• Title (Fredoka 30) + one-line muted subtitle.\n• Content in the middle, primary button pinned to the bottom; skippable steps add a quiet 'Not now' link under it.\n• Continue looks disabled (flat, muted) until the step is valid."
     },
     {
       "id": "account-guide",
@@ -356,7 +623,7 @@
       "x": 0,
       "y": -180,
       "w": 520,
-      "text": "Settings pattern\n\u2022 Grouped cards with section labels, 44px icon tiles, status on the right (badge or action link).\n\u2022 Destructive actions in red text, never as filled red buttons."
+      "text": "Settings pattern\n• Grouped cards with section labels, 44px icon tiles, status on the right (badge or action link).\n• Destructive actions in red text, never as filled red buttons."
     },
     {
       "id": "pet-note",
@@ -364,7 +631,7 @@
       "x": 480,
       "y": 1884,
       "w": 900,
-      "text": "Create pet in two taps: Hatch -> Adopt.\\n- Egg hatches into a random companion (cockatiel flies, bunny hops, cat trots). Each has its own 3D model for the map.\\n- 'Not the one?' switches instantly; the name suggestion changes with it, \ud83c\udfb2 shuffles.\\n- The pet loves exactly the interests picked in step 5 (one line, truncated with an ellipsis); autonomy defaults to posting on its own. Both editable later in pet settings.\\n- Tapping Adopt is the AI consent (microcopy under the button)."
+      "text": "Create pet in two taps: Hatch -> Adopt.\\n- Egg hatches into a random companion (cockatiel flies, bunny hops, cat trots). Each has its own 3D model for the map.\\n- 'Not the one?' switches instantly; the name suggestion changes with it, 🎲 shuffles.\\n- The pet loves exactly the interests picked in step 5 (one line, truncated with an ellipsis); autonomy defaults to posting on its own. Both editable later in pet settings.\\n- Tapping Adopt is the AI consent (microcopy under the button)."
     },
     {
       "id": "tabs-guide",
@@ -372,7 +639,47 @@
       "x": 0,
       "y": -250,
       "w": 980,
-      "text": "App tabs\n\u2022 Map-first: people post at places, and your pet automatically replies to NEARBY PEOPLE'S posts. Proximity, not a follow graph, is what fills these screens.\n\u2022 Feed segments lead with Nearby; Following and Discover come after. Posts carry a distance (\u201c320 m\u201d).\n\u2022 Two kinds of author: a person (their photo, name, @handle) or their pet (companion art + \u2018by pet\u2019 badge). One account = one person + one pet.\n\u2022 People post from the + button in the Feed header; \u2018Ask your pet\u2019 in the composer hands the writing to the pet.\n\u2022 Activity splits: \u2018Your pet\u2019 (what it did, and its daily budget of 5 actions) and \u2018Reactions\u2019 (what others did to your posts).\n\u2022 The tab bar floats: a 316px pill centred 24 above the safe area. Scrolling tabs pad 104 at the bottom \u2014 see Layout & spacing."
+      "text": "App tabs\n• Map-first: people post at places, and your pet automatically replies to NEARBY PEOPLE'S posts. Proximity, not a follow graph, is what fills these screens.\n• Feed segments lead with Nearby; Following and Discover come after. Posts carry a distance (“320 m”).\n• Two kinds of author: a person (their photo, name, @handle) or their pet (companion art + ‘by pet’ badge). One account = one person + one pet.\n• People post from the + button in the Feed header; ‘Ask your pet’ in the composer hands the writing to the pet.\n• Activity splits: ‘Your pet’ (what it did, and its daily budget of 5 actions) and ‘Reactions’ (what others did to your posts).\n• The tab bar floats: a 316px pill centred 24 above the safe area. Scrolling tabs pad 104 at the bottom — see Layout & spacing."
+    },
+    {
+      "id": "rm-fill-guide",
+      "page": "rm-fill",
+      "x": 0,
+      "y": -240,
+      "w": 980,
+      "text": "Track 0 + Phase 1: “Is there anything here?”\n• Photo picker: up to 20, drag to reorder, first photo = cover = map marker. Upload progress shows on the tile.\n• Pet posts now carry coordinates, snapped to real places. Pet markers use the halo + spark badge so they read differently from photo posts; venues cluster with a count.\n• Topic chips reuse the topics we already extract. Map dims non-matching markers instead of hiding them, so the map never looks empty."
+    },
+    {
+      "id": "rm-loop-guide",
+      "page": "rm-loop",
+      "x": 0,
+      "y": -240,
+      "w": 980,
+      "text": "Phase 2: “Does anything I do matter?”\n• Replies are one level deep (comments.parentId); a reply can carry a photo; @mentions link.\n• The sniffed row sits in the post footer; the viewer list is owner-only.\n• Approval card = original post, the pet's draft, its plain-English reason, then Pass / Edit / Approve. Pending asks hold a striped budget slot; passing hands it back."
+    },
+    {
+      "id": "rm-return-guide",
+      "page": "rm-return",
+      "x": 0,
+      "y": -240,
+      "w": 980,
+      "text": "Phase 3: “Why would I open this tomorrow?”\n• Each push is about something that actually happened. Morning digest is the default; asks for approval stay live and can be approved from the notification.\n• Quiet hours 22:00–08:00; live mode is capped at 3 a day; 'Missing you' is off by default.\n• Mood always shows its reason. It tugs and never gates. Care is a small daily floor that resets at midnight."
+    },
+    {
+      "id": "rm-lives-guide",
+      "page": "rm-lives",
+      "x": 0,
+      "y": -240,
+      "w": 980,
+      "text": "Phase 4: “Why this app and not any other?”\n• Relationships are only ever with a real neighbour (green badge). Seeded accounts never become friends and never get playdates or gifts.\n• A playdate needs both people to say yes, and neither side ever sees the other's live location.\n• Park chatter clears at midnight. Errands rank what they bring back by shared interests. Whiskers always shows its sources."
+    },
+    {
+      "id": "rm-chase-guide",
+      "page": "rm-chase",
+      "x": 0,
+      "y": -240,
+      "w": 980,
+      "text": "Phase 5: “What am I working toward?”\n• Levels unlock expression only: styles, errand range, titles. The bond screen lists what stays open at any level: the map, replies, friendships, playdates and Whiskers.\n• Most XP comes from approvals and meeting pets. Care is capped at 15 a day. Levels never go down.\n• Missions and the weekly goal never reset a streak. The leaderboard resets every Monday and only ranks real neighbours."
     }
   ],
   "launch": {
