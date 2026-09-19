@@ -582,14 +582,26 @@ a:hover { color: var(--primary-press); }
     <div class="panel">
       <div class="spec-h">Language is not region</div>
       <div class="small" style="font-size:13px; line-height:20px; margin-top:10px;">
-        Two independent settings, and conflating them is the easy mistake. Words follow the person; numbers,
-        dates, distances and units follow the device. Somebody reading Chinese on a phone set to the US
-        wants Chinese words and miles.
+        Two independent settings, and conflating them is the easy mistake. Words follow the person; number
+        separators, date order and weekday names follow the device.
       </div>
       <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">
         <div class="rule"><span class="tick">&check;</span><div>&ldquo;Match my device&rdquo; is a real option in the picker, not a synonym for the default language.</div></div>
         <div class="rule"><span class="tick">&check;</span><div>Each language named in itself &mdash; &#31616;&#20307;&#20013;&#25991;, not &ldquo;Chinese&rdquo;.</div></div>
-        <div class="rule"><span class="cross">&times;</span><div>Never a unit, separator or date order baked into a label.</div></div>
+        <div class="rule"><span class="cross">&times;</span><div>Never a separator or date order baked into a label.</div></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="spec-h">Distance follows neither</div>
+      <div class="small" style="font-size:13px; line-height:20px; margin-top:10px;">
+        Always <b>m</b> and <b>km</b>, in every language and every region. A unit symbol is notation rather
+        than vocabulary: it is read as distance even by somebody who can&rsquo;t read the sentence around it,
+        which &#20844;&#37324;, &#20844;&#23610; and &#21522; are not.
+      </div>
+      <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">
+        <div class="rule"><span class="tick">&check;</span><div>The number keeps the locale&rsquo;s decimal separator &mdash; that part <i>is</i> local.</div></div>
+        <div class="rule"><span class="tick">&check;</span><div>A space between CJK text and a half-width value: &#36317;&#20320; 320 m.</div></div>
+        <div class="rule"><span class="cross">&times;</span><div>No imperial, and no translated unit name &mdash; a units toggle is not a language setting.</div></div>
       </div>
     </div>
     <div class="panel">

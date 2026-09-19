@@ -3,11 +3,9 @@ import {
   formatDay as formatDayShared,
   formatDistance as formatDistanceShared,
   formatTimeAgo as formatTimeAgoShared,
-  measurementFor,
   resolveLocale,
   translatorFor,
   type Locale,
-  type MeasurementSystem,
   type Phrase,
   type PluralKey,
   type TVars,
@@ -29,11 +27,14 @@ import { authClient } from '@/lib/auth-client';
  *   somebody who never opens the picker keeps tracking their phone — including
  *   when we later add their language.
  *
- *   **Which region's conventions do numbers, dates and distances follow?** Always
- *   the device's. These are properties of where you are, not of what you read: a
- *   Japanese speaker in Texas wants Japanese words and miles. So the tag handed to
- *   `Intl` is the chosen language pinned to the *device's* region — `ja-US`, not
- *   `ja-JP` — which is exactly what makes that come out right.
+ *   **Which region's conventions do the numbers and dates follow?** The device's.
+ *   Separators, date order and weekday names are properties of where you are rather
+ *   than of what you read, so the tag handed to `Intl` is the chosen language pinned
+ *   to the *device's* region — `ja-US`, not `ja-JP`.
+ *
+ * Distance is the exception, and deliberately not localised at all: `m` and `km`
+ * are what apps show worldwide and are legible to a reader who can't read the
+ * sentence around them. See `formatDistance`.
  */
 
 type I18n = {
@@ -42,7 +43,6 @@ type I18n = {
   chosen: boolean;
   /** The full BCP-47 tag for `Intl`: chosen language + device region. */
   tag: string;
-  measurement: MeasurementSystem;
   t: (key: TranslationKey, vars?: TVars) => string;
   /** Count-aware; picks the plural form and exposes `{count}`. */
   n: (key: PluralKey, count: number, vars?: TVars) => string;
@@ -62,7 +62,7 @@ type I18n = {
   rich: (key: TranslationKey, parts: Record<string, ReactNode>) => ReactNode;
   /** A bare number, grouped the way the region groups them. */
   num: (value: number) => string;
-  /** "320 m" or "1,050 ft", in the device's units. */
+  /** "40 m", "1.2 km" — always metric, always the Latin symbol. */
   distance: (metres: number) => string;
   /** "now", "12 min ago", "5 days ago". */
   timeAgo: (iso: string | Date) => string;
@@ -84,20 +84,18 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     // Region from the device, language from the choice — see the note above.
     const region = device?.regionCode;
     const tag = region ? `${locale}-${region}` : locale;
-    const measurement = measurementFor(tag);
     const { t, n, p } = translatorFor(locale);
 
     return {
       locale,
       chosen: !!stored,
       tag,
-      measurement,
       t,
       n,
       p,
       rich: (key, parts) => interpolateNodes(t(key), parts),
       num: (value) => new Intl.NumberFormat(tag).format(value),
-      distance: (metres) => formatDistanceShared(metres, tag, measurement),
+      distance: (metres) => formatDistanceShared(metres, tag),
       timeAgo: (iso) => formatTimeAgoShared(iso, tag),
       day: (day) => formatDayShared(day, locale, tag),
     };

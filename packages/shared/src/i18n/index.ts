@@ -227,70 +227,37 @@ export function translatorFor(locale: Locale): Translator {
 // ---------------------------------------------------------------------------
 // Formatting
 //
-// Not translation, and more likely to be got wrong: a US reader wants miles, and
-// no amount of translated text fixes a screen that says "320 m".
+// Not translation, and more likely to be got wrong.
 // ---------------------------------------------------------------------------
 
 /**
- * Places that read distance in miles.
+ * "40 m", "320 m", "1.2 km".
  *
- * A short list rather than a library: `Intl` exposes no measurement system, and
- * these are the ones that matter. Everywhere else is metric.
- */
-const IMPERIAL_REGIONS = new Set(["US", "GB", "LR", "MM"]);
-
-export type MeasurementSystem = "metric" | "imperial";
-
-/** Derived from the *full* tag, since `en-US` and `en-GB` differ from `en-DE`. */
-export function measurementFor(tag: string | null | undefined): MeasurementSystem {
-  // Via `parseTag`, not `split()[1]`: on `zh-Hans-US` the second subtag is the
-  // script, and reading it as the region silently gave an American reader metric.
-  const region = tag ? parseTag(tag).region?.toUpperCase() : undefined;
-  return region && IMPERIAL_REGIONS.has(region) ? "imperial" : "metric";
-}
-
-const METRES_PER_MILE = 1609.344;
-const METRES_PER_FOOT = 0.3048;
-/**
- * Where imperial switches from feet to miles — about 460 m.
+ * **Always metric, always the Latin symbol.** `m` and `km` are what apps show
+ * worldwide, and they're read as distance even by someone who can't read a word of
+ * the surrounding sentence — which `公里`, `公尺` and `呎` are not. This used to run
+ * each value through `Intl.NumberFormat`'s `style: "unit"`, which localises the
+ * unit *name* along with the number and so produced `2.4 公里` on a Chinese screen
+ * and `140 呎` for a Chinese reader on an American phone. Both were wrong for the
+ * same reason: a unit symbol is notation, not vocabulary.
  *
- * Higher than the usual 1000 ft on purpose. This is a local app where the
- * difference between 180 m and 320 m is the whole point, and "0.2 mi" throws that
- * away; "1,050 ft" keeps it. Miles only take over once the number stops being
- * walking distance.
- */
-const FEET_TO_MILES_AT = 1500;
-
-/**
- * "320 m", "1.2 km", "350 ft", "0.8 mi".
+ * The *number* is still formatted per locale, because the decimal separator is
+ * genuinely local — a German reader expects `1,2 km`. Only the symbol is fixed.
  *
  * Rounded coarsely on purpose: the precision would be false, and a jittering
- * number is distracting. The unit comes from `Intl.NumberFormat`, so it's
- * abbreviated the way each locale abbreviates it.
+ * number is distracting.
  */
-export function formatDistance(metres: number, tag = "en", system?: MeasurementSystem): string {
-  const unitSystem = system ?? measurementFor(tag);
-  const fmt = (value: number, unit: string, digits = 0) =>
-    new Intl.NumberFormat(tag, {
-      style: "unit",
-      unit,
-      unitDisplay: "short",
+export function formatDistance(metres: number, tag = "en"): string {
+  const fmt = (value: number, unit: "m" | "km", digits = 0) =>
+    `${new Intl.NumberFormat(tag, {
       maximumFractionDigits: digits,
       minimumFractionDigits: digits,
-    }).format(value);
+    }).format(value)} ${unit}`;
 
-  if (unitSystem === "imperial") {
-    const feet = metres / METRES_PER_FOOT;
-    if (feet < FEET_TO_MILES_AT) {
-      // Coarser as it grows, so the number stops jittering at a walk.
-      const step = feet < 200 ? 10 : 50;
-      return fmt(Math.max(5, Math.round(feet / step) * step), "foot");
-    }
-    return fmt(metres / METRES_PER_MILE, "mile", 1);
-  }
-  if (metres < 100) return fmt(Math.max(1, Math.round(metres / 5) * 5), "meter");
+  if (metres < 100) return fmt(Math.max(1, Math.round(metres / 5) * 5), "m");
+  // Rounded first, so 999 m reads as "1.0 km" rather than "1000 m".
   const rounded = Math.round(metres / 10) * 10;
-  return rounded < 1000 ? fmt(rounded, "meter") : fmt(metres / 1000, "kilometer", 1);
+  return rounded < 1000 ? fmt(rounded, "m") : fmt(metres / 1000, "km", 1);
 }
 
 /**

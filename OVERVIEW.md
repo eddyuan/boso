@@ -1023,22 +1023,29 @@ runtime live in [`packages/shared/src/i18n`](packages/shared/src/i18n) so the se
 read one set of strings — push notifications are built on the server and screens are built on the
 device, and two catalogues would drift.
 
-### Language and units are separate questions
+### Language and region are separate questions
 
 - **Words follow the person.** Their stored choice (`users.locale`) if they made one, their device
   otherwise. The column is **nullable, and `null` means "follow the device"** — not "English". Anyone
   who never opens the picker keeps tracking their phone, including when we add a language they speak.
-- **Numbers, dates and distances follow the device's region**, always. Those describe where you are,
-  not what you read. The tag handed to `Intl` is the chosen language pinned to the device's region —
-  `zh-US`, not `zh-CN` — so a Chinese speaker in Texas gets Chinese words and miles.
+- **Numbers and dates follow the device's region.** Separators, date order and weekday names describe
+  where you are rather than what you read, so the tag handed to `Intl` is the chosen language pinned to
+  the device's region — `zh-Hans-US`, not `zh-Hans-CN`.
+- **Distance follows neither: it is always `m` / `km`.** That's what apps show worldwide, and the
+  symbol is read as distance even by somebody who can't read the sentence around it. `formatDistance`
+  used to run every value through `Intl.NumberFormat`'s `style: "unit"`, which localises the unit
+  *name* along with the number — producing `2.4 公里` on a Chinese screen and `140 呎` for a Chinese
+  reader on an American phone. Both wrong for the same reason: **a unit symbol is notation, not
+  vocabulary.** Only the number is still formatted per locale, because the decimal separator genuinely
+  is local (`1,2 km` in German).
 
 ### Resolving a tag
 
 `resolveLocale` takes anything — a device tag, a stored column, `undefined` — and narrows it to a
 locale we have. Two rules, and the difference between them is the point:
 
-- **Region is dropped.** `en-GB` and `en-US` differ in units and dates, not in wording, and `Intl`
-  handles that from the full tag.
+- **Region is dropped.** `en-GB` and `en-US` differ in number and date conventions, not in wording,
+  and `Intl` handles that from the full tag.
 - **Script is kept**, because script *is* wording. `zh-Hans` and `zh-Hant` are different writing
   systems, not different spellings. This is why the locale code is `zh-Hans` and not a bare `zh`,
   which by convention means "Chinese" without saying which — a distinction the old resolver couldn't
@@ -1073,6 +1080,9 @@ the first screen renders in the right language instead of visibly switching.
    without translating it is a build error rather than English quietly appearing mid-screen.
 4. **Numbers in placeholders are formatted centrally** by `Intl.NumberFormat` — "13,460 XP" against
    "13.460 XP" — rather than at each call site, one of which would be missed.
+5. **A space sits between Chinese text and a half-width value** where the value is *always* half-width
+   — `距你 320 m`, not `距你320 m`. Only there: `{name}` and `{date}` can be either, so they're left
+   alone rather than guessed at.
 
 ### The server decides which sentence; the client decides what it says
 
@@ -1605,3 +1615,4 @@ a person can supply, which is why `/admin/roadmap` now marks them **Needs you** 
 | 2026-09-19 | Two languages. Shared `i18n` catalogue + `Intl` runtime, `users.locale` (nullable = follow device), Language row on Profile, every app string extracted, Simplified Chinese as the first translation. Mood reasons and the game's vocabulary now travel as ids/phrases rather than English prose. Along the way: three push notifications still deep-linked to the `activity` tab removed in fd520a2, the age gate's heading hardcoded 18 next to an interpolated `MIN_AGE`, `MOVE_ICON` was keyed by the English word "Flies", the web map tested `moves === 'Flies'`, and signing a device out reported nothing when it failed |
 | 2026-09-19 | Locale codes are script-qualified: `zh-Hans`, not a bare `zh`, since Simplified and Traditional are different writing systems rather than different spellings. `resolveLocale` keeps the script and infers it from the region (`zh-TW` → Traditional), so adding `zh-Hant` is a catalogue plus one line. Fixed `measurementFor`, which read the second subtag as the region and so saw `hans` in `zh-Hans-US` — an American Chinese reader would have got metric |
 | 2026-09-19 | Traditional Chinese (`zh-Hant`), written out in full rather than spread over Simplified — 269 character forms converted plus genuine vocabulary differences (貼文, 追蹤, 按讚, 設定, 行事曆, 大頭貼, 國碼), targeting Taiwan usage. `zh-TW`/`zh-HK`/`zh-MO` now route to it by region alone |
+| 2026-09-19 | Distance is always `m` / `km`, in every language. `Intl`'s `style: "unit"` localises the unit name along with the number, which gave `2.4 公里` and `140 呎`; a unit symbol is notation rather than vocabulary. The imperial branch, `measurementFor` and `MeasurementSystem` are gone — only the number is still locale-formatted, for the decimal separator |
