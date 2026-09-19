@@ -10,6 +10,24 @@ classes, then a `.screen` (390 × 844 phone frame) or `.sheet` (wide spec sheet)
 The kit is identical in every roadmap artboard, so a new one should be started by
 copying an existing file's `<helmet>` verbatim rather than re-deriving it.
 
+## How to review
+
+```sh
+open design/app-ui/review.html
+```
+
+One self-contained page with all 67 artboards, grouped by canvas page, with a jump nav and a
+50/75/100% zoom. The shared kit is inlined once rather than per artboard, so it opens straight from
+disk with no server and no network beyond the Google Fonts link.
+
+Individual artboards also open on their own (`open design/app-ui/RmMissions.dc.html`). That needs
+`support.js`, which is a small local shim — the canvas editor's own script was never committed, so
+without it `<x-dc>` and `<helmet>` fall back to unknown inline elements and the layout comes out
+subtly wrong.
+
+`review.html` is generated from `canvas.json` plus the artboard bodies. Regenerate it after changing
+any artboard, or it goes stale in exactly the way the published bundles did.
+
 ## Pages
 
 | Page | What's on it |
