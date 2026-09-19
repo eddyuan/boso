@@ -450,11 +450,14 @@ The app's own map takes whichever species the pet is; `MAP_SPECIES` in
 
 Design system: `constants/theme.ts` (golden light/dark tokens), Fredoka + Nunito via `@expo-google-fonts`,
 `components/ui/*` (button, field, chips, option cards, badges, cards/rows, progress, code input, SVG icons),
-`components/mascot/*` (cockatiel with 12 moods, bunny, cat, egg). Mockups: [design/app-ui](design/app-ui/README.md) —
-67 artboards; the `app` page holds the composed tabs, the `Rm*` artboards hold per-feature detail with the
-reasoning attached. Redrawn 2026-09-19 against what shipped; see that README for the drift log. `review.html` shows all
-67 on one page; the two published `*-app-ui.html` canvas bundles are regenerated from the same
-sources and are current.
+`components/mascot/*` (cockatiel with 12 moods, bunny, cat, egg).
+
+[design/app-ui](design/app-ui/README.md) is **guidelines only** — tokens, the spacing scale, components,
+the five layout patterns, and the mascot. Screen mock-ups were removed: once copy lives in the
+translation catalogue, a drawing with English baked in is a second competing answer to "what does this
+say", and it's the one nobody updates. `Patterns` draws structure as blocks rather than sentences, and
+carries the rules that only matter once text is translated — rows grow rather than truncate, and no
+sentence is ever assembled from fragments.
 
 Feature cards live in `components/`: `missions-card`, `playdates-card`, `treasure-shelf`, `viewers-sheet`,
 `comment-sheet`, `sensitive-cover`. Each returns `null` when it has nothing to show, so a screen never
