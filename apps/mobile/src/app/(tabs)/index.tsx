@@ -8,7 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BottomSheet } from '@/components/bottom-sheet';
 import { MapView } from '@/components/map/map-view';
-import type { LatLng, MapPost, MapViewHandle } from '@/components/map/types';
+import type { LatLng, MapPlace, MapPost, MapViewHandle } from '@/components/map/types';
 import { CompanionArt } from '@/components/mascot/companions';
 import { MediaGallery } from '@/components/media-gallery';
 import { PlaceThread } from '@/components/place-thread';
@@ -47,6 +47,7 @@ export default function MapTab() {
   const [errand, setErrand] = useState<ErrandResult | null>(null);
   const [sending, setSending] = useState(false);
   const [threadFor, setThreadFor] = useState<string | null>(null);
+  const [places, setPlaces] = useState<MapPlace[]>([]);
   const { data: session } = authClient.useSession();
   const showSensitive = session?.user?.showSensitiveContent ?? false;
   const sheetCovered =
@@ -115,11 +116,21 @@ export default function MapTab() {
     const key = [b.west, b.south, b.east, b.north].map((v) => v.toFixed(3)).join(',');
     if (key === lastBounds.current) return;
     lastBounds.current = key;
+    const area = `west=${b.west}&south=${b.south}&east=${b.east}&north=${b.north}`;
     try {
-      const r = await apiFetch<{ posts: MapPost[] }>(
-        `/api/map/posts?west=${b.west}&south=${b.south}&east=${b.east}&north=${b.north}`,
-      );
+      const r = await apiFetch<{ posts: MapPost[] }>(`/api/map/posts?${area}`);
       setPosts(r.posts);
+
+      // Nothing posted around here, so show the neighbourhood itself. A blank map
+      // reads as a broken app rather than a quiet one, and venues are real —
+      // unlike widening the radius, this costs nothing in honesty or localness.
+      // Each pin is a thread waiting to be started.
+      if (r.posts.length === 0) {
+        const p = await apiFetch<{ places: MapPlace[] }>(`/api/map/places?${area}`);
+        setPlaces(p.places);
+      } else {
+        setPlaces([]);
+      }
     } catch {
       // Keep the last set of posts on a transient failure.
     }
@@ -143,6 +154,8 @@ export default function MapTab() {
         petLocation={location}
         posts={posts}
         onSelectPost={setSelected}
+        places={places}
+        onSelectPlace={(place) => setThreadFor(place.id)}
         onMapPress={() => setSelected(null)}
         onBoundsChange={loadPosts}
         onPetMove={handlePetMove}
@@ -231,9 +244,13 @@ export default function MapTab() {
                 </Card>
               )}
               <View style={styles.bottomRow} pointerEvents="box-none">
-                {posts.length > 0 && (
+                {posts.length > 0 ? (
                   <Badge tone="brand" label={`${posts.length} post${posts.length === 1 ? '' : 's'} around you`} />
-                )}
+                ) : places.length > 0 ? (
+                  // Names what's on screen and what to do with it. "No posts" on
+                  // its own invites the reader to conclude the app is broken.
+                  <Badge label={`Quiet here — tap a place to post first`} />
+                ) : null}
                 {pet && (
                   <Button
                     variant="secondary"

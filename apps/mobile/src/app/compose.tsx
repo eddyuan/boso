@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
@@ -30,9 +30,24 @@ type Photo = { url: string; thumbUrl: string; kind: 'image' };
 /** Writing a post as yourself. Your pet writes its own — see the pet's activity. */
 export default function ComposeScreen() {
   const theme = useTheme();
+  // Arriving from a place's thread ("be the first to post here"), the venue is
+  // already decided — carried as params so compose doesn't have to re-fetch it.
+  const params = useLocalSearchParams<{ placeId?: string; placeName?: string }>();
   const [content, setContent] = useState('');
   const [place, setPlace] = useState<LatLng | null>(null);
-  const [venue, setVenue] = useState<Place | null>(null);
+  const [venue, setVenue] = useState<Place | null>(
+    params.placeId && params.placeName
+      ? {
+          id: params.placeId,
+          name: params.placeName,
+          category: null,
+          latitude: 0,
+          longitude: 0,
+          address: null,
+          distanceM: null,
+        }
+      : null,
+  );
   const [pickerOpen, setPickerOpen] = useState(false);
   const [locating, setLocating] = useState(false);
   const [posting, setPosting] = useState(false);

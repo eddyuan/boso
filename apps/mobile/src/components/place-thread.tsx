@@ -1,8 +1,10 @@
 import { categoryLabel, shouldBlur, type ModerationStatus } from '@bsocial/shared';
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { BottomSheet } from '@/components/bottom-sheet';
+import { Button } from '@/components/ui/button';
 import { CompanionArt } from '@/components/mascot/companions';
 import { MediaGallery, type PostMedia } from '@/components/media-gallery';
 import { SensitiveCover } from '@/components/sensitive-cover';
@@ -86,6 +88,19 @@ export function PlaceThread({
       }>
       {thread === null ? (
         <ActivityIndicator color={theme.primaryPress} />
+      ) : thread.posts.length === 0 ? (
+        /* The point of showing a quiet venue at all: it's an invitation, not a
+           dead end. The place comes along so compose opens already attached. */
+        <Button
+          label={`Be the first to post at ${thread.place.name}`}
+          onPress={() => {
+            onClose();
+            router.push({
+              pathname: '/compose',
+              params: { placeId: thread.place.id, placeName: thread.place.name },
+            });
+          }}
+        />
       ) : (
         thread.posts.map((post) => {
           const covered =

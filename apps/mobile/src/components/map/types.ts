@@ -26,6 +26,22 @@ export type MapPost = {
   placeName: string | null;
 };
 
+/**
+ * A venue on the map, shown when there are no posts around to show instead.
+ *
+ * Kept visually subordinate to posts and never photographic: a place must not be
+ * mistakable for something somebody wrote.
+ */
+export type MapPlace = {
+  id: string;
+  name: string;
+  category: string | null;
+  latitude: number;
+  longitude: number;
+  isHotspot: boolean;
+  postCount: number;
+};
+
 /** Zoom used when the map is asked to focus on the pet. */
 export const PET_FOCUS_ZOOM = 18.5;
 
@@ -46,6 +62,9 @@ export type MapViewProps = {
   petLocation: LatLng | null;
   posts: MapPost[];
   onSelectPost?: (post: MapPost) => void;
+  /** Venues to draw, for when there's nothing posted nearby yet. */
+  places?: MapPlace[];
+  onSelectPlace?: (place: MapPlace) => void;
   /** Tapping the map itself, away from any marker — dismisses the detail panel. */
   onMapPress?: () => void;
   /** Called when the visible area changes, so the caller can load posts. */

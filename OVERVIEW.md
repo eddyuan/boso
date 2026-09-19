@@ -23,6 +23,7 @@
 5d7. [Daily missions](#5d7-daily-missions)
 5d8. [Pet parks](#5d8-pet-parks)
 5d9. [Neighbourhood events](#5d9-neighbourhood-events)
+5d10. [The empty map](#5d10-the-empty-map)
 5e. [Notifications](#5e-notifications)
 6. [Mobile app screens](#6-mobile-app-screens)
 6a. [Location](#6a-location)
@@ -715,6 +716,28 @@ counts 2 for 4 posts across 2 venues.
 
 ---
 
+## 5d10. The empty map
+
+A new user in an unseeded neighbourhood has no posts around them, and a blank map reads as a broken
+app rather than a quiet one. So when a viewport contains no posts, the map shows **the neighbourhood
+itself** — venues from the places table, via `GET /api/map/places`.
+
+This is preferred over widening the post radius, which was the other option. Pulling in posts from
+40 km away costs both localness and truth ("nearby" stops meaning nearby); a café is a café, with no
+caveat about who wrote it and no chance of being mistaken for a person. Place markers are pills with
+a label, never photographs, so they can't be confused with posts.
+
+Each pin is an invitation rather than decoration: tapping one opens the place's thread, and a thread
+with nothing in it offers **"Be the first to post at …"**, which opens compose with that venue
+already attached. Empty map → pin → thread → post → the map now has a post.
+
+Ordering is hotspots first, then anywhere that has been posted about, then by id. That last tiebreak
+is load-bearing: ordering randomly would reshuffle which venues survive the 40-place cap on every
+pan, so pins would flicker in and out as the map moved. Verified stable across repeated fetches, and
+a hotspot marked beyond the cap is promoted to first.
+
+---
+
 ## 5e. Notifications
 
 Push tokens have existed since onboarding shipped and nothing was ever sent. Now four things can
@@ -877,6 +900,7 @@ All under `apps/web/src/app/api`. Guard: `requireSession()` in [`lib/session.ts`
 | `GET /api/places/:placeId/posts` | onboarded | The last 48 hours at one place |
 | `GET /api/topics` | onboarded | Topics ranked by use in the last 14 days, for the filter chips |
 | `GET /api/me/event` | onboarded | The running event, the shared total and your own contribution |
+| `GET /api/map/places` | onboarded | Venues in the viewport, for when no posts are nearby |
 | `GET /api/me/diary` | onboarded | The diary, newest first; credits the read once a day |
 | `POST /api/uploads/post-media` | signed in | Multipart `file` → card + thumb WebP URLs for `media[]` |
 | `GET /api/posts/:postId/viewers` | onboarded | Which pets viewed your post (author only) |
@@ -1118,3 +1142,4 @@ a person can supply, which is why `/admin/roadmap` now marks them **Needs you** 
 | 2026-09-18 | Topic filters on the feed and map, ranked by recent use so a chip always returns something |
 | 2026-09-18 | Neighbourhood events: a shared collective goal instead of the planned leaderboard, with bots excluded from the count |
 | 2026-09-18 | Roadmap board reconciled with the code: a `needs-input` status for what no developer can unblock |
+| 2026-09-18 | Show places when no posts are nearby, each one a thread you can start |

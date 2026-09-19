@@ -71,6 +71,8 @@ export function MapView({
   petLocation,
   posts,
   onSelectPost,
+  places = [],
+  onSelectPlace,
   onBoundsChange,
   onPetMove,
   onMapPress,
@@ -79,6 +81,7 @@ export function MapView({
   const hostRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
+  const placeMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
   const petRef = useRef<{
     group: THREE.Group;
     setSpecies: (species: string) => void;
@@ -450,6 +453,40 @@ export function MapView({
       }
     }
   }, [posts, onSelectPost, theme.primarySoft, theme.surface]);
+
+  /**
+   * Place markers: deliberately small, flat and label-led, so a venue can never
+   * be mistaken for a post. Posts are 52px photographs; these are pills.
+   */
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const seen = new Set<string>();
+    for (const place of places) {
+      seen.add(place.id);
+      if (placeMarkersRef.current.has(place.id)) continue;
+      const el = document.createElement('button');
+      el.setAttribute('aria-label', `See what's happening at ${place.name}`);
+      const accent = place.isHotspot ? theme.primary : theme.surface;
+      const ink = place.isHotspot ? theme.onPrimary : theme.text;
+      el.style.cssText = `display:flex;align-items:center;gap:5px;max-width:150px;padding:5px 10px;border-radius:999px;border:1.5px solid ${theme.line};background:${accent};color:${ink};font:600 12px/1.2 system-ui,sans-serif;cursor:pointer;box-shadow:0 2px 6px rgba(43,31,22,0.18);white-space:nowrap;overflow:hidden;text-overflow:ellipsis`;
+      el.textContent = place.name;
+      el.onclick = (event) => {
+        event.stopPropagation();
+        onSelectPlace?.(place);
+      };
+      placeMarkersRef.current.set(
+        place.id,
+        new mapboxgl.Marker({ element: el }).setLngLat([place.longitude, place.latitude]).addTo(map),
+      );
+    }
+    for (const [id, marker] of placeMarkersRef.current) {
+      if (!seen.has(id)) {
+        marker.remove();
+        placeMarkersRef.current.delete(id);
+      }
+    }
+  }, [places, onSelectPlace, theme.line, theme.onPrimary, theme.primary, theme.surface, theme.text]);
 
   if (!MAPBOX_TOKEN) return <MissingToken />;
   // react-native-web renders this View as a div; the map fills it.
