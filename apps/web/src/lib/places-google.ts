@@ -17,6 +17,10 @@ const FIELD_MASK = [
   "places.location",
   "places.primaryType",
   "places.types",
+  // Photo handles ride along in the search response at no extra charge; the
+  // images themselves are a separate billed call, made later and only for
+  // venues somebody looks at.
+  "places.photos",
 ].join(",");
 
 /** Google's place types (Table A), grouped into the five categories the app shows. */
@@ -28,6 +32,14 @@ const TYPES: Record<PlaceCategory, string[]> = {
   landmark: ["tourist_attraction", "museum", "art_gallery", "library", "movie_theater", "historical_landmark"],
 };
 
+type GooglePhoto = {
+  /** "places/{placeId}/photos/{photoId}" — the handle the media endpoint takes. */
+  name: string;
+  widthPx?: number;
+  heightPx?: number;
+  authorAttributions?: { displayName?: string; uri?: string }[];
+};
+
 type GooglePlace = {
   id: string;
   displayName?: { text?: string };
@@ -35,7 +47,50 @@ type GooglePlace = {
   location?: { latitude: number; longitude: number };
   primaryType?: string;
   types?: string[];
+  photos?: GooglePhoto[];
 };
+
+/** How many handles we keep per venue. */
+export const MAX_PHOTOS_PER_PLACE = 10;
+
+const MEDIA_URL = "https://places.googleapis.com/v1/";
+/** Wide enough for a full-bleed card; storeImage re-encodes down from here. */
+const PHOTO_WIDTH_PX = 1200;
+
+export type PhotoRef = { name: string; attribution: string | null };
+
+/** Pulls the handles worth keeping out of a search result. */
+export function photoRefsOf(place: { photos?: GooglePhoto[] }): PhotoRef[] {
+  return (place.photos ?? []).slice(0, MAX_PHOTOS_PER_PLACE).map((photo) => ({
+    name: photo.name,
+    attribution: photo.authorAttributions?.[0]?.displayName ?? null,
+  }));
+}
+
+/**
+ * Downloads one photo's bytes.
+ *
+ * This is a billed request per call, which is why callers pass a budget. The
+ * media endpoint answers with a redirect to the actual image, which fetch
+ * follows by default.
+ */
+export async function fetchPhotoBytes(photoName: string): Promise<Uint8Array | null> {
+  const apiKey = process.env.GOOGLE_PLACES_API_KEY;
+  if (!apiKey) return null;
+
+  const url = `${MEDIA_URL}${photoName}/media?maxWidthPx=${PHOTO_WIDTH_PX}&key=${apiKey}`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      console.error("[places] photo fetch failed:", res.status, photoName);
+      return null;
+    }
+    return new Uint8Array(await res.arrayBuffer());
+  } catch (error) {
+    console.error("[places] photo fetch threw:", photoName, error);
+    return null;
+  }
+}
 
 function categoryOf(place: GooglePlace): PlaceCategory | null {
   const all = [place.primaryType, ...(place.types ?? [])].filter(Boolean) as string[];
@@ -164,6 +219,7 @@ export async function fetchPlacesGoogle(bbox: Bbox, options: GoogleImportOptions
             latitude: place.location.latitude,
             longitude: place.location.longitude,
             address: place.formattedAddress ?? null,
+            photoRefs: photoRefsOf(place),
           });
         }
       }

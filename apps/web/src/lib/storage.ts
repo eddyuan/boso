@@ -11,24 +11,46 @@ const env = process.env;
  * S3_ENDPOINT is only needed for non-AWS services; on AWS it's derived from the
  * region, so requiring it would silently fall back to local disk.
  */
+/**
+ * Treats blank as absent throughout.
+ *
+ * A variable that exists but is empty is the normal state of a half-filled
+ * .env, and it used to defeat this file: `S3_ENDPOINT=` left `endpoint` as ""
+ * (optional chaining doesn't short-circuit on a string, and ?? doesn't fall back
+ * from one), which is falsy, so a fully configured bucket silently wrote to
+ * local disk instead.
+ */
+const set = (value: string | undefined) => {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+};
+
 const endpoint =
-  env.S3_ENDPOINT?.replace(/\/$/, "") ??
-  (env.S3_REGION ? `https://s3.${env.S3_REGION}.amazonaws.com` : undefined);
+  set(env.S3_ENDPOINT)?.replace(/\/$/, "") ??
+  (set(env.S3_REGION) ? `https://s3.${set(env.S3_REGION)}.amazonaws.com` : undefined);
 
 const s3 =
-  endpoint && env.S3_BUCKET && env.S3_ACCESS_KEY_ID && env.S3_SECRET_ACCESS_KEY && env.S3_PUBLIC_URL
+  endpoint && set(env.S3_BUCKET) && set(env.S3_ACCESS_KEY_ID) && set(env.S3_SECRET_ACCESS_KEY) && set(env.S3_PUBLIC_URL)
     ? {
         client: new AwsClient({
-          accessKeyId: env.S3_ACCESS_KEY_ID,
-          secretAccessKey: env.S3_SECRET_ACCESS_KEY,
-          region: env.S3_REGION ?? "auto",
+          accessKeyId: set(env.S3_ACCESS_KEY_ID)!,
+          secretAccessKey: set(env.S3_SECRET_ACCESS_KEY)!,
+          region: set(env.S3_REGION) ?? "auto",
           service: "s3",
         }),
         endpoint,
-        bucket: env.S3_BUCKET,
-        publicUrl: env.S3_PUBLIC_URL.replace(/\/$/, ""),
+        bucket: set(env.S3_BUCKET)!,
+        publicUrl: set(env.S3_PUBLIC_URL)!.replace(/\/$/, ""),
       }
     : null;
+
+// Silence is the wrong default here: uploads landing on a container's local disk
+// look fine until the container goes away.
+if (!s3) {
+  console.warn(
+    "[storage] S3 is not fully configured; uploads go to public/uploads and will not survive a redeploy.",
+  );
+}
 
 // Dev fallback: files go to apps/web/public/uploads and are served by Next.
 const LOCAL_PREFIX = "/uploads";

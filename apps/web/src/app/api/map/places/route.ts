@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { and, asc, desc, gte, lte, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db, places, posts } from "@bsocial/db";
+import { photosByPlaceId } from "@/lib/place-photos";
 import { requireSession } from "@/lib/session";
 
 /**
@@ -43,6 +44,8 @@ export async function GET(req: Request) {
       latitude: places.latitude,
       longitude: places.longitude,
       isHotspot: places.isHotspot,
+      /** Whether photos could be fetched, so the client knows to ask. */
+      hasPhotoRefs: sql<boolean>`${places.photoRefs} is not null and jsonb_array_length(${places.photoRefs}) > 0`,
       postCount: sql<number>`(select count(*) from ${posts} where ${posts.placeId} = ${places.id})`.mapWith(Number),
     })
     .from(places)
@@ -66,5 +69,12 @@ export async function GET(req: Request) {
     )
     .limit(MAX_PLACES);
 
-  return NextResponse.json({ places: rows });
+  const photos = await photosByPlaceId(rows.map((r) => r.id));
+
+  return NextResponse.json({
+    places: rows.map((r) => {
+      const mine = photos.get(r.id) ?? [];
+      return { ...r, photo: mine[0] ?? null, photoCount: mine.length };
+    }),
+  });
 }

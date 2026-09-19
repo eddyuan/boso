@@ -753,6 +753,32 @@ circle — five per circle — so the guards are the design, not a precaution:
 It declines with a *reason* rather than a bare false, because "we looked and there's genuinely nothing
 here" and "we refused to spend more today" are not the same answer and only one is worth retrying.
 
+### Venue photos
+
+Places carry up to **10 photos**, re-encoded and held in our own bucket
+([`lib/place-photos.ts`](apps/web/src/lib/place-photos.ts)). They appear as a small thumbnail inside
+the map pill and full-size at the top of the place's thread.
+
+Fetching is split in two, because the two halves are billed differently:
+
+- **Handles** (`places.photo_refs`) arrive inside the Nearby Search response that was already paid
+  for, so they're captured for every venue at import time for nothing.
+- **Images** are a separate charge per photo, so they're fetched only for venues someone is actually
+  looking at — the client posts the ids on screen to `POST /api/map/places/photos`, which fills at
+  most 3 venues per call. Ten photos each across a freshly imported area would otherwise cost about
+  a hundred times the import itself, mostly for venues nobody opens.
+
+`photos_fetched_at` is stamped **before** the downloads, so a venue is attempted once: a crash
+partway through doesn't leave something that gets re-billed on every later view, and "this place has
+no photos" is a real answer worth remembering.
+
+Attribution is stored per photo and shown wherever the photo is. It's kept alongside rather than
+derived because a photo whose credit has been lost can't be displayed correctly afterwards.
+
+> **Note on terms.** The Google Maps Platform terms restrict storing returned content (place IDs
+> aside), so holding these images in our own bucket is a deliberate decision taken with that known,
+> not an oversight. Attribution is retained partly so the position is defensible.
+
 Ordering is hotspots first, then anywhere that has been posted about, then by id. That last tiebreak
 is load-bearing: ordering randomly would reshuffle which venues survive the 40-place cap on every
 pan, so pins would flicker in and out as the map moved. Verified stable across repeated fetches, and
@@ -924,6 +950,7 @@ All under `apps/web/src/app/api`. Guard: `requireSession()` in [`lib/session.ts`
 | `GET /api/me/event` | onboarded | The running event, the shared total and your own contribution |
 | `GET /api/map/places` | onboarded | Venues in the viewport, for when no posts are nearby |
 | `POST /api/map/places/fill` | onboarded | Import venues for a sparse area — billed, capped, once per cell |
+| `POST /api/map/places/photos` | onboarded | Store photos for venues on screen — up to 10 each, 3 venues per call |
 | `GET /api/me/diary` | onboarded | The diary, newest first; credits the read once a day |
 | `POST /api/uploads/post-media` | signed in | Multipart `file` → card + thumb WebP URLs for `media[]` |
 | `GET /api/posts/:postId/viewers` | onboarded | Which pets viewed your post (author only) |
@@ -1081,6 +1108,7 @@ Worth stating plainly, because "built" reads like "working":
 - [ ] No step-up verification (fresh code) before unlinking providers or changing contact info.
 - [ ] Phone-only users can't set a password; no password reset UI yet.
 - [ ] Terms/Privacy URLs are placeholders; legal pages don't exist.
+- [x] ~~An empty `S3_ENDPOINT` silently disabled S3~~ — a set-but-blank variable left the derived endpoint as `""`, so a fully configured bucket wrote to `public/uploads` instead. Blank is now treated as absent everywhere in `storage.ts`, and an unconfigured bucket warns at startup rather than failing quietly.
 - [ ] Production cross-site cookies for Expo web on a separate domain not configured.
 - [ ] `GOOGLE_IOS_CLIENT_ID` / `GOOGLE_ANDROID_CLIENT_ID` likely unnecessary on the server.
 - [ ] Bundle ID `com.tielo.app` / scheme `tielo://` not yet registered; check trademark, domains and store availability for "Tielo".
@@ -1167,3 +1195,4 @@ a person can supply, which is why `/admin/roadmap` now marks them **Needs you** 
 | 2026-09-18 | Roadmap board reconciled with the code: a `needs-input` status for what no developer can unblock |
 | 2026-09-18 | Show places when no posts are nearby, each one a thread you can start |
 | 2026-09-18 | Import venues on demand for areas nobody has seeded, billed once per cell and capped |
+| 2026-09-18 | Venue photos (max 10 each) stored in our own bucket, with attribution; fixed an empty `S3_ENDPOINT` silently sending every upload to local disk |

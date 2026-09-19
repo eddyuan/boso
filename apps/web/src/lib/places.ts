@@ -17,6 +17,8 @@ export type FetchedPlace = {
   latitude: number;
   longitude: number;
   address: string | null;
+  /** Provider photo handles, kept for later materialisation. */
+  photoRefs?: { name: string; attribution: string | null }[];
 };
 
 /** Insert or refresh places, keyed on source + sourceId so re-imports don't duplicate. */
@@ -38,6 +40,8 @@ export async function savePlaces(found: FetchedPlace[], source = "google"): Prom
           latitude: sql`excluded.latitude`,
           longitude: sql`excluded.longitude`,
           address: sql`excluded.address`,
+          // Refreshed on re-import: a venue can gain photos after we first saw it.
+          photoRefs: sql`excluded.photo_refs`,
         },
       });
     written += chunk.length;

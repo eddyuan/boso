@@ -291,11 +291,52 @@ export const places = pgTable(
     address: text("address"),
     /** Marked in admin: pets path toward these and they carry a local thread. */
     isHotspot: boolean("is_hotspot").notNull().default(false),
+    /**
+     * Photo handles from the provider, captured during the place import because
+     * they arrive in the same (already-billed) response — fetching the images
+     * themselves is a separate charge, so that happens later and only for venues
+     * somebody actually looks at. Shape: { name, attribution }[].
+     */
+    photoRefs: jsonb("photo_refs"),
+    /** Set once we've tried to turn refs into stored images, so we try once. */
+    photosFetchedAt: timestamp("photos_fetched_at"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (t) => [
     uniqueIndex("places_source_idx").on(t.source, t.sourceId),
     index("places_latlng_idx").on(t.latitude, t.longitude),
+  ],
+);
+
+/**
+ * Venue photos, re-encoded and held in our own bucket.
+ *
+ * Attribution travels with every row. The provider requires it to be shown
+ * wherever the photo appears, and a photo whose credit has been lost can't be
+ * displayed correctly later — so it's stored alongside rather than derived.
+ */
+export const placePhotos = pgTable(
+  "place_photos",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    placeId: uuid("place_id")
+      .notNull()
+      .references(() => places.id, { onDelete: "cascade" }),
+    url: text("url").notNull(),
+    thumbUrl: text("thumb_url").notNull(),
+    width: integer("width"),
+    height: integer("height"),
+    /** Who took it, as the provider reported it. */
+    attribution: text("attribution"),
+    /** The provider's photo handle, so the same photo isn't stored twice. */
+    sourceName: text("source_name"),
+    /** Display order, 0 first. */
+    position: integer("position").notNull().default(0),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    index("place_photos_place_idx").on(t.placeId, t.position),
+    uniqueIndex("place_photos_source_idx").on(t.placeId, t.sourceName),
   ],
 );
 

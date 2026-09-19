@@ -114,6 +114,25 @@ export default function MapTab() {
     if (p.granted) await locate();
   }
 
+  const fetchPhotos = useCallback(async (visible: MapPlace[]) => {
+    const need = visible.filter((p) => p.hasPhotoRefs && !p.photo).map((p) => p.id);
+    if (need.length === 0) return;
+    try {
+      const r = await apiFetch<{ photos: Record<string, MapPlace['photo'][]> }>('/api/map/places/photos', {
+        method: 'POST',
+        body: JSON.stringify({ placeIds: need.slice(0, 40) }),
+      });
+      setPlaces((prev) =>
+        prev.map((p) => {
+          const got = r.photos[p.id];
+          return got?.length ? { ...p, photo: got[0]!, photoCount: got.length } : p;
+        }),
+      );
+    } catch {
+      // Photos are a nicety; the pins work without them.
+    }
+  }, []);
+
   const loadPosts = useCallback(async (b: { west: number; south: number; east: number; north: number }) => {
     // Skip refetching for tiny map movements.
     const key = [b.west, b.south, b.east, b.north].map((v) => v.toFixed(3)).join(',');
@@ -147,17 +166,24 @@ export default function MapTab() {
             if (outcome.filled) {
               const again = await apiFetch<{ places: MapPlace[] }>(`/api/map/places?${area}`);
               setPlaces(again.places);
+              void fetchPhotos(again.places);
             }
           }
         }
+        void fetchPhotos(p.places);
       } else {
         setPlaces([]);
       }
     } catch {
       // Keep the last set of posts on a transient failure.
     }
-  }, []);
+  }, [fetchPhotos]);
 
+  /**
+   * Asks the server to store photos for the venues on screen that don't have one
+   * yet. Each image is a billed request, so this is driven by what's actually
+   * visible and the server fills only a few per call — repeated pans converge.
+   */
   // Stable identity, and only re-render when the shown distance actually
   // changes — the map reports about once a second.
   const handlePetMove = useCallback(({ distanceM }: { distanceM: number }) => {

@@ -28,8 +28,11 @@ type ThreadPost = {
   ownerName: string | null;
 };
 
+type PlacePhoto = { url: string; thumbUrl: string; attribution: string | null };
+
 type Thread = {
   place: { id: string; name: string; address: string | null; isHotspot: boolean };
+  photos: PlacePhoto[];
   windowHours: number;
   posts: ThreadPost[];
   showSensitiveContent: boolean;
@@ -86,6 +89,22 @@ export function PlaceThread({
           </ThemedText>
         </View>
       }>
+      {/* The venue itself, above whatever has been said about it. Attribution
+          travels with each photo and is shown wherever the photo is. */}
+      {thread && thread.photos.length > 0 && (
+        <View>
+          <MediaGallery
+            media={thread.photos.map((p) => ({ url: p.url, thumbUrl: p.thumbUrl, kind: 'image' as const }))}
+            height={180}
+          />
+          {thread.photos[0]?.attribution ? (
+            <ThemedText type="caption" themeColor="textSecondary" style={{ marginTop: 4 }}>
+              Photo: {thread.photos[0].attribution}
+            </ThemedText>
+          ) : null}
+        </View>
+      )}
+
       {thread === null ? (
         <ActivityIndicator color={theme.primaryPress} />
       ) : thread.posts.length === 0 ? (

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { and, desc, eq, gt, sql } from "drizzle-orm";
 import { z } from "zod";
 import { comments, db, likes, pets, places, posts, users } from "@bsocial/db";
+import { photosByPlaceId } from "@/lib/place-photos";
 import { mediaByPostId } from "@/lib/post-media";
 import { requireSession } from "@/lib/session";
 import { amplifiedPosts, ownOrVisible } from "@/lib/visibility";
@@ -46,8 +47,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ placeId:
     .where(eq(places.id, placeId));
   if (!place) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
+  const placePhotos = (await photosByPlaceId([place.id])).get(place.id) ?? [];
+
   const [myPet] = await db.select({ id: pets.id }).from(pets).where(eq(pets.userId, session.user.id));
-  if (!myPet) return NextResponse.json({ place, posts: [] });
+  if (!myPet) return NextResponse.json({ place, photos: placePhotos, posts: [] });
 
   const since = new Date(Date.now() - WINDOW_HOURS * 3600 * 1000);
 
@@ -79,6 +82,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ placeId:
 
   return NextResponse.json({
     place,
+    photos: placePhotos,
     windowHours: WINDOW_HOURS,
     posts: rows.map((r) => ({ ...r, media: media.get(r.id) ?? [] })),
     showSensitiveContent: session.user.showSensitiveContent,

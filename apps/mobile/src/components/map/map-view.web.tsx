@@ -470,7 +470,17 @@ export function MapView({
       const accent = place.isHotspot ? theme.primary : theme.surface;
       const ink = place.isHotspot ? theme.onPrimary : theme.text;
       el.style.cssText = `display:flex;align-items:center;gap:5px;max-width:150px;padding:5px 10px;border-radius:999px;border:1.5px solid ${theme.line};background:${accent};color:${ink};font:600 12px/1.2 system-ui,sans-serif;cursor:pointer;box-shadow:0 2px 6px rgba(43,31,22,0.18);white-space:nowrap;overflow:hidden;text-overflow:ellipsis`;
-      el.textContent = place.name;
+      // A 22px thumbnail inside the pill. Posts are 52px photo circles; keeping
+      // places pill-shaped and label-led is what stops the two being confused.
+      if (place.photo) {
+        const img = document.createElement('span');
+        img.style.cssText = `flex:0 0 auto;width:22px;height:22px;border-radius:50%;background:${theme.backgroundElement} center/cover no-repeat;background-image:url(${place.photo.thumbUrl})`;
+        el.appendChild(img);
+      }
+      const label = document.createElement('span');
+      label.style.cssText = 'overflow:hidden;text-overflow:ellipsis';
+      label.textContent = place.name;
+      el.appendChild(label);
       el.onclick = (event) => {
         event.stopPropagation();
         onSelectPlace?.(place);
@@ -486,7 +496,7 @@ export function MapView({
         placeMarkersRef.current.delete(id);
       }
     }
-  }, [places, onSelectPlace, theme.line, theme.onPrimary, theme.primary, theme.surface, theme.text]);
+  }, [places, onSelectPlace, theme.backgroundElement, theme.line, theme.onPrimary, theme.primary, theme.surface, theme.text]);
 
   if (!MAPBOX_TOKEN) return <MissingToken />;
   // react-native-web renders this View as a div; the map fills it.
