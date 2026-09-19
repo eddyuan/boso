@@ -991,6 +991,7 @@ Admin-only (all `requireAdmin`, under `/api/admin`):
 | `GET /api/admin/telemetry` | Economy figures and API spend over a window |
 | `GET`/`PATCH /api/admin/config` | Read the tuning registry and values; change or reset one |
 | `GET`/`POST /api/admin/jobs` | Job health and recent runs; queue one to run now |
+| `GET`/`DELETE /api/admin/assets` | Storage inventory and orphans; delete unreferenced objects |
 | `PATCH /api/admin/places` | Mark a place as a hotspot |
 | `GET`/`POST`/`DELETE /api/admin/events` | Schedule collective events; see the running one's progress |
 | `PATCH /api/admin/posts` · `DELETE /api/admin/posts?id=` | Hide/unhide a post (`posts.hiddenAt`) · delete it permanently |
@@ -1211,6 +1212,35 @@ Two things make it trustworthy rather than merely informative:
 
 ---
 
+### Assets
+
+`/admin/assets` reconciles what object storage holds against what the database references
+([`lib/assets.ts`](apps/web/src/lib/assets.ts)). Two problems share the name and neither is visible
+from one side alone:
+
+- An **orphan** is an object nothing points at. The database has forgotten it, so only the bucket
+  knows. It costs storage every month and nothing notices.
+- A **broken reference** is a row pointing at an object that has gone. The bucket has forgotten it, so
+  only the database knows — and it renders as a broken image for a real user, making it the more urgent
+  of the two.
+
+> **The configured bucket is shared with another product.** It also holds `audio/`,
+> `voice-recordings/`, `wallet-styles/` and `wallet-passes/` — 334 objects, over 100 MB, none of it
+> Tielo's. So reconciliation only ever considers the prefixes this app writes (`posts/`, `places/`,
+> `avatars/`); everything else is reported as foreign and can't be selected or deleted. **Adding a new
+> `storeImage` prefix means adding it to `OWNED_PREFIXES` too**, or its objects will look foreign.
+
+Three guards, because this is the one page here that can destroy data:
+
+1. The delete endpoint **recomputes the inventory** rather than trusting the keys the client sent — a
+   page left open while a post is written would otherwise offer an object that has since become
+   referenced.
+2. Keys outside the owned prefixes are refused at the endpoint as well as excluded from the listing.
+3. A **truncated listing disables deletion entirely**: an incomplete list reports real files as absent,
+   which is the one direction this tool must never get wrong.
+
+---
+
 ## 11. Status, known gaps & open decisions
 
 ### Done
@@ -1344,4 +1374,5 @@ a person can supply, which is why `/admin/roadmap` now marks them **Needs you** 
 | 2026-09-19 | Game ops 2/5 — live tuning: 35 bounded values in the database with an audit trail, wired through XP, drop rate, push caps, radii and the spend ceilings |
 | 2026-09-19 | Game ops 3/5 — job visibility: every Inngest handler records its run, with overdue alarms and a manual trigger; confirms all eight have never run |
 | 2026-09-19 | Game ops 4/5 — player inspector: game state on the account page, with mood derived exactly as the app derives it and the bond ledger reconciled against the stored total |
+| 2026-09-19 | Game ops 5/5 — assets: storage reconciled against the database in both directions, scoped to our own prefixes because the bucket is shared with another product |
 | 2026-09-18 | Backfill photo handles lazily via Place Details, so venues imported before the field-mask change can get photos too |

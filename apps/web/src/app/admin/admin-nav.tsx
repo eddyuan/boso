@@ -9,6 +9,7 @@ import {
   CalendarClock,
   FileText,
   Globe2,
+  HardDrive,
   LayoutDashboard,
   Loader2,
   LogOut,
@@ -47,6 +48,7 @@ const NAV_GROUPS: { label: string; items: { href: string; label: string; icon: L
       { href: "/admin/posts", label: "Posts", icon: FileText },
       { href: "/admin/review", label: "Review", icon: ShieldAlert },
       { href: "/admin/places", label: "Places", icon: MapPin },
+      { href: "/admin/assets", label: "Assets", icon: HardDrive },
     ],
   },
   {

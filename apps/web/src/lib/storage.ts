@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readdir, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { AwsClient } from "aws4fetch";
 
@@ -75,6 +75,99 @@ export async function putObject(key: string, body: Uint8Array<ArrayBuffer>, cont
     await writeFile(file, body);
   }
   return `${publicBaseUrl()}/${key}`;
+}
+
+export type StoredObject = { key: string; bytes: number; modified: Date | null };
+
+/**
+ * Lists what is actually in storage.
+ *
+ * The bucket is the only place that knows about an object nobody references any
+ * more — the database, by definition, has forgotten it. Paginates, because
+ * ListObjectsV2 caps at 1000 keys and a truncated list would report real files as
+ * absent, which is precisely the wrong direction for a tool that offers deletion.
+ */
+export async function listObjects(prefix = "", limit = 5000): Promise<StoredObject[]> {
+  const found: StoredObject[] = [];
+
+  if (s3) {
+    let token: string | undefined;
+    do {
+      const url = new URL(`${s3.endpoint}/${s3.bucket}`);
+      url.searchParams.set("list-type", "2");
+      if (prefix) url.searchParams.set("prefix", prefix);
+      url.searchParams.set("max-keys", String(Math.min(1000, limit - found.length)));
+      if (token) url.searchParams.set("continuation-token", token);
+
+      const res = await s3.client.fetch(url.toString());
+      if (!res.ok) throw new Error(`List failed (${res.status}): ${await res.text()}`);
+      const xml = await res.text();
+
+      for (const m of xml.matchAll(/<Contents>([\s\S]*?)<\/Contents>/g)) {
+        const body = m[1]!;
+        const key = /<Key>([^<]+)<\/Key>/.exec(body)?.[1];
+        if (!key) continue;
+        found.push({
+          key,
+          bytes: Number(/<Size>(\d+)<\/Size>/.exec(body)?.[1] ?? 0),
+          modified: /<LastModified>([^<]+)<\/LastModified>/.exec(body)?.[1]
+            ? new Date(/<LastModified>([^<]+)<\/LastModified>/.exec(body)![1]!)
+            : null,
+        });
+      }
+
+      token = /<IsTruncated>true<\/IsTruncated>/.test(xml)
+        ? /<NextContinuationToken>([^<]+)<\/NextContinuationToken>/.exec(xml)?.[1]
+        : undefined;
+    } while (token && found.length < limit);
+    return found;
+  }
+
+  // Local fallback: walk public/uploads the same way, so the tool behaves
+  // identically in development.
+  const root = path.join(process.cwd(), "public", LOCAL_PREFIX);
+  async function walk(dir: string, rel: string) {
+    let entries;
+    try {
+      entries = await readdir(dir, { withFileTypes: true });
+    } catch {
+      return; // No uploads directory yet is the same as an empty bucket.
+    }
+    for (const e of entries) {
+      if (found.length >= limit) return;
+      const abs = path.join(dir, e.name);
+      const key = rel ? `${rel}/${e.name}` : e.name;
+      if (e.isDirectory()) await walk(abs, key);
+      else {
+        const st = await stat(abs);
+        found.push({ key, bytes: st.size, modified: st.mtime });
+      }
+    }
+  }
+  await walk(prefix ? path.join(root, prefix) : root, prefix);
+  return found;
+}
+
+/** Removes one object. Returns false when it was already gone. */
+export async function deleteObject(key: string): Promise<boolean> {
+  if (s3) {
+    const res = await s3.client.fetch(`${s3.endpoint}/${s3.bucket}/${key}`, { method: "DELETE" });
+    // S3 answers 204 whether or not the key existed, so "already gone" and
+    // "deleted" are indistinguishable — both are the outcome the caller wanted.
+    return res.ok || res.status === 404;
+  }
+  try {
+    await rm(path.join(process.cwd(), "public", LOCAL_PREFIX, key));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Turns a public URL back into its storage key, or null if it isn't ours. */
+export function keyFromUrl(url: string): string | null {
+  const base = `${publicBaseUrl()}/`;
+  return url.startsWith(base) ? url.slice(base.length) : null;
 }
 
 // True if the URL points at our own storage (so clients can't set arbitrary
