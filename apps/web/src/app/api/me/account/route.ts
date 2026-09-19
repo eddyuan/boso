@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db, users } from "@bsocial/db";
+import { LOCALES, type Locale } from "@bsocial/shared";
 import { requireSession } from "@/lib/session";
 import { getAccountOverview } from "@/lib/sign-in-methods";
 
@@ -15,13 +16,26 @@ export async function GET() {
   return NextResponse.json(overview);
 }
 
-const preferencesSchema = z.object({
-  /**
-   * Opt-in to seeing `sensitive` posts uncovered. Off by default and never
-   * prompted for — it lives in profile settings for people who go looking.
-   */
-  showSensitiveContent: z.boolean(),
-});
+const preferencesSchema = z
+  .object({
+    /**
+     * Opt-in to seeing `sensitive` posts uncovered. Off by default and never
+     * prompted for — it lives in profile settings for people who go looking.
+     */
+    showSensitiveContent: z.boolean().optional(),
+    /**
+     * The chosen UI language. `null` means follow the device, which is different
+     * from "English": someone who never opens the picker should keep tracking
+     * their phone when they change its language or when we add their language.
+     */
+    locale: z
+      .enum(LOCALES.map((l) => l.code) as [Locale, ...Locale[]])
+      .nullable()
+      .optional(),
+  })
+  // Both fields are optional so either can be set alone, which leaves `{}` as a
+  // request that would silently do nothing. Rejected rather than accepted.
+  .refine((v) => Object.keys(v).length > 0, { message: "nothing_to_update" });
 
 export async function PATCH(req: Request) {
   const { session, response } = await requireSession();
@@ -31,10 +45,15 @@ export async function PATCH(req: Request) {
   const parsed = preferencesSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "invalid_body" }, { status: 400 });
 
-  await db
-    .update(users)
-    .set({ showSensitiveContent: parsed.data.showSensitiveContent })
-    .where(eq(users.id, session.user.id));
+  // Only the keys that were actually sent, so a PATCH of one preference can't
+  // reset the other to its default.
+  const patch: Partial<{ showSensitiveContent: boolean; locale: string | null }> = {};
+  if (parsed.data.showSensitiveContent !== undefined) {
+    patch.showSensitiveContent = parsed.data.showSensitiveContent;
+  }
+  if (parsed.data.locale !== undefined) patch.locale = parsed.data.locale;
 
-  return NextResponse.json({ showSensitiveContent: parsed.data.showSensitiveContent });
+  await db.update(users).set(patch).where(eq(users.id, session.user.id));
+
+  return NextResponse.json(patch);
 }

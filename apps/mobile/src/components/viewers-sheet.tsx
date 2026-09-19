@@ -7,8 +7,8 @@ import { CompanionArt } from '@/components/mascot/companions';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useT } from '@/lib/i18n';
 import { apiFetch } from '@/lib/api';
-import { timeAgo } from '@/lib/time';
 
 type Viewer = {
   petId: string;
@@ -36,6 +36,7 @@ export function ViewersSheet({
   onClose: () => void;
 }) {
   const theme = useTheme();
+  const { timeAgo } = useT();
   const [viewers, setViewers] = useState<Viewer[] | null>(null);
   const [total, setTotal] = useState(0);
 

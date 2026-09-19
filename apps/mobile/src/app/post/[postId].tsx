@@ -23,9 +23,9 @@ import { Badge, ErrorText } from '@/components/ui/controls';
 import { Icon } from '@/components/ui/icon';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useT } from '@/lib/i18n';
 import { apiFetch } from '@/lib/api';
 import { ViewersSheet } from '@/components/viewers-sheet';
-import { timeAgo } from '@/lib/time';
 
 type Post = {
   id: string;
@@ -59,6 +59,7 @@ type Post = {
  */
 export default function PostScreen() {
   const theme = useTheme();
+  const { timeAgo } = useT();
   const { postId } = useLocalSearchParams<{ postId: string }>();
   const [post, setPost] = useState<Post | null>(null);
   const [showSensitive, setShowSensitive] = useState(false);

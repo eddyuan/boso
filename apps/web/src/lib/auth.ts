@@ -138,6 +138,10 @@ export const auth = betterAuth({
       // Whether to drop the tap-to-reveal cover on `sensitive` posts. On the
       // session because every feed render needs it. Written by /api/me/account.
       showSensitiveContent: { type: "boolean", required: false, defaultValue: false, input: false },
+      // The chosen UI language, or null to follow the device. On the session
+      // because the very first screen needs it — fetching it afterwards would
+      // render English and then visibly switch. Written by /api/me/account.
+      locale: { type: "string", required: false, input: false },
     },
   },
 

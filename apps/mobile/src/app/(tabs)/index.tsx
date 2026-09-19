@@ -21,10 +21,9 @@ import { Badge, Card, ErrorText } from '@/components/ui/controls';
 import { Icon } from '@/components/ui/icon';
 import { Radius, Spacing, TabBar } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useT } from '@/lib/i18n';
 import { apiFetch } from '@/lib/api';
 import { authClient } from '@/lib/auth-client';
-import { formatDistance } from '@/lib/distance';
-import { timeAgo } from '@/lib/time';
 import { FontFamily } from '@/constants/theme';
 
 type Pet = { id: string; name: string; species: string; autoApprove: boolean };
@@ -34,6 +33,7 @@ type ErrandResult = { posts: MapPost[]; foundNothing: boolean };
 // as their photo.
 export default function MapTab() {
   const theme = useTheme();
+  const { distance, timeAgo } = useT();
   const [pet, setPet] = useState<Pet | null>(null);
   const [location, setLocation] = useState<LatLng | null>(null);
   const [permission, setPermission] = useState<Location.PermissionStatus | null>(null);
@@ -206,7 +206,7 @@ export default function MapTab() {
   // Stable identity, and only re-render when the shown distance actually
   // changes — the map reports about once a second.
   const handlePetMove = useCallback(({ distanceM }: { distanceM: number }) => {
-    const next = formatDistance(distanceM);
+    const next = distance(distanceM);
     setPetAway((prev) => (prev === next ? prev : next));
   }, []);
 

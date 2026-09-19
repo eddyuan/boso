@@ -12,6 +12,7 @@ import { Colors, FontFamily } from '@/constants/theme';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { authClient } from '@/lib/auth-client';
+import { I18nProvider } from '@/lib/i18n';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -43,6 +44,7 @@ export default function RootLayout() {
   return (
     // Required by react-native-gesture-handler, which the map's bottom sheet uses.
     <GestureHandlerRootView style={{ flex: 1 }}>
+      <I18nProvider>
       <ThemeProvider value={navigationTheme(colorScheme === 'dark')}>
       <AnimatedSplashOverlay />
       <Stack screenOptions={{ headerShown: false }}>
@@ -76,6 +78,7 @@ export default function RootLayout() {
         <Stack.Screen name="email" />
       </Stack>
       </ThemeProvider>
+      </I18nProvider>
     </GestureHandlerRootView>
   );
 }

@@ -12,8 +12,8 @@ import { Card, Divider, ErrorText, SectionTitle } from '@/components/ui/controls
 import { Icon } from '@/components/ui/icon';
 import { FontFamily, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useT } from '@/lib/i18n';
 import { apiFetch } from '@/lib/api';
-import { formatDistance } from '@/lib/distance';
 
 const DEBOUNCE_MS = 300;
 
@@ -30,6 +30,7 @@ type Person = {
 /** Find people: by name while typing, or whoever has posted near you. */
 export default function SearchScreen() {
   const theme = useTheme();
+  const { distance } = useT();
   const [query, setQuery] = useState('');
   const [people, setPeople] = useState<Person[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -124,7 +125,7 @@ export default function SearchScreen() {
                     {person.name?.trim() || (person.username ? `@${person.username}` : 'Someone')}
                   </ThemedText>
                   <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-                    {[person.username ? `@${person.username}` : null, person.distanceM === undefined ? null : `${formatDistance(person.distanceM)} away`]
+                    {[person.username ? `@${person.username}` : null, person.distanceM === undefined ? null : `${distance(person.distanceM)} away`]
                       .filter(Boolean)
                       .join(' · ')}
                   </ThemedText>

@@ -9,8 +9,8 @@ import { Badge, Card, Divider, ErrorText, IconTile } from '@/components/ui/contr
 import { Icon, type IconName } from '@/components/ui/icon';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useT } from '@/lib/i18n';
 import { apiFetch } from '@/lib/api';
-import { timeAgo } from '@/lib/time';
 
 type PetAction = {
   id: string;
@@ -49,6 +49,7 @@ const ACTION_LABEL: Record<PetAction['type'], string> = {
  */
 export default function PetLogScreen() {
   const theme = useTheme();
+  const { timeAgo } = useT();
   const [actions, setActions] = useState<PetAction[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 

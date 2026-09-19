@@ -10,8 +10,8 @@ import { Badge, Card, ErrorText } from '@/components/ui/controls';
 import { Icon } from '@/components/ui/icon';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useT } from '@/lib/i18n';
 import { apiFetch } from '@/lib/api';
-import { timeAgo } from '@/lib/time';
 
 type Detail = {
   myPetName: string;
@@ -53,6 +53,7 @@ const EVENT_LABEL: Record<string, string> = {
  */
 export default function FriendScreen() {
   const theme = useTheme();
+  const { timeAgo } = useT();
   const { petId } = useLocalSearchParams<{ petId: string }>();
   const [data, setData] = useState<Detail | null>(null);
   const [error, setError] = useState<string | null>(null);

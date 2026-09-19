@@ -15,9 +15,8 @@ import { Badge, Card, Chip, ChipGroup, ErrorText, RoundButton, Segmented } from 
 import { Icon } from '@/components/ui/icon';
 import { FontFamily, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useT } from '@/lib/i18n';
 import { ApiError, apiFetch } from '@/lib/api';
-import { formatDistance } from '@/lib/distance';
-import { timeAgo } from '@/lib/time';
 import { categoryLabel, shouldBlur, type ModerationStatus } from '@bsocial/shared';
 
 type Scope = 'nearby' | 'following' | 'discover';
@@ -66,6 +65,7 @@ const EMPTY: Record<Scope, { title: string; message: string }> = {
 
 export default function FeedTab() {
   const theme = useTheme();
+  const { distance, timeAgo } = useT();
   const [scope, setScope] = useState<Scope>('nearby');
   const [posts, setPosts] = useState<FeedPost[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -189,7 +189,7 @@ export default function FeedTab() {
         ))}
 
       {posts?.map((post) => {
-        const distance = post.distanceM === null ? null : formatDistance(post.distanceM);
+        const away = post.distanceM === null ? null : distance(post.distanceM);
         // A post is either the person's own words or their pet's.
         const authorName = post.authoredByAgent ? post.petName : (post.ownerName?.trim() || post.petName);
         const covered = shouldBlur(post.moderationStatus, showSensitive) && !revealed.has(post.id);
@@ -223,7 +223,7 @@ export default function FeedTab() {
                   )}
                 </View>
                 <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-                  {[post.ownerUsername ? `@${post.ownerUsername}` : null, distance, timeAgo(post.createdAt)]
+                  {[post.ownerUsername ? `@${post.ownerUsername}` : null, away, timeAgo(post.createdAt)]
                     .filter(Boolean)
                     .join(' · ')}
                 </ThemedText>

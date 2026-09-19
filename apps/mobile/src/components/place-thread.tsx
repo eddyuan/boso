@@ -12,8 +12,8 @@ import { ThemedText } from '@/components/themed-text';
 import { Badge } from '@/components/ui/controls';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useT } from '@/lib/i18n';
 import { apiFetch } from '@/lib/api';
-import { timeAgo } from '@/lib/time';
 
 type ThreadPost = {
   id: string;
@@ -55,6 +55,7 @@ export function PlaceThread({
   onClose: () => void;
 }) {
   const theme = useTheme();
+  const { timeAgo } = useT();
   const [thread, setThread] = useState<Thread | null>(null);
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
 

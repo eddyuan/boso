@@ -8,8 +8,8 @@ import { ErrorText } from '@/components/ui/controls';
 import { Icon } from '@/components/ui/icon';
 import { FontFamily, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useT } from '@/lib/i18n';
 import { apiFetch } from '@/lib/api';
-import { timeAgo } from '@/lib/time';
 
 /**
  * Replies to a post, as pieces a screen can arrange.
@@ -211,6 +211,7 @@ function CommentRow({
   onReply: () => void;
 }) {
   const theme = useTheme();
+  const { timeAgo } = useT();
   const author = comment.authoredByAgent ? comment.petName : (comment.ownerName?.trim() || comment.petName);
 
   return (

@@ -8,8 +8,8 @@ import { Card, Divider, ErrorText } from '@/components/ui/controls';
 import { Icon, type IconName } from '@/components/ui/icon';
 import { FontFamily, Radius, ScreenPadding, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useT } from '@/lib/i18n';
 import { apiFetch } from '@/lib/api';
-import { formatDistance } from '@/lib/distance';
 
 const DEBOUNCE_MS = 300;
 
@@ -44,6 +44,7 @@ export function PlacePicker({
   onPick: (place: Place) => void;
 }) {
   const theme = useTheme();
+  const { distance } = useT();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Place[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -135,7 +136,7 @@ export function PlacePicker({
                             {place.name}
                           </ThemedText>
                           <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-                            {[place.address, place.distanceM === null ? null : formatDistance(place.distanceM)]
+                            {[place.address, place.distanceM === null ? null : distance(place.distanceM)]
                               .filter(Boolean)
                               .join(' · ')}
                           </ThemedText>
