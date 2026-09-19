@@ -44,40 +44,42 @@ export default function RootLayout() {
   return (
     // Required by react-native-gesture-handler, which the map's bottom sheet uses.
     <GestureHandlerRootView style={{ flex: 1 }}>
+      {/* Outermost of the two, so every screen and the splash overlay can read a
+          locale — ThemedText does, which is nearly every line of text in the app. */}
       <I18nProvider>
-      <ThemeProvider value={navigationTheme(colorScheme === 'dark')}>
-      <AnimatedSplashOverlay />
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Protected guard={onboarded}>
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="post/[postId]" />
-        <Stack.Screen name="diary" />
-        <Stack.Screen name="event" />
-        <Stack.Screen name="shelf" />
-        <Stack.Screen name="bond" />
-        <Stack.Screen name="friend/[petId]" />
-        <Stack.Screen name="pet-log" />
-        <Stack.Screen name="account" />
-          <Stack.Screen name="devices" />
-        </Stack.Protected>
-        <Stack.Protected guard={verified && !onboarded}>
-          <Stack.Screen name="onboarding" />
-        </Stack.Protected>
-        <Stack.Protected guard={signedIn && !ageRestricted && !verified}>
-          <Stack.Screen name="verify-contact" />
-        </Stack.Protected>
-        <Stack.Protected guard={ageRestricted}>
-          <Stack.Screen name="age-restricted" />
-        </Stack.Protected>
-        <Stack.Protected guard={!signedIn}>
-          <Stack.Screen name="sign-in" />
-          <Stack.Screen name="sign-up" />
-        </Stack.Protected>
-        {/* Used both signed out (phone sign-in) and signed in (add/verify contact). */}
-        <Stack.Screen name="phone" />
-        <Stack.Screen name="email" />
-      </Stack>
-      </ThemeProvider>
+        <ThemeProvider value={navigationTheme(colorScheme === 'dark')}>
+          <AnimatedSplashOverlay />
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Protected guard={onboarded}>
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="post/[postId]" />
+              <Stack.Screen name="diary" />
+              <Stack.Screen name="event" />
+              <Stack.Screen name="shelf" />
+              <Stack.Screen name="bond" />
+              <Stack.Screen name="friend/[petId]" />
+              <Stack.Screen name="pet-log" />
+              <Stack.Screen name="account" />
+              <Stack.Screen name="devices" />
+            </Stack.Protected>
+            <Stack.Protected guard={verified && !onboarded}>
+              <Stack.Screen name="onboarding" />
+            </Stack.Protected>
+            <Stack.Protected guard={signedIn && !ageRestricted && !verified}>
+              <Stack.Screen name="verify-contact" />
+            </Stack.Protected>
+            <Stack.Protected guard={ageRestricted}>
+              <Stack.Screen name="age-restricted" />
+            </Stack.Protected>
+            <Stack.Protected guard={!signedIn}>
+              <Stack.Screen name="sign-in" />
+              <Stack.Screen name="sign-up" />
+            </Stack.Protected>
+            {/* Used both signed out (phone sign-in) and signed in (add/verify contact). */}
+            <Stack.Screen name="phone" />
+            <Stack.Screen name="email" />
+          </Stack>
+        </ThemeProvider>
       </I18nProvider>
     </GestureHandlerRootView>
   );
