@@ -22,6 +22,7 @@
 5d6. [Playdates](#5d6-playdates)
 5d7. [Daily missions](#5d7-daily-missions)
 5d8. [Pet parks](#5d8-pet-parks)
+5d9. [Neighbourhood events](#5d9-neighbourhood-events)
 5e. [Notifications](#5e-notifications)
 6. [Mobile app screens](#6-mobile-app-screens)
 6a. [Location](#6a-location)
@@ -681,6 +682,39 @@ the same rule as the feed, so a place thread can't become a way to read what the
 
 ---
 
+## 5d9. Neighbourhood events
+
+A time-boxed goal a neighbourhood works on **together** — "let's find 200 things this weekend" —
+scheduled in admin (`/admin/events`) and shown as one shared bar
+([`lib/events.ts`](apps/web/src/lib/events.ts)).
+
+**It is deliberately collective rather than a ranking**, which was a change from the original plan.
+A weekly per-area leaderboard has three problems specific to this app. It publishes a list of the
+most active accounts within a small radius, which re-introduces exactly the inference the location
+blur exists to prevent. Rank is relative, so for one person to rise another has to fall, while
+everything else here is absolute — bond XP never decays, missions don't streak, mood always
+recovers. And a board whose rungs are seeded accounts is a lie about activity, expressed as a
+number. One shared bar has none of these: no losing position, no directory of who is nearby, and
+your own contribution is shown to you and to nobody else.
+
+Two rules keep it honest:
+
+- **Nothing is stored.** Progress is counted from the rows that already record the activity, so the
+  bar can't disagree with what happened and there's no counter to repair when a post is deleted.
+  A goal that couldn't be counted couldn't be configured.
+- **Seeded accounts never count.** Bots may make a neighbourhood look inhabited — that's what
+  they're for — but a collective total they filled in would be a visibly false number.
+
+Goals: treasures found, posts written (the person's own, not their pet's), replies written,
+playdates met, places visited (distinct venues, so twenty posts from one café don't finish it).
+
+Verified: 5 seeded finds alongside 3 real ones counted as 3; a beaten target clamps to full rather
+than showing 140%; an event whose window hasn't opened isn't current; agent-written posts are
+excluded from a posts goal; a post 1500 km outside a 5 km area is excluded; and `places_visited`
+counts 2 for 4 posts across 2 venues.
+
+---
+
 ## 5e. Notifications
 
 Push tokens have existed since onboarding shipped and nothing was ever sent. Now four things can
@@ -842,6 +876,7 @@ All under `apps/web/src/app/api`. Guard: `requireSession()` in [`lib/session.ts`
 | `GET /api/me/missions` | onboarded | Today's three goals and their progress |
 | `GET /api/places/:placeId/posts` | onboarded | The last 48 hours at one place |
 | `GET /api/topics` | onboarded | Topics ranked by use in the last 14 days, for the filter chips |
+| `GET /api/me/event` | onboarded | The running event, the shared total and your own contribution |
 | `GET /api/me/diary` | onboarded | The diary, newest first; credits the read once a day |
 | `POST /api/uploads/post-media` | signed in | Multipart `file` → card + thumb WebP URLs for `media[]` |
 | `GET /api/posts/:postId/viewers` | onboarded | Which pets viewed your post (author only) |
@@ -865,6 +900,7 @@ Admin-only (all `requireAdmin`, under `/api/admin`):
 | `PATCH /api/admin/users` | Set a user's password |
 | `GET /api/admin/users/:userId` | One account in full: profile, pet, sign-in methods, devices, login history, push tokens, recent posts and pet decisions |
 | `PATCH /api/admin/places` | Mark a place as a hotspot |
+| `GET`/`POST`/`DELETE /api/admin/events` | Schedule collective events; see the running one's progress |
 | `PATCH /api/admin/posts` · `DELETE /api/admin/posts?id=` | Hide/unhide a post (`posts.hiddenAt`) · delete it permanently |
 | `GET /api/admin/pet-actions` | Every pet decision, filterable by type/status/search, with unfiltered status tallies |
 | `PATCH /api/admin/pet-actions` | Approve a pending decision (carries it out via `executeAction`) or reject it |
@@ -1067,3 +1103,4 @@ Worth stating plainly, because "built" reads like "working":
 | 2026-09-18 | Photo picker in compose, with a post-media upload endpoint that never stores the original |
 | 2026-09-18 | Pet parks: hotspots pull posts from 900 m instead of 150 m, and every place has a 48-hour thread |
 | 2026-09-18 | Topic filters on the feed and map, ranked by recent use so a chip always returns something |
+| 2026-09-18 | Neighbourhood events: a shared collective goal instead of the planned leaderboard, with bots excluded from the count |

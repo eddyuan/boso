@@ -6,6 +6,7 @@ import { useState } from "react";
 import {
   Activity,
   Bot,
+  CalendarClock,
   FileText,
   Globe2,
   LayoutDashboard,
@@ -59,6 +60,7 @@ const NAV_GROUPS: { label: string; items: { href: string; label: string; icon: L
   {
     label: "Product",
     items: [
+      { href: "/admin/events", label: "Events", icon: CalendarClock },
       { href: "/admin/roadmap", label: "Roadmap", icon: Network },
       { href: "/admin/app-design", label: "App design", icon: Smartphone },
     ],

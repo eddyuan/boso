@@ -530,14 +530,14 @@ export const PHASES: Phase[] = [
       {
         id: "events",
         title: "Live events and leaderboards",
-        summary: "Weekend visitors, seasonal decorations, a weekly neighbourhood ranking.",
+        summary: "A time-boxed goal a neighbourhood works on together, as one shared bar.",
         why:
-          "Time-boxed reasons to return and the closest thing to a press hook. Weekly resets avoid permanent losers; seeded accounts can add texture but shouldn't be beatable rivals.",
+          "Time-boxed reasons to return, without the costs of a ranking. A per-area leaderboard would publish who is most active within a small radius (undoing the location blur), make progress relative so one person rises only as another falls, and read as false wherever seeded accounts filled its rungs. A collective bar keeps the pull and has none of those.",
         effort: "L",
         impact: 3,
-        status: "ready",
+        status: "shipped",
         needs: ["missions"],
-        todo: ["Scheduled event config in admin", "Map decorations and event-only rewards", "Weekly per-area ranking with reset"],
+        todo: ["Map decorations (needs 3D art, same dependency as cosmetics)", "Event-only treasure tiers"],
       },
     ],
   },

@@ -807,3 +807,50 @@ export const playdates = pgTable(
     index("playdates_from_idx").on(t.fromPetId, t.status),
   ],
 );
+
+export const eventGoalEnum = pgEnum("event_goal", [
+  "treasures_found",
+  "posts_written",
+  "replies_written",
+  "playdates_met",
+  "places_visited",
+]);
+
+/**
+ * A time-boxed thing a neighbourhood does together.
+ *
+ * Deliberately **collective, not competitive**. A ranking would publish a list
+ * of the most active accounts within a small radius, which re-introduces exactly
+ * the inference the location blur exists to prevent, and rank is relative — for
+ * one person to rise another has to fall, while everything else here is absolute
+ * (bond XP never decays, missions don't streak, mood always recovers). One
+ * shared bar has neither problem: there is no losing position and no directory
+ * of who is active near you.
+ *
+ * Progress is never stored. It's counted from the same rows that already record
+ * the activity, so the bar can't disagree with what happened, and an event whose
+ * goal can't be counted can't be configured.
+ */
+export const liveEvents = pgTable(
+  "live_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    title: text("title").notNull(),
+    /** One line shown under the title. */
+    blurb: text("blurb"),
+    goal: eventGoalEnum("goal").notNull(),
+    /** How many, in total, from everyone taking part. */
+    target: integer("target").notNull(),
+    startsAt: timestamp("starts_at").notNull(),
+    endsAt: timestamp("ends_at").notNull(),
+    /**
+     * Centre of the area taking part, or null for everywhere. A radius without a
+     * centre is meaningless, so the two are set together.
+     */
+    latitude: doublePrecision("latitude"),
+    longitude: doublePrecision("longitude"),
+    radiusKm: doublePrecision("radius_km"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("live_events_window_idx").on(t.startsAt, t.endsAt)],
+);

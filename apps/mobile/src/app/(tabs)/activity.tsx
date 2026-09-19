@@ -4,6 +4,7 @@ import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
 import { Screen } from '@/components/auth-form';
 import { EmptyState } from '@/components/empty-state';
+import { EventCard, type LiveEvent } from '@/components/event-card';
 import { MissionsCard, type Mission } from '@/components/missions-card';
 import { PlaydatesCard, type Playdates } from '@/components/playdates-card';
 import { ThemedText } from '@/components/themed-text';
@@ -57,6 +58,7 @@ export default function ActivityTab() {
   const [diary, setDiary] = useState<DiaryEntry[]>([]);
   const [missions, setMissions] = useState<Mission[]>([]);
   const [playdates, setPlaydates] = useState<Playdates | null>(null);
+  const [liveEvent, setLiveEvent] = useState<LiveEvent | null>(null);
 
   const loadPlaydates = useCallback(
     () =>
@@ -84,6 +86,9 @@ export default function ActivityTab() {
         .then((r) => setMissions(r.missions))
         .catch(() => {});
       loadPlaydates();
+      apiFetch<LiveEvent & { event: LiveEvent['event'] | null }>('/api/me/event')
+        .then((r) => setLiveEvent(r.event ? r : null))
+        .catch(() => {});
     }, [load, loadPlaydates]),
   );
 
@@ -111,6 +116,7 @@ export default function ActivityTab() {
       <ErrorText message={error} />
       {!actions && !error && <ActivityIndicator color={theme.primaryPress} />}
 
+      <EventCard data={liveEvent} />
       <MissionsCard missions={missions} />
       {playdates && <PlaydatesCard data={playdates} onChange={loadPlaydates} />}
 
