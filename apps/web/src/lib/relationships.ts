@@ -1,5 +1,5 @@
 import { and, desc, eq, sql } from "drizzle-orm";
-import { db, petRelationships, pets, users } from "@bsocial/db";
+import { affinityEvents, db, petRelationships, pets, users } from "@bsocial/db";
 import {
   AFFINITY_POINTS,
   FRIENDSHIP_THRESHOLD,
@@ -38,8 +38,10 @@ export async function recordInteraction(
         : 0;
 
   await Promise.all([
-    bump(actorPetId, otherPetId, points, now),
-    received > 0 ? bump(otherPetId, actorPetId, received, now) : Promise.resolve(),
+    bump(actorPetId, otherPetId, points, now, event),
+    received > 0
+      ? bump(otherPetId, actorPetId, received, now, event === "comment" ? "received_comment" : "received_like")
+      : Promise.resolve(),
   ]);
 }
 
@@ -47,7 +49,7 @@ export async function recordInteraction(
  * Adds to one direction of a pair, decaying whatever was there first so silence
  * is charged for at the moment warmth is added rather than on a sweep.
  */
-async function bump(petId: string, otherPetId: string, points: number, now: Date): Promise<void> {
+async function bump(petId: string, otherPetId: string, points: number, now: Date, event: AffinityEvent): Promise<void> {
   const [existing] = await db
     .select({ score: petRelationships.score, lastInteractionAt: petRelationships.lastInteractionAt })
     .from(petRelationships)
@@ -58,6 +60,13 @@ async function bump(petId: string, otherPetId: string, points: number, now: Date
   // Recorded the first time a pair crosses the line, so "friends since" is a
   // real date rather than whenever someone happened to look.
   const crossed = current < FRIENDSHIP_THRESHOLD && next >= FRIENDSHIP_THRESHOLD;
+
+  // Logged as well as summed, so a friendship can be explained rather than just
+  // asserted. Mirrors how bond XP is kept.
+  await db
+    .insert(affinityEvents)
+    .values({ petId, otherPetId, event, points })
+    .catch((error) => console.error("[affinity] could not log an event:", error));
 
   await db
     .insert(petRelationships)

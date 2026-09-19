@@ -12,6 +12,7 @@ import type { LatLng, MapPlace, MapPost, MapViewHandle } from '@/components/map/
 import { CompanionArt } from '@/components/mascot/companions';
 import { MediaGallery } from '@/components/media-gallery';
 import { PlaceThread } from '@/components/place-thread';
+import { WhiskersSheet, type Whiskers } from '@/components/whiskers-sheet';
 import { SensitiveCover } from '@/components/sensitive-cover';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -27,7 +28,6 @@ import { timeAgo } from '@/lib/time';
 import { FontFamily } from '@/constants/theme';
 
 type Pet = { id: string; name: string; species: string; autoApprove: boolean };
-type Whiskers = { line: string; sourcePostIds: string[] } | null;
 type ErrandResult = { posts: MapPost[]; foundNothing: boolean };
 
 // Main tab: the map, with your pet at your location and nearby posts shown
@@ -43,7 +43,8 @@ export default function MapTab() {
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [petAway, setPetAway] = useState<string | null>(null);
-  const [whiskers, setWhiskers] = useState<Whiskers>(null);
+  const [whiskers, setWhiskers] = useState<Whiskers | null>(null);
+  const [whiskersOpen, setWhiskersOpen] = useState(false);
   const [errand, setErrand] = useState<ErrandResult | null>(null);
   const [sending, setSending] = useState(false);
   const [threadFor, setThreadFor] = useState<string | null>(null);
@@ -83,7 +84,7 @@ export default function MapTab() {
       setLocation(next);
       // Today's gossip is generated once server-side and cached for the day, so
       // asking again on every focus is cheap and always returns the same line.
-      apiFetch<{ whiskers: Whiskers }>(
+      apiFetch<{ whiskers: Whiskers | null }>(
         `/api/me/whiskers?latitude=${next.latitude}&longitude=${next.longitude}`,
       )
         .then((r) => setWhiskers(r.whiskers))
@@ -199,6 +200,7 @@ export default function MapTab() {
     setSelected(null);
     setThreadFor(null);
     setErrand(null);
+    setWhiskersOpen(false);
   }, []);
 
   // Stable identity, and only re-render when the shown distance actually
@@ -301,12 +303,19 @@ export default function MapTab() {
               {/* One line of local news a day. Tappable through to the posts it
                   came from, so it's never a claim you can't check. */}
               {whiskers && (
-                <Card style={styles.whiskers}>
-                  <Icon name="sparkle" size={16} color={theme.primaryInk} />
-                  <ThemedText type="small" style={{ flex: 1 }}>
-                    {whiskers.line}
-                  </ThemedText>
-                </Card>
+                <Pressable
+                  onPress={() => setWhiskersOpen(true)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Today's whisper, and where it came from"
+                  style={{ alignSelf: 'stretch' }}>
+                  <Card style={styles.whiskers}>
+                    <Icon name="sparkle" size={16} color={theme.primaryInk} />
+                    <ThemedText type="small" style={{ flex: 1 }}>
+                      {whiskers.line}
+                    </ThemedText>
+                    <Icon name="chevron" size={16} color={theme.textSecondary} />
+                  </Card>
+                </Pressable>
               )}
               <View style={styles.bottomRow} pointerEvents="box-none">
                 {posts.length > 0 ? (
@@ -450,6 +459,13 @@ export default function MapTab() {
         ))}
       </BottomSheet>
       <PlaceThread placeId={threadFor} open={threadFor !== null} onClose={() => setThreadFor(null)} />
+
+      <WhiskersSheet
+        whiskers={whiskers}
+        petName={pet?.name ?? 'Your pet'}
+        open={whiskersOpen}
+        onClose={() => setWhiskersOpen(false)}
+      />
     </ThemedView>
   );
 }

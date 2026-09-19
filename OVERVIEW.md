@@ -475,6 +475,7 @@ carries an empty shell — an absent card is the empty state.
 | `event` | The running event in full, and why it's a shared bar rather than a ranking |
 | `shelf` | Everything the pet has brought home, and what turns up where |
 | `bond` | The level, what each act earns, and all twenty unlocks |
+| `friend/[petId]` | One friendship and how it got there, from the affinity ledger |
 | `compose` | Write a post as yourself, optionally placed on the map |
 | `search` | Find people by name, or see who has posted near you |
 | `(tabs)/activity` | Today's three **missions**, open **playdate** invites and nearby pets to ask, your pet's diary, what it did, and what's waiting for your answer |
@@ -838,6 +839,27 @@ route table — every route has a way in, and every link resolves to a route.
 so rendering the constants would advertise a figure the ledger doesn't pay — the same drift the
 missions endpoint had to avoid. Levels aren't tunable, so those are read locally.
 
+The map's whisper line opens a sheet with **the posts it was drawn from**, each tapping through to its
+thread. A rumour you can't check is something the app made up, so `GET /api/me/whiskers` now returns
+the source posts rather than only their ids. Sources deleted since the whisper was cached are reported
+as missing rather than silently dropped — the line stays true about what was said at the time.
+
+### The affinity ledger
+
+`RmRelationship` promised a "how they got here" timeline, and the data for it did not exist:
+`pet_relationships` kept a running score and nothing else, so the screen could only ever have said
+"warmth 18" — an unexplainable number, which is precisely what the bond ledger exists to prevent.
+
+So affinity now has the same treatment. `affinity_events` records one row per interaction, written
+alongside the score bump it explains. It's **directional**, like the score: a reply earns the replier 3
+and the pet replied to 2, as separate rows, because how keen somebody else's pet is about yours is
+theirs to know. Points are stored as awarded, since the table is tunable.
+
+Friendships that predate the ledger say so on the screen rather than appearing to have no history.
+
+Verified: one reply produces exactly two rows with the right events and points in the right
+directions, and the pair's score is never below what the ledger accounts for.
+
 ---
 
 ## 5e. Notifications
@@ -1000,6 +1022,7 @@ All under `apps/web/src/app/api`. Guard: `requireSession()` in [`lib/session.ts`
 | `GET`/`POST`/`PATCH /api/me/playdates` | onboarded | Who you could meet · propose · accept or decline |
 | `GET /api/me/missions` | onboarded | Today's three goals and their progress |
 | `GET /api/posts/:postId` | onboarded | One post, for the thread screen; feed visibility rules apply |
+| `GET /api/me/relationships/:petId` | onboarded | One friendship, with its event timeline |
 | `GET /api/places/:placeId/posts` | onboarded | The last 48 hours at one place |
 | `GET /api/topics` | onboarded | Topics ranked by use in the last 14 days, for the filter chips |
 | `GET /api/me/event` | onboarded | The running event, the shared total and your own contribution |
@@ -1429,4 +1452,5 @@ a person can supply, which is why `/admin/roadmap` now marks them **Needs you** 
 | 2026-09-19 | Game ops 5/5 — assets: storage reconciled against the database in both directions, scoped to our own prefixes because the bucket is shared with another product |
 | 2026-09-19 | Admin: denser sidebar (17 items, ~160px shorter, 32px narrower) and the platform UI font instead of the rounded display face — it's a tool, read at small sizes for hours |
 | 2026-09-19 | App navigation: one owner tab per detail screen; the post thread becomes a real screen reachable by id, replacing the reply sheet |
+| 2026-09-19 | App: diary, event, shelf, bond and friendship screens with entries from their owner tabs; the whisper line opens its sources; `affinity_events` added so a friendship can be explained |
 | 2026-09-18 | Backfill photo handles lazily via Place Details, so venues imported before the field-mask change can get photos too |

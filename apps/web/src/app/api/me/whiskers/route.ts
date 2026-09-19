@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
-import { db, pets, users, whiskers } from "@bsocial/db";
+import { inArray } from "drizzle-orm";
+import { db, pets, posts, users, whiskers } from "@bsocial/db";
 import { enoughToTalkAbout, gatherLocalNews, writeWhiskersLine } from "@/lib/whiskers";
 import { requireSession } from "@/lib/session";
 
@@ -28,7 +29,7 @@ export async function GET(req: Request) {
     .select({ line: whiskers.line, sourcePostIds: whiskers.sourcePostIds })
     .from(whiskers)
     .where(and(eq(whiskers.userId, session.user.id), eq(whiskers.day, day)));
-  if (cached) return NextResponse.json({ whiskers: cached });
+  if (cached) return NextResponse.json({ whiskers: { ...cached, sources: await sourcesFor(cached.sourcePostIds) } });
 
   const [pet] = await db.select({ name: pets.name }).from(pets).where(eq(pets.userId, session.user.id));
   if (!pet) return NextResponse.json({ whiskers: null });
@@ -59,5 +60,31 @@ export async function GET(req: Request) {
     .values({ userId: session.user.id, day, line, sourcePostIds })
     .onConflictDoNothing();
 
-  return NextResponse.json({ whiskers: { line, sourcePostIds } });
+  return NextResponse.json({ whiskers: { line, sourcePostIds, sources: await sourcesFor(sourcePostIds) } });
+}
+
+/**
+ * The posts a whisper was drawn from.
+ *
+ * A rumour with no source is something the app made up, so every whisper carries
+ * the actual words it came from and each one can be opened. Posts can be deleted
+ * after a whisper is cached, so a missing one is simply absent rather than an
+ * error — the line stays true about what was said at the time.
+ */
+async function sourcesFor(ids: string[]) {
+  if (ids.length === 0) return [];
+  const rows = await db
+    .select({
+      id: posts.id,
+      content: posts.content,
+      authoredByAgent: posts.authoredByAgent,
+      petName: pets.name,
+      species: pets.species,
+      ownerName: users.name,
+    })
+    .from(posts)
+    .innerJoin(pets, eq(pets.id, posts.petId))
+    .innerJoin(users, eq(users.id, pets.userId))
+    .where(inArray(posts.id, ids));
+  return rows;
 }

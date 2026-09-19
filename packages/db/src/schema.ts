@@ -1020,3 +1020,33 @@ export const jobRuns = pgTable(
   },
   (t) => [index("job_runs_job_idx").on(t.job, t.startedAt)],
 );
+
+/**
+ * Why two pets feel the way they do about each other.
+ *
+ * `pet_relationships` keeps a running score, which can say "warmth 18" and
+ * nothing else — the number is unexplainable, and an unexplainable number is the
+ * thing the bond ledger exists to avoid. This is the same idea for affinity: one
+ * row per interaction, so "how did they become friends" has an answer.
+ *
+ * Directional, like the score it explains: a reply earns the replier one amount
+ * and the pet replied to a smaller one, and those are separate rows.
+ */
+export const affinityEvents = pgTable(
+  "affinity_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    petId: uuid("pet_id")
+      .notNull()
+      .references(() => pets.id, { onDelete: "cascade" }),
+    otherPetId: uuid("other_pet_id")
+      .notNull()
+      .references(() => pets.id, { onDelete: "cascade" }),
+    /** An AFFINITY_POINTS key from @bsocial/shared. */
+    event: text("event").notNull(),
+    /** Points at the time — the table is tunable, so the stored value is the truth. */
+    points: doublePrecision("points").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("affinity_events_pair_idx").on(t.petId, t.otherPetId, t.createdAt)],
+);

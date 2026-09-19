@@ -261,7 +261,12 @@ export default function ProfileTab() {
         <Card style={styles.friendsCard}>
           <ThemedText type="label">{pet?.name ?? 'Your pet'}&apos;s circle</ThemedText>
           {friends.slice(0, 5).map((friend) => (
-            <View key={friend.petId} style={styles.friendRow}>
+            <Pressable
+              key={friend.petId}
+              onPress={() => router.push(`/friend/${friend.petId}`)}
+              accessibilityRole="button"
+              accessibilityLabel={`${friend.petName} — how they got here`}
+              style={styles.friendRow}>
               <View style={[styles.friendArt, { backgroundColor: theme.primarySoft }]}>
                 <CompanionArt species={friend.species} size={28} />
               </View>
@@ -274,7 +279,8 @@ export default function ProfileTab() {
                 </ThemedText>
               </View>
               <Badge tone={friend.affinity >= 12 ? 'brand' : 'muted'} label={friend.tierLabel} />
-            </View>
+              <Icon name="chevron" size={16} color={theme.textSecondary} />
+            </Pressable>
           ))}
         </Card>
       )}
