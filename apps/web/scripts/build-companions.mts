@@ -1,17 +1,24 @@
 /**
- * Builds the Tielo companions (cockatiel, bunny, cat) as glTF binaries with
- * animations, from three.js primitives. Mirrors the 2D design in
+ * Builds the Tielo companions (cockatiel, bunny, cat, chick) as glTF binaries
+ * with animations, from three.js primitives. Mirrors the 2D design in
  * design/app-ui (MascotEmotions).
  *
  *   pnpm --filter @bsocial/web mascot:build
  *
- * Output: apps/web/public/models/{cockatiel-primitive,bunny,cat}.glb and the same
+ * Output: apps/web/public/models/{cockatiel-primitive,bunny,cat,chick}.glb and the same
  *         files under apps/mobile/assets/models/. The shipped cockatiel comes
  *         from scripts/rig-tripo-bird.mts instead.
  *
  * Scale: ~1 unit tall, feet at y = 0, facing +Z. Animation clips:
  *   Idle (loop), Hop (one hop, ~0.6s), Flap (wing flap, ~0.45s), Look (head tilt),
  *   Fly (loop, ~0.42s: flapping, leaning forward, feet tucked; altitude is up to the caller)
+ *
+ * The chick is a code-only reconstruction from a reference photo, authored with the
+ * img2threejs skill's image-analysis discipline (identify → decompose → materials →
+ * screenshot-verify against the reference) rather than its full photoreal-object JSON
+ * spec schema, which is disproportionate for a flat-shaded toy this simple. It's a
+ * dev/mascot demo entry only — not wired into onboarding's random-pet pool or the
+ * pets.species enum.
  */
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -64,6 +71,27 @@ const materials = {
   ink: mat(C.ink, 0.35),
   feet: mat(C.feet, 0.8),
   white: mat(C.white, 0.2),
+};
+
+// Chick: from a reference photo (round toy-plushie chick) via the img2threejs
+// skill — see tmp/img2threejs-chick/ for the sculpt spec this was authored from.
+const CHICK_C = {
+  body: "#F5C94A",
+  tuft: "#F8D874",
+  face: "#FBF3E1",
+  cheek: "#F2775A",
+  beakLeg: "#E8875B",
+  ink: "#2B1F16",
+  white: "#FFFFFF",
+};
+const chickMaterials = {
+  body: mat(CHICK_C.body, 0.6),
+  tuft: mat(CHICK_C.tuft, 0.6),
+  face: mat(CHICK_C.face, 0.75),
+  cheek: mat(CHICK_C.cheek, 0.85),
+  beakLeg: mat(CHICK_C.beakLeg, 0.55),
+  ink: mat(CHICK_C.ink, 0.3),
+  white: mat(CHICK_C.white, 0.2),
 };
 
 function mesh(name: string, geometry: THREE.BufferGeometry, material: THREE.Material) {
@@ -198,6 +226,113 @@ function buildCockatiel() {
       t.rotation.y = toe;
       foot.add(t);
     }
+  }
+
+  return root;
+}
+
+function buildChick() {
+  const m = chickMaterials;
+  const root = new THREE.Group();
+  root.name = "Chick";
+
+  const body = new THREE.Group();
+  body.name = "body";
+  body.position.y = 0.5;
+  root.add(body);
+
+  // One continuous ball for body+head — the reference shows no neck break.
+  const torsoGeo = new THREE.SphereGeometry(0.5, 48, 32);
+  torsoGeo.scale(1, 1.0, 0.98);
+  body.add(mesh("torso", torsoGeo, m.body));
+
+  // Face disc: large, flattened, inset into the front of the sphere.
+  const faceGeo = new THREE.SphereGeometry(0.4, 40, 24);
+  faceGeo.scale(1, 0.92, 0.32);
+  const face = mesh("face", faceGeo, m.face);
+  face.position.set(0, 0.02, 0.36);
+  body.add(face);
+
+  // Big cheek blushes — the dominant identity feature after the eyes.
+  for (const side of [-1, 1]) {
+    const g = new THREE.SphereGeometry(0.13, 24, 16);
+    g.scale(1, 1, 0.35);
+    const cheek = mesh(side < 0 ? "cheekL" : "cheekR", g, m.cheek);
+    cheek.position.set(0.24 * side, -0.08, 0.42);
+    cheek.lookAt(cheek.position.clone().multiplyScalar(2));
+    body.add(cheek);
+  }
+
+  // Big glossy eyes with an offset catchlight.
+  const eyes = new THREE.Group();
+  eyes.name = "eyes";
+  body.add(eyes);
+  for (const side of [-1, 1]) {
+    const eye = mesh(side < 0 ? "eyeL" : "eyeR", new THREE.SphereGeometry(0.088, 24, 16), m.ink);
+    eye.scale.z = 0.55;
+    eye.position.set(0.15 * side, 0.09, 0.46);
+    eyes.add(eye);
+    const hl = mesh(side < 0 ? "eyeHighlightL" : "eyeHighlightR", new THREE.SphereGeometry(0.03, 12, 8), m.white);
+    hl.position.set(0.15 * side + 0.03, 0.12, 0.5);
+    eyes.add(hl);
+  }
+
+  // Beak: a flattened, squat sphere rather than a cone — a cone's flat triangular
+  // facets catch the key light as a hard-edged highlight and read as a paper dart,
+  // where the reference shows a soft rounded toy beak. The back half embeds into
+  // the face disc, which is fine — it's never visible. Plus a thin mouth-line groove.
+  const beakGeo = new THREE.SphereGeometry(0.075, 24, 16);
+  beakGeo.scale(1, 0.62, 0.75);
+  const beak = mesh("beak", beakGeo, m.beakLeg);
+  beak.position.set(0, -0.02, 0.5);
+  body.add(beak);
+  const mouthLine = mesh("mouthLine", new THREE.BoxGeometry(0.045, 0.007, 0.01), m.ink);
+  mouthLine.position.set(0, -0.062, 0.565);
+  body.add(mouthLine);
+
+  // Head tuft: three rounded lobes, centre tallest, sides shorter and splayed.
+  const tuft = new THREE.Group();
+  tuft.name = "tuft";
+  tuft.position.set(0, 0.46, 0.02);
+  body.add(tuft);
+  const lobes: [THREE.Vector3[], number, number][] = [
+    [[new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0.16, -0.01), new THREE.Vector3(0, 0.32, 0)], 0.06, 0.045],
+    [[new THREE.Vector3(-0.07, 0, -0.01), new THREE.Vector3(-0.1, 0.12, -0.02), new THREE.Vector3(-0.12, 0.22, -0.01)], 0.05, 0.035],
+    [[new THREE.Vector3(0.07, 0, -0.01), new THREE.Vector3(0.1, 0.12, -0.02), new THREE.Vector3(0.12, 0.22, -0.01)], 0.05, 0.035],
+  ];
+  lobes.forEach(([pts, r0, r1], i) => {
+    const { tube, tip } = taperedTube(pts, r0, r1, 24, 10);
+    tuft.add(mesh(`tuftLobe${i}`, tube, m.tuft), mesh(`tuftTip${i}`, tip, m.tuft));
+  });
+
+  // Wing nubs — small and mostly tucked against the body, matching the reference's
+  // thin frontal slivers rather than the cockatiel's fuller spread wings.
+  for (const side of [-1, 1]) {
+    const pivot = new THREE.Group();
+    pivot.name = side < 0 ? "wingL" : "wingR";
+    pivot.position.set(0.44 * side, 0.0, -0.02);
+    body.add(pivot);
+    const g = new THREE.SphereGeometry(0.13, 24, 16);
+    g.scale(0.32, 0.85, 0.6);
+    g.translate(0.03 * side, -0.06, 0);
+    const wing = mesh(side < 0 ? "wingMeshL" : "wingMeshR", g, m.body);
+    wing.rotation.z = 0.12 * side;
+    pivot.add(wing);
+  }
+
+  // Short stub legs and feet — no distinct toes visible in the reference.
+  for (const side of [-1, 1]) {
+    const foot = new THREE.Group();
+    foot.name = side < 0 ? "footL" : "footR";
+    foot.position.set(0.14 * side, 0, 0.02);
+    root.add(foot);
+    const leg = new THREE.CapsuleGeometry(0.028, 0.05, 4, 10);
+    leg.translate(0, 0.045, 0);
+    foot.add(mesh(`leg${side < 0 ? "L" : "R"}`, leg, m.beakLeg));
+    const toeball = new THREE.SphereGeometry(0.032, 16, 12);
+    toeball.scale(1.3, 0.6, 1.5);
+    toeball.translate(0, 0.014, 0.02);
+    foot.add(mesh(`foot${side < 0 ? "L" : "R"}Mesh`, toeball, m.beakLeg));
   }
 
   return root;
@@ -516,6 +651,35 @@ function catAnimations() {
   return [...commonIdleLook([tailIdle]), trotClip("Move"), trotClip("Trot")];
 }
 
+// Ground hop with a little wing-flap assist and tuft bounce — the chick has no
+// ears, so this can't reuse hopClips().
+function chickHop(name: string) {
+  const BODY_Y = 0.5;
+  const t = [0, 0.12, 0.34, 0.52, 0.66];
+  return new THREE.AnimationClip(name, 0.66, [
+    new THREE.VectorKeyframeTrack("body.position", t, flat([
+      [0, BODY_Y - 0.05, 0], [0, BODY_Y + 0.05, 0], [0, BODY_Y + 0.3, 0], [0, BODY_Y - 0.06, 0], [0, BODY_Y, 0],
+    ])),
+    new THREE.VectorKeyframeTrack("body.scale", t, flat([
+      [1.12, 0.88, 1.12], [0.92, 1.12, 0.92], [0.96, 1.06, 0.96], [1.14, 0.86, 1.14], [1, 1, 1],
+    ])),
+    new THREE.QuaternionKeyframeTrack("wingL.quaternion", t, flat([q(0, 0, 0), q(0, 0, -0.5), q(0, 0, -0.15), q(0, 0, -0.35), q(0, 0, 0)])),
+    new THREE.QuaternionKeyframeTrack("wingR.quaternion", t, flat([q(0, 0, 0), q(0, 0, 0.5), q(0, 0, 0.15), q(0, 0, 0.35), q(0, 0, 0)])),
+    new THREE.QuaternionKeyframeTrack("tuft.quaternion", t, flat([q(0, 0, 0), q(0.18, 0, 0), q(-0.12, 0, 0), q(0.1, 0, 0), q(0, 0, 0)])),
+    new THREE.VectorKeyframeTrack("footL.position", t, flat([
+      [-0.14, 0, 0.02], [-0.14, 0.05, 0.02], [-0.14, 0.26, 0.02], [-0.14, 0, 0.02], [-0.14, 0, 0.02],
+    ])),
+    new THREE.VectorKeyframeTrack("footR.position", t, flat([
+      [0.14, 0, 0.02], [0.14, 0.05, 0.02], [0.14, 0.26, 0.02], [0.14, 0, 0.02], [0.14, 0, 0.02],
+    ])),
+  ]);
+}
+
+function chickAnimations() {
+  const tuftIdle = new THREE.QuaternionKeyframeTrack("tuft.quaternion", [0, 1, 2], flat([q(0, 0, 0), q(-0.06, 0, 0.04), q(0, 0, 0)]));
+  return [...commonIdleLook([tuftIdle]), chickHop("Move"), chickHop("Hop")];
+}
+
 async function exportModel(name: string, root: THREE.Object3D, animations: THREE.AnimationClip[]) {
   const scene = new THREE.Scene();
   scene.add(root);
@@ -544,6 +708,7 @@ async function main() {
   await exportModel("cockatiel-primitive", buildCockatiel(), [...cockatielClips, fly]);
   await exportModel("bunny", buildBunny(), bunnyAnimations());
   await exportModel("cat", buildCat(), catAnimations());
+  await exportModel("chick", buildChick(), chickAnimations());
 }
 
 main().catch((e) => {

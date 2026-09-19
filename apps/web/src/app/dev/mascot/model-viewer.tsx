@@ -8,7 +8,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 export const MASCOT_URL = "/models/cockatiel.glb";
 
-export const SPECIES = ["cockatiel", "puppy", "bunny", "cat"] as const;
+export const SPECIES = ["cockatiel", "puppy", "bunny", "cat", "chick"] as const;
 
 // ?species=puppy|bunny|cat switches the model in the dev viewer.
 export function modelUrl(species: string) {
