@@ -1,5 +1,6 @@
 import { eq, gt, sql } from "drizzle-orm";
 import { db, placeImports } from "@bsocial/db";
+import { getConfig } from "./config";
 import { countPlaces, savePlaces, type Bbox } from "./places";
 import { fetchPlacesGoogle } from "./places-google";
 
@@ -65,6 +66,12 @@ export async function fillAreaFor(latitude: number, longitude: number): Promise<
   if (process.env.PLACES_AUTOFILL === "off") return { filled: false, reason: "disabled" };
   if (!process.env.GOOGLE_PLACES_API_KEY) return { filled: false, reason: "no_api_key" };
 
+  const { values } = await getConfig();
+  const cellsPerDay = values["cost.autofillCellsPerDay"] ?? MAX_CELLS_PER_DAY;
+  const requestsPerCell = values["cost.autofillRequestsPerCell"] ?? MAX_REQUESTS_PER_CELL;
+  // A ceiling of zero is a deliberate stop, not a misconfiguration.
+  if (cellsPerDay === 0) return { filled: false, reason: "daily_cap" };
+
   const cell = cellFor(latitude, longitude);
   const bbox = cellBbox(cell);
 
@@ -77,7 +84,7 @@ export async function fillAreaFor(latitude: number, longitude: number): Promise<
     .select({ cells: sql<number>`count(*)`.mapWith(Number) })
     .from(placeImports)
     .where(gt(placeImports.createdAt, dayAgo));
-  if ((spent?.cells ?? 0) >= MAX_CELLS_PER_DAY) return { filled: false, reason: "daily_cap" };
+  if ((spent?.cells ?? 0) >= cellsPerDay) return { filled: false, reason: "daily_cap" };
 
   // Claim the cell. onConflictDoNothing is what makes this safe under
   // concurrency: whoever inserts the row owns the spend, everyone else backs off.
@@ -90,7 +97,7 @@ export async function fillAreaFor(latitude: number, longitude: number): Promise<
 
   try {
     const result = await fetchPlacesGoogle(bbox, {
-      maxRequests: MAX_REQUESTS_PER_CELL,
+      maxRequests: requestsPerCell,
       cellRadiusM: CELL_RADIUS_M,
     });
     const written = await savePlaces(result.places);

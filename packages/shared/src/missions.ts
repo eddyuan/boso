@@ -66,8 +66,11 @@ export const MISSION_PROGRESS_EVENT: Record<MissionId, XpEvent> = {
  * XP table would be a second source of truth that silently drifts from the
  * first, which is exactly the bug this replaced.
  */
-export function missionXp(m: MissionDef): number {
-  return m.target * XP_VALUES[MISSION_PROGRESS_EVENT[m.id]];
+export function missionXp(m: MissionDef, xpValues?: Partial<Record<XpEvent, number>>): number {
+  const event = MISSION_PROGRESS_EVENT[m.id];
+  // The live table when one is supplied, so what a mission advertises and what
+  // the bond pays can't come from different places.
+  return m.target * (xpValues?.[event] ?? XP_VALUES[event]);
 }
 
 export const MISSIONS_PER_DAY = 3;
@@ -94,13 +97,18 @@ function seeded(seed: string): () => number {
  * The day's three, chosen from what's actually possible right now and stable
  * for the whole day — a list that reshuffles on every refresh isn't a goal.
  */
-export function missionsFor(userId: string, day: string, available: Set<string>): MissionDef[] {
+export function missionsFor(
+  userId: string,
+  day: string,
+  available: Set<string>,
+  perDay: number = MISSIONS_PER_DAY,
+): MissionDef[] {
   const eligible = MISSIONS.filter((m) => !m.requires || available.has(m.requires));
   const rng = seeded(`${userId}:${day}`);
 
   const pool = [...eligible];
   const chosen: MissionDef[] = [];
-  while (pool.length > 0 && chosen.length < MISSIONS_PER_DAY) {
+  while (pool.length > 0 && chosen.length < perDay) {
     chosen.push(pool.splice(Math.floor(rng() * pool.length), 1)[0]!);
   }
   return chosen;

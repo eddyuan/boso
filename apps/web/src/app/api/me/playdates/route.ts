@@ -100,7 +100,7 @@ export async function POST(req: Request) {
 
   const [row] = await db
     .insert(playdates)
-    .values({ fromPetId: myPet.id, toPetId: target.petId, placeId, expiresAt: expiryFrom() })
+    .values({ fromPetId: myPet.id, toPetId: target.petId, placeId, expiresAt: await expiryFrom() })
     .returning();
 
   if (them[0]) {

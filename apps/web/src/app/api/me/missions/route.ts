@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { and, eq, gt, sql } from "drizzle-orm";
 import { bondEvents, db, petActions, petDiary, pets } from "@bsocial/db";
-import { MISSION_PROGRESS_EVENT, missionXp, missionsFor } from "@bsocial/shared";
+import { MISSION_PROGRESS_EVENT, missionXp, missionsFor, type XpEvent } from "@bsocial/shared";
+import { getConfig } from "@/lib/config";
 import { playdateCandidates } from "@/lib/playdates";
 import { requireSession } from "@/lib/session";
 
@@ -51,6 +52,14 @@ export async function GET() {
 
   const counts = new Map(earned.map((r) => [r.event, r.count]));
 
+  // The same live values the bond pays from, so an advertised reward is the
+  // reward. Reading these from the constants instead would let the two drift the
+  // moment anyone retunes XP.
+  const { values } = await getConfig();
+  const liveXp = Object.fromEntries(
+    Object.values(MISSION_PROGRESS_EVENT).map((e) => [e, values[`xp.${e}`]]),
+  ) as Partial<Record<XpEvent, number>>;
+
   const available = new Set<string>();
   // Answered asks count too: finishing the mission mustn't remove it from the
   // list it was completed on.
@@ -58,11 +67,11 @@ export async function GET() {
   if (diaryEntry.length > 0) available.add("diary_entry");
   if (nearby.length > 0) available.add("nearby_people");
 
-  const missions = missionsFor(session.user.id, day, available).map((m) => {
+  const missions = missionsFor(session.user.id, day, available, values["missions.perDay"]).map((m) => {
     const progress = counts.get(MISSION_PROGRESS_EVENT[m.id]) ?? 0;
     return {
       ...m,
-      xp: missionXp(m),
+      xp: missionXp(m, liveXp),
       progress: Math.min(progress, m.target),
       done: progress >= m.target,
     };

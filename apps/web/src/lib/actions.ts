@@ -5,6 +5,7 @@ import { resolvePetPostLocation } from "@/lib/pet-location";
 import { sendPush } from "@/lib/push";
 import { recordInteraction } from "@/lib/relationships";
 import { rollTreasure } from "@bsocial/shared";
+import { getConfig } from "./config";
 // A concrete action ready to record: planner decisions (lib/pet-planner.ts),
 // with post text filled in by lib/agent.ts.
 export type PetAction =
@@ -68,6 +69,8 @@ export async function recordDecision(petId: string, decision: PetAction) {
 
 /** Carries out an approved decision. Called either immediately (auto-approve) or from the approval endpoint. */
 export async function executeAction(petId: string, decision: PetAction) {
+  const { values } = await getConfig();
+  const findChance = values["treasures.findChance"];
   switch (decision.action) {
     case "post": {
       // Without coordinates a pet post never reaches the map or Nearby, which
@@ -90,7 +93,7 @@ export async function executeAction(petId: string, decision: PetAction) {
       // A trip out is also a chance to bring something home. Most find nothing,
       // which is what makes finding something feel like anything.
       if (at) {
-        const found = rollTreasure(at.placeCategory ?? null);
+        const found = rollTreasure(at.placeCategory ?? null, Math.random, findChance);
         if (found) {
           await db
             .insert(petTreasures)

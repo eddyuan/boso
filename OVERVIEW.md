@@ -989,6 +989,7 @@ Admin-only (all `requireAdmin`, under `/api/admin`):
 | `PATCH /api/admin/users` | Set a user's password |
 | `GET /api/admin/users/:userId` | One account in full: profile, pet, sign-in methods, devices, login history, push tokens, recent posts and pet decisions |
 | `GET /api/admin/telemetry` | Economy figures and API spend over a window |
+| `GET`/`PATCH /api/admin/config` | Read the tuning registry and values; change or reset one |
 | `PATCH /api/admin/places` | Mark a place as a hotspot |
 | `GET`/`POST`/`DELETE /api/admin/events` | Schedule collective events; see the running one's progress |
 | `PATCH /api/admin/posts` · `DELETE /api/admin/posts?id=` | Hide/unhide a post (`posts.hiddenAt`) · delete it permanently |
@@ -1129,6 +1130,38 @@ is unknowable, and 0% would be a claim.
 
 ---
 
+### Live tuning
+
+`/admin/config` turns 35 game-feel and cost values into database rows an admin can change without a
+deploy ([`packages/shared/src/config.ts`](packages/shared/src/config.ts) holds the registry;
+[`lib/config.ts`](apps/web/src/lib/config.ts) reads and writes it).
+
+Three rules decide what qualifies:
+
+- **Game feel and cost, nothing else.** `MIN_AGE` is a legal boundary, `EARTH_RADIUS_M` is physics,
+  and `USERNAME_MAX` would invalidate rows already written. None of those are tuning; they stay in
+  code where a change gets reviewed.
+- **Every entry has bounds**, enforced on write *and* on read. A find chance typed as `18` instead of
+  `0.18` is refused on the way in, and a value stored before a bound was tightened — or edited
+  straight in the database — falls back to its default and is reported on the page rather than
+  silently taking effect.
+- **Each default is the constant it replaced**, so an empty settings table behaves exactly as the app
+  did before any of this existed.
+
+The audit row is written **before** the value changes. A change that applied without being recorded is
+the precise situation the audit exists to prevent, so if both can't happen the value doesn't move.
+
+Config is cached for 5 seconds — long enough that the pet loop doesn't re-query per tick, short enough
+that a retune lands while the admin is still looking at the page.
+
+**The drift trap this had to avoid:** missions *advertise* a reward and the bond *pays* one. Reading
+the advertised figure from the constant while paying from config would have let the two separate the
+moment anyone retuned XP — so `missionXp()` takes the live table, and the telemetry page compares
+against live values too. Comparing actuals to a stale constant would invent drift that doesn't exist
+and hide drift that does.
+
+---
+
 ## 11. Status, known gaps & open decisions
 
 ### Done
@@ -1259,4 +1292,5 @@ a person can supply, which is why `/admin/roadmap` now marks them **Needs you** 
 | 2026-09-19 | Design: redrew the canvas against what shipped — 67 artboards, 7 new, the leaderboard replaced by the neighbourhood goal, and 11 corrected where the drawings had stopped matching the code |
 | 2026-09-19 | Design: regenerated both published canvas bundles from the artboards, added `review.html` and the missing `support.js` |
 | 2026-09-19 | Game ops 1/5 — telemetry: `api_calls` spend ledger across every paid provider, plus an economy page putting actual drop rates, XP and mission completions next to their configured values |
+| 2026-09-19 | Game ops 2/5 — live tuning: 35 bounded values in the database with an audit trail, wired through XP, drop rate, push caps, radii and the spend ceilings |
 | 2026-09-18 | Backfill photo handles lazily via Place Details, so venues imported before the field-mask change can get photos too |

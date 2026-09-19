@@ -1,5 +1,6 @@
 import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db, placePhotos, places } from "@bsocial/db";
+import { getConfig } from "./config";
 import { storeImage } from "./images";
 import { fetchPhotoBytes, fetchPlacePhotoRefs, MAX_PHOTOS_PER_PLACE, type PhotoRef } from "./places-google";
 
@@ -45,13 +46,14 @@ export type PhotoFill = {
  * covered gradually by ordinary use rather than in one paid sweep — and only for
  * venues anyone actually looks at.
  */
-async function ensurePhotoRefs(placeIds: string[]): Promise<{ lookups: number; withPhotos: number }> {
+async function ensurePhotoRefs(placeIds: string[], perCall: number): Promise<{ lookups: number; withPhotos: number }> {
+  if (perCall === 0) return { lookups: 0, withPhotos: 0 };
   const unasked = await db
     .select({ id: places.id, sourceId: places.sourceId })
     .from(places)
     .where(and(inArray(places.id, placeIds), isNull(places.photoRefs)))
     .orderBy(asc(places.id))
-    .limit(DETAILS_PER_CALL);
+    .limit(perCall);
 
   let withPhotos = 0;
   for (const place of unasked) {
@@ -75,9 +77,14 @@ export async function materializePhotos(placeIds: string[]): Promise<PhotoFill> 
     return { places: 0, photos: 0, requests: 0, detailsLookups: 0, detailsWithPhotos: 0 };
   }
 
+  const { values } = await getConfig();
+  const perCall = values["cost.photoPlacesPerCall"] ?? PLACES_PER_CALL;
+  const detailsPerCall = values["cost.photoDetailsPerCall"] ?? DETAILS_PER_CALL;
+  const maxPhotos = values["cost.maxPhotosPerPlace"] ?? MAX_PHOTOS_PER_PLACE;
+
   // Handles first: a venue with none has nothing to materialise, and most of the
   // table predates the search ever asking for them.
-  const details = await ensurePhotoRefs(placeIds);
+  const details = await ensurePhotoRefs(placeIds, detailsPerCall);
 
   const pending = await db
     .select({ id: places.id, refs: places.photoRefs })
@@ -91,13 +98,13 @@ export async function materializePhotos(placeIds: string[]): Promise<PhotoFill> 
       ),
     )
     .orderBy(asc(places.id))
-    .limit(PLACES_PER_CALL);
+    .limit(perCall);
 
   let photos = 0;
   let requests = 0;
 
   for (const place of pending) {
-    const refs = (place.refs as PhotoRef[] | null)?.slice(0, MAX_PHOTOS_PER_PLACE) ?? [];
+    const refs = (place.refs as PhotoRef[] | null)?.slice(0, maxPhotos) ?? [];
 
     // Stamped before the downloads, so a crash partway through doesn't leave a
     // venue that gets re-billed on every later view.

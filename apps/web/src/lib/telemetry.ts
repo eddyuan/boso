@@ -10,6 +10,7 @@ import {
   posts,
   users,
 } from "@bsocial/db";
+import { getConfig } from "./config";
 import {
   FIND_CHANCE,
   LEVELS,
@@ -50,9 +51,13 @@ export async function xpBySource(sinceDays: number): Promise<XpBySource[]> {
     .groupBy(bondEvents.event)
     .orderBy(sql`sum(${bondEvents.amount}) desc`);
 
+  // Compared against the *live* value, not the shipped constant: after a retune
+  // the constant is no longer what anything is paid from, so comparing to it
+  // would invent a drift that doesn't exist and hide one that does.
+  const { values } = await getConfig();
   return rows.map((r) => ({
     ...r,
-    configured: (XP_VALUES as Record<string, number>)[r.event] ?? 0,
+    configured: values[`xp.${r.event}`] ?? (XP_VALUES as Record<string, number>)[r.event] ?? 0,
   }));
 }
 
@@ -99,6 +104,7 @@ export type DropStats = {
 export async function dropStats(sinceDays: number): Promise<DropStats> {
   const since = new Date(Date.now() - sinceDays * 86_400_000);
 
+  const { values } = await getConfig();
   const [finds, rolls] = await Promise.all([
     db
       .select({ kind: petTreasures.kind, n: sql<number>`count(*)`.mapWith(Number) })
@@ -132,7 +138,7 @@ export async function dropStats(sinceDays: number): Promise<DropStats> {
     finds: total,
     wanders,
     actualRate: wanders > 0 ? total / wanders : null,
-    configuredRate: FIND_CHANCE,
+    configuredRate: values["treasures.findChance"] ?? FIND_CHANCE,
     byRarity,
   };
 }
@@ -148,17 +154,23 @@ export type MissionStat = { id: MissionId; label: string; xp: number; completion
  */
 export async function missionStats(sinceDays: number): Promise<MissionStat[]> {
   const since = new Date(Date.now() - sinceDays * 86_400_000);
-  const rows = await db
-    .select({ event: bondEvents.event, n: sql<number>`count(*)`.mapWith(Number) })
-    .from(bondEvents)
-    .where(gte(bondEvents.createdAt, since))
-    .groupBy(bondEvents.event);
+  const [rows, { values }] = await Promise.all([
+    db
+      .select({ event: bondEvents.event, n: sql<number>`count(*)`.mapWith(Number) })
+      .from(bondEvents)
+      .where(gte(bondEvents.createdAt, since))
+      .groupBy(bondEvents.event),
+    getConfig(),
+  ]);
   const byEvent = new Map(rows.map((r) => [r.event, r.n]));
 
   return MISSIONS.map((m) => ({
     id: m.id,
     label: m.label,
-    xp: m.target * (XP_VALUES as Record<string, number>)[MISSION_PROGRESS_EVENT[m.id]],
+    xp:
+      m.target *
+      (values[`xp.${MISSION_PROGRESS_EVENT[m.id]}`] ??
+        (XP_VALUES as Record<string, number>)[MISSION_PROGRESS_EVENT[m.id]]),
     completions: byEvent.get(MISSION_PROGRESS_EVENT[m.id]) ?? 0,
     conditional: Boolean(m.requires),
   }));

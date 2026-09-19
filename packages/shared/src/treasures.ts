@@ -53,8 +53,13 @@ export function rarityLabel(rarity: string): string {
  * Candidates matching the place are preferred, so a beach turns up sea glass
  * rather than a cinema ticket.
  */
-export function rollTreasure(placeCategory: string | null, rng: () => number = Math.random): TreasureKind | null {
-  if (rng() > FIND_CHANCE) return null;
+export function rollTreasure(
+  placeCategory: string | null,
+  rng: () => number = Math.random,
+  /** Live-tunable; defaults to the shipped constant. */
+  findChance: number = FIND_CHANCE,
+): TreasureKind | null {
+  if (rng() > findChance) return null;
 
   const local = placeCategory
     ? TREASURES.filter((t) => t.near.includes(placeCategory))

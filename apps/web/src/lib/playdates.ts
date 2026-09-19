@@ -2,6 +2,7 @@ import { and, eq, gt, isNotNull, ne, or, sql } from "drizzle-orm";
 import { db, petRelationships, pets, places, playdates, users } from "@bsocial/db";
 import { FRIENDSHIP_THRESHOLD, decayedAffinity } from "@bsocial/shared";
 import { distanceKm, isFresh } from "./location";
+import { getConfig } from "./config";
 
 /**
  * Proposing a meetup between two pets whose owners are genuinely near each
@@ -43,6 +44,9 @@ export async function playdateCandidates(
   if (!me?.latitude || !me.longitude || !isFresh(me.at)) return [];
 
   // Everyone whose pet this pet already gets on with, who has a recent position.
+  const { values } = await getConfig();
+  const nearbyKm = values["playdates.nearbyKm"] ?? NEARBY_KM;
+
   const rows = await db
     .select({
       petId: pets.id,
@@ -83,7 +87,7 @@ export async function playdateCandidates(
       affinity: decayedAffinity(r.score, r.lastInteractionAt, now),
       fresh: isFresh(r.at),
     }))
-    .filter((c) => c.fresh && c.distanceKm <= NEARBY_KM && c.affinity >= FRIENDSHIP_THRESHOLD)
+    .filter((c) => c.fresh && c.distanceKm <= nearbyKm && c.affinity >= FRIENDSHIP_THRESHOLD)
     .sort((a, b) => b.affinity - a.affinity)
     .map(({ fresh: _fresh, ...c }) => c);
 }
@@ -110,8 +114,10 @@ export async function meetingPlace(
   return place?.id ?? null;
 }
 
-export function expiryFrom(now: Date = new Date()): Date {
-  return new Date(now.getTime() + EXPIRES_HOURS * 3600 * 1000);
+export async function expiryFrom(now: Date = new Date()): Promise<Date> {
+  const { values } = await getConfig();
+  const hours = values["playdates.expiresHours"] ?? EXPIRES_HOURS;
+  return new Date(now.getTime() + hours * 3600 * 1000);
 }
 
 /** An open proposal already covering this pair, in either direction. */

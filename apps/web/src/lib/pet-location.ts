@@ -1,6 +1,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import { createHash } from "node:crypto";
 import { db, mockProfiles, places, users } from "@bsocial/db";
+import { getConfig } from "./config";
 
 /**
  * Where a pet's post happens.
@@ -131,10 +132,16 @@ export async function resolvePetPostLocation(
   const daily = shiftWithin(anchor, SHIFT_RADIUS_M, seeded(`${userId}:${day}`));
   const point = shiftWithin(daily, JITTER_M, Math.random);
 
+  const { values } = await getConfig();
+  const pull = values["map.hotspotPullM"] ?? HOTSPOT_PULL_M;
+  const snap = values["map.placeSnapM"] ?? PLACE_SNAP_M;
+
   // A hotspot gets first refusal from much further away; only if there's no
-  // marked gathering spot in range does an ordinary neighbour win.
+  // marked gathering spot in range does an ordinary neighbour win. A radius of
+  // zero disables that tier rather than matching everything.
   const place =
-    (await nearestPlace(point, HOTSPOT_PULL_M, true)) ?? (await nearestPlace(point, PLACE_SNAP_M, false));
+    (pull > 0 ? await nearestPlace(point, pull, true) : null) ??
+    (snap > 0 ? await nearestPlace(point, snap, false) : null);
 
   if (place) {
     // Posts cluster on real venues, which reads far better on the map than a

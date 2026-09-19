@@ -15,6 +15,7 @@ import {
   MapPin,
   Network,
   Smartphone,
+  SlidersHorizontal,
   Sparkles,
   TrendingUp,
   ShieldAlert,
@@ -63,6 +64,7 @@ const NAV_GROUPS: { label: string; items: { href: string; label: string; icon: L
     label: "Product",
     items: [
       { href: "/admin/events", label: "Events", icon: CalendarClock },
+      { href: "/admin/config", label: "Tuning", icon: SlidersHorizontal },
       { href: "/admin/roadmap", label: "Roadmap", icon: Network },
       { href: "/admin/app-design", label: "App design", icon: Smartphone },
     ],

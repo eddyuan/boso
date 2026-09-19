@@ -7,3 +7,4 @@ export * from "./relationships";
 export * from "./treasures";
 export * from "./bond";
 export * from "./missions";
+export * from "./config";

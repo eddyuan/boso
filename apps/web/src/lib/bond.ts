@@ -1,6 +1,7 @@
 import { and, eq, gt, sql } from "drizzle-orm";
 import { bondEvents, db, pets } from "@bsocial/db";
 import { XP_VALUES, leveledUp, progressFor, type BondProgress, type XpEvent } from "@bsocial/shared";
+import { getConfig } from "./config";
 
 /**
  * Awarding bond XP.
@@ -17,7 +18,10 @@ export type AwardResult = {
 };
 
 export async function awardXp(petId: string, event: XpEvent): Promise<AwardResult | null> {
-  const amount = XP_VALUES[event];
+  // Read live rather than from the constant, so a retune applies to the next
+  // award instead of the next deploy. The constant remains the default.
+  const { values } = await getConfig();
+  const amount = values[`xp.${event}`] ?? XP_VALUES[event];
 
   const [before] = await db.select({ bondXp: pets.bondXp }).from(pets).where(eq(pets.id, petId));
   if (!before) return null;

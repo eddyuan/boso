@@ -963,3 +963,25 @@ export const apiCalls = pgTable(
     index("api_calls_provider_idx").on(t.provider, t.createdAt),
   ],
 );
+
+/**
+ * Who changed which tuning value, when, and what it was before.
+ *
+ * A live-tuning panel without this makes "why did retention drop on Tuesday"
+ * unanswerable — the number that caused it has already been overwritten. The old
+ * value is stored alongside the new one so a change can be read, and reverted,
+ * without reconstructing it from two rows.
+ */
+export const configAudit = pgTable(
+  "config_audit",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    key: text("key").notNull(),
+    /** Null when the key had never been set and was running on its default. */
+    fromValue: doublePrecision("from_value"),
+    toValue: doublePrecision("to_value").notNull(),
+    actorId: text("actor_id").references(() => users.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("config_audit_key_idx").on(t.key, t.createdAt)],
+);

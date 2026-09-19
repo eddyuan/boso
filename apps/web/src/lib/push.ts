@@ -1,6 +1,7 @@
 import { and, eq, gt, inArray, sql } from "drizzle-orm";
 import { db, notifications, pushTokens, users } from "@bsocial/db";
 import { recordApiCallQuietly } from "./api-spend";
+import { getConfig } from "./config";
 
 /**
  * Sending a push, and — more importantly — deciding not to.
@@ -54,12 +55,14 @@ function localHour(now: Date, longitude: number | null): number | null {
   return (((now.getUTCHours() + offsetHours) % 24) + 24) % 24;
 }
 
-export function isQuietHour(hour: number | null): boolean {
+export function isQuietHour(hour: number | null, from = QUIET_FROM, until = QUIET_UNTIL): boolean {
   // Unknown location: send anyway. Staying silent would mean anyone who never
   // granted location hears from their pet exactly never, which is a worse
   // failure than the occasional badly-timed buzz. The daily caps still apply.
   if (hour === null) return false;
-  return hour >= QUIET_FROM || hour < QUIET_UNTIL;
+  // Equal bounds mean an admin has switched quiet hours off entirely.
+  if (from === until) return false;
+  return from < until ? hour >= from && hour < until : hour >= from || hour < until;
 }
 
 /**
@@ -77,7 +80,20 @@ export async function sendPush(
     .where(eq(users.id, userId));
   if (!user) return { sent: false, reason: "no_user" };
 
-  if (isQuietHour(localHour(now, user.longitude))) return { sent: false, reason: "quiet_hours" };
+  const { values } = await getConfig();
+  const quietFrom = values["push.quietFrom"] ?? QUIET_FROM;
+  const quietUntil = values["push.quietUntil"] ?? QUIET_UNTIL;
+  if (isQuietHour(localHour(now, user.longitude), quietFrom, quietUntil)) {
+    return { sent: false, reason: "quiet_hours" };
+  }
+
+  const caps: Record<NotificationType, number> = {
+    pet_ask: values["push.capAsk"] ?? DAILY_CAP.pet_ask,
+    pet_reply: values["push.capReply"] ?? DAILY_CAP.pet_reply,
+    pet_friend: values["push.capFriend"] ?? DAILY_CAP.pet_friend,
+    quiet_return: values["push.capQuiet"] ?? DAILY_CAP.quiet_return,
+  };
+  const capTotal = values["push.dailyTotal"] ?? DAILY_CAP_TOTAL;
 
   const since = new Date(now.getTime() - 24 * 3600 * 1000);
   const recent = await db
@@ -87,10 +103,10 @@ export async function sendPush(
     .groupBy(notifications.type);
 
   const total = recent.reduce((n, r) => n + r.count, 0);
-  if (total >= DAILY_CAP_TOTAL) return { sent: false, reason: "daily_total_cap" };
+  if (total >= capTotal) return { sent: false, reason: "daily_total_cap" };
 
   const ofType = recent.find((r) => r.type === message.type)?.count ?? 0;
-  if (ofType >= DAILY_CAP[message.type]) return { sent: false, reason: "type_cap" };
+  if (ofType >= caps[message.type]) return { sent: false, reason: "type_cap" };
 
   const tokens = await db
     .select({ token: pushTokens.token })
