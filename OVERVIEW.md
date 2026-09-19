@@ -1193,6 +1193,24 @@ functions have no window, because silence there means nobody posted, not that an
 
 ---
 
+### Player inspector
+
+`/admin/users/[userId]` already held the account, devices, login history and pet decisions. It now also
+carries the game state, so "my pet has gone quiet" is answerable on one screen instead of three
+queries: bond level and progress, mood with its reasons, care done today, where XP came from, the
+pet's circle, the shelf, pushes sent against today's live cap, and location freshness.
+
+Two things make it trustworthy rather than merely informative:
+
+- **Mood is derived here exactly as the app derives it**, through the same `petState`. A separate
+  admin calculation could show a mood the owner isn't seeing, which is worse than showing nothing.
+- **The bond ledger is reconciled against the stored total.** If `sum(bond_events.amount)` doesn't
+  equal `pets.bond_xp`, the page says so in red: XP was added without recording why, or a ledger row
+  was written without crediting it. Either way the level has stopped being explainable, which is the
+  whole promise of keeping a ledger.
+
+---
+
 ## 11. Status, known gaps & open decisions
 
 ### Done
@@ -1325,4 +1343,5 @@ a person can supply, which is why `/admin/roadmap` now marks them **Needs you** 
 | 2026-09-19 | Game ops 1/5 — telemetry: `api_calls` spend ledger across every paid provider, plus an economy page putting actual drop rates, XP and mission completions next to their configured values |
 | 2026-09-19 | Game ops 2/5 — live tuning: 35 bounded values in the database with an audit trail, wired through XP, drop rate, push caps, radii and the spend ceilings |
 | 2026-09-19 | Game ops 3/5 — job visibility: every Inngest handler records its run, with overdue alarms and a manual trigger; confirms all eight have never run |
+| 2026-09-19 | Game ops 4/5 — player inspector: game state on the account page, with mood derived exactly as the app derives it and the bond ledger reconciled against the stored total |
 | 2026-09-18 | Backfill photo handles lazily via Place Details, so venues imported before the field-mask change can get photos too |
