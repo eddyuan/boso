@@ -65,7 +65,28 @@ export async function putObject(key: string, body: Uint8Array<ArrayBuffer>, cont
     const res = await s3.client.fetch(`${s3.endpoint}/${s3.bucket}/${key}`, {
       method: "PUT",
       body,
-      headers: { "Content-Type": contentType, "Cache-Control": "public, max-age=31536000, immutable" },
+      headers: {
+        "Content-Type": contentType,
+        "Cache-Control": "public, max-age=31536000, immutable",
+        /**
+         * Sent explicitly, and this is load-bearing.
+         *
+         * aws4fetch wraps every request in `new Request(...)`, and a Request body
+         * is always normalised to a stream — so the length is lost and the
+         * runtime falls back to `Transfer-Encoding: chunked`. S3 rejects that on
+         * PUT with `501 NotImplemented: A header you provided implies
+         * functionality that is not implemented`.
+         *
+         * Declaring the length keeps it a single sized request. aws4fetch lists
+         * `content-length` as unsignable, so adding it can't disturb the
+         * signature.
+         *
+         * Wrapping the body in a Blob does *not* fix this — verified inside the
+         * Next runtime, where it still came back 501, because the Request wrapper
+         * discards the Blob's size just the same.
+         */
+        "Content-Length": String(body.byteLength),
+      },
     });
     if (!res.ok) throw new Error(`Upload failed (${res.status}): ${await res.text()}`);
   } else {

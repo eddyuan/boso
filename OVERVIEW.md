@@ -1376,6 +1376,7 @@ Worth stating plainly, because "built" reads like "working":
 - [ ] No step-up verification (fresh code) before unlinking providers or changing contact info.
 - [ ] Phone-only users can't set a password; no password reset UI yet.
 - [ ] Terms/Privacy URLs are placeholders; legal pages don't exist.
+- [x] ~~Every S3 upload failed with `501 NotImplemented` inside Next~~ — aws4fetch wraps requests in `new Request(...)`, which normalises any body to a stream, so the length was lost and the runtime fell back to `Transfer-Encoding: chunked`; S3 rejects that on PUT. `putObject` now declares `Content-Length` explicitly (unsignable, so it can't disturb the signature). Wrapping the body in a `Blob` does **not** fix it — the Request wrapper discards a Blob's size too.
 - [x] ~~An empty `S3_ENDPOINT` silently disabled S3~~ — a set-but-blank variable left the derived endpoint as `""`, so a fully configured bucket wrote to `public/uploads` instead. Blank is now treated as absent everywhere in `storage.ts`, and an unconfigured bucket warns at startup rather than failing quietly.
 - [ ] Production cross-site cookies for Expo web on a separate domain not configured.
 - [ ] `GOOGLE_IOS_CLIENT_ID` / `GOOGLE_ANDROID_CLIENT_ID` likely unnecessary on the server.
