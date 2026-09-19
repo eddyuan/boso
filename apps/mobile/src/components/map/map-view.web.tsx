@@ -369,6 +369,8 @@ export function MapView({
     return () => {
       markersRef.current.forEach((m) => m.remove());
       markersRef.current.clear();
+      placeMarkersRef.current.forEach((m) => m.remove());
+      placeMarkersRef.current.clear();
       map.off('move', place);
       petMarkersRef.current = null;
       youDotRef.current = null;

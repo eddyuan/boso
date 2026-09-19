@@ -184,6 +184,20 @@ export default function MapTab() {
    * yet. Each image is a billed request, so this is driven by what's actually
    * visible and the server fills only a few per call — repeated pans converge.
    */
+  /**
+   * Tapping blank map dismisses whatever is open.
+   *
+   * All of them, not just the post sheet: the sheets have no backdrop by design
+   * (the map stays live underneath), so the map itself is the only thing left to
+   * tap to get out of one. Dismissing a single kind would mean the gesture works
+   * on a post and does nothing on a place.
+   */
+  const dismissSheets = useCallback(() => {
+    setSelected(null);
+    setThreadFor(null);
+    setErrand(null);
+  }, []);
+
   // Stable identity, and only re-render when the shown distance actually
   // changes — the map reports about once a second.
   const handlePetMove = useCallback(({ distanceM }: { distanceM: number }) => {
@@ -204,7 +218,7 @@ export default function MapTab() {
         onSelectPost={setSelected}
         places={places}
         onSelectPlace={(place) => setThreadFor(place.id)}
-        onMapPress={() => setSelected(null)}
+        onMapPress={dismissSheets}
         onBoundsChange={loadPosts}
         onPetMove={handlePetMove}
       />
