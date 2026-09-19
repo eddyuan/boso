@@ -9,11 +9,13 @@ import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Spacing } from '@/constants/theme';
+import { useT } from '@/lib/i18n';
 import { useTheme } from '@/hooks/use-theme';
 import { authClient } from '@/lib/auth-client';
 
 export default function SignInScreen() {
   const theme = useTheme();
+  const { t } = useT();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -30,7 +32,7 @@ export default function SignInScreen() {
       : await authClient.signIn.username({ username: id.replace(/^@/, ''), password });
     setLoading(false);
     // On success, useSession() updates and the root layout swaps to the app.
-    if (error) setError(error.message ?? 'Sign in failed');
+    if (error) setError(error.message ?? t('auth.error.signIn'));
   }
 
   return (
@@ -38,10 +40,10 @@ export default function SignInScreen() {
       footer={
         <>
           <ErrorText message={error} />
-          <Button label="Sign in" onPress={onSubmit} loading={loading} disabled={!identifier || !password} />
+          <Button label={t('auth.signIn')} onPress={onSubmit} loading={loading} disabled={!identifier || !password} />
           <Pressable onPress={() => router.replace('/sign-up')} accessibilityRole="link" style={styles.footerLink}>
             <ThemedText type="small" themeColor="textSecondary" style={{ fontFamily: 'Nunito_700Bold' }}>
-              New here? <ThemedText type="linkPrimary">Create an account</ThemedText>
+              {t('auth.newHere')} <ThemedText type="linkPrimary">{t('auth.createAccount')}</ThemedText>
             </ThemedText>
           </Pressable>
         </>
@@ -49,10 +51,10 @@ export default function SignInScreen() {
       <View style={styles.brand}>
         <Mascot mood="waving" size={104} />
         <ThemedText type="hero" style={{ color: theme.primaryInk, fontSize: 36 }}>
-          Tielo
+          {t('auth.appName')}
         </ThemedText>
         <ThemedText themeColor="textSecondary" style={styles.center}>
-          Your pet keeps your social life going.
+          {t('auth.tagline')}
         </ThemedText>
       </View>
 
@@ -60,7 +62,7 @@ export default function SignInScreen() {
       <OrDivider />
 
       <Field
-        placeholder="Email or nickname"
+        placeholder={t('auth.emailOrNickname')}
         value={identifier}
         onChangeText={setIdentifier}
         autoComplete="username"
@@ -68,7 +70,7 @@ export default function SignInScreen() {
         leading={<Icon name="mail" size={20} color={theme.textSecondary} />}
       />
       <Field
-        placeholder="Password"
+        placeholder={t('auth.password')}
         value={password}
         onChangeText={setPassword}
         secureTextEntry={!showPassword}
@@ -80,7 +82,7 @@ export default function SignInScreen() {
           <Pressable
             onPress={() => setShowPassword((v) => !v)}
             accessibilityRole="button"
-            accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+            accessibilityLabel={t(showPassword ? 'auth.a11y.hidePassword' : 'auth.a11y.showPassword')}
             hitSlop={10}>
             <Icon name="eye" size={20} color={showPassword ? theme.primaryInk : theme.textSecondary} />
           </Pressable>

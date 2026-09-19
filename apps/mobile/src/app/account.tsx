@@ -1,4 +1,4 @@
-import { getDisplayName } from '@bsocial/shared';
+import { getDisplayName, type TranslationKey, type Translator } from '@bsocial/shared';
 import { Image } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -14,6 +14,7 @@ import { AppleLogo, GoogleLogo, Icon } from '@/components/ui/icon';
 import { FontFamily, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { ApiError, apiFetch } from '@/lib/api';
+import { useT } from '@/lib/i18n';
 import { authClient, refreshSession } from '@/lib/auth-client';
 import { linkProvider, type SocialProvider } from '@/lib/social';
 
@@ -27,23 +28,31 @@ type AccountOverview = {
   methods: string[];
 };
 
-const ERROR_MESSAGES: Record<string, string> = {
-  last_sign_in_method: 'This is your only way to sign in. Add a phone number or link another account first.',
+/** Server error codes worth a better sentence than the raw message. */
+const ERROR_MESSAGES: Record<string, TranslationKey> = {
+  last_sign_in_method: 'account.error.lastMethod',
 };
 
-function confirm(title: string, message: string, action: string, onConfirm: () => void) {
+function confirm(
+  t: Translator['t'],
+  title: string,
+  message: string,
+  action: string,
+  onConfirm: () => void,
+) {
   if (Platform.OS === 'web') {
     if (window.confirm(`${title}\n\n${message}`)) onConfirm();
     return;
   }
   Alert.alert(title, message, [
-    { text: 'Cancel', style: 'cancel' },
+    { text: t('dialog.cancel'), style: 'cancel' },
     { text: action, style: 'destructive', onPress: onConfirm },
   ]);
 }
 
 export default function AccountScreen() {
   const theme = useTheme();
+  const { t } = useT();
   const { data: session } = authClient.useSession();
   const [account, setAccount] = useState<AccountOverview | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -52,9 +61,9 @@ export default function AccountScreen() {
     try {
       setAccount(await apiFetch<AccountOverview>('/api/me/account'));
     } catch {
-      setError("Couldn't load your account.");
+      setError(t('account.error.load'));
     }
-  }, []);
+  }, [t]);
 
   // Reload when returning from the email/phone screens or a browser link flow.
   useFocusEffect(
@@ -69,7 +78,7 @@ export default function AccountScreen() {
       const message = await linkProvider(provider);
       if (message) setError(message);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Linking failed');
+      setError(e instanceof Error ? e.message : t('account.error.link'));
     }
     await load();
   }
@@ -81,7 +90,8 @@ export default function AccountScreen() {
       refreshSession();
     } catch (e) {
       const code = e instanceof ApiError ? e.code : undefined;
-      setError((code && ERROR_MESSAGES[code]) ?? (e instanceof Error ? e.message : 'Unlink failed'));
+      const known = code ? ERROR_MESSAGES[code] : undefined;
+      setError(known ? t(known) : e instanceof Error ? e.message : t('account.error.unlink'));
     }
   }
 
@@ -95,16 +105,24 @@ export default function AccountScreen() {
       <ListRow
         icon={<IconTile>{logo}</IconTile>}
         title={label}
-        subtitle={linked ? 'Linked' : 'Not linked'}
+        subtitle={t(linked ? 'account.linked' : 'account.notLinked')}
         trailing={
           linked ? (
             <RowAction
               tone="danger"
-              label="Unlink"
-              onPress={() => confirm(`Unlink ${label}?`, `You won't be able to sign in with ${label} anymore.`, 'Unlink', () => unlink(provider))}
+              label={t('account.unlink')}
+              onPress={() =>
+                confirm(
+                  t,
+                  t('account.unlinkConfirm.title', { provider: label }),
+                  t('account.unlinkConfirm.body', { provider: label }),
+                  t('account.unlink'),
+                  () => unlink(provider),
+                )
+              }
             />
           ) : (
-            <RowAction label="Link" onPress={() => link(provider)} />
+            <RowAction label={t('account.link')} onPress={() => link(provider)} />
           )
         }
       />
@@ -112,7 +130,7 @@ export default function AccountScreen() {
   };
 
   return (
-    <Screen header={<PageHeader title="Account" />}>
+    <Screen header={<PageHeader title={t('account.title')} />}>
       {user && (
         <View style={styles.profile}>
           {user.image ? (
@@ -140,7 +158,7 @@ export default function AccountScreen() {
       <ErrorText message={error} />
 
       <View style={styles.section}>
-        <SectionTitle>Contact</SectionTitle>
+        <SectionTitle>{t('account.contact')}</SectionTitle>
         <Card>
           <ListRow
             icon={
@@ -148,15 +166,15 @@ export default function AccountScreen() {
                 <Icon name="mail" />
               </IconTile>
             }
-            title="Email"
-            subtitle={account?.email ?? 'Not added'}
+            title={t('auth.email')}
+            subtitle={account?.email ?? t('account.notAdded')}
             trailing={
               account?.email && account.emailVerified ? (
-                <Badge label="Verified" tone="success" icon={<Icon name="check" size={12} color={theme.green} strokeWidth={3} />} />
+                <Badge label={t('account.verified')} tone="success" icon={<Icon name="check" size={12} color={theme.green} strokeWidth={3} />} />
               ) : account?.email ? (
-                <RowAction label="Verify" onPress={() => router.push({ pathname: '/email', params: { mode: 'verify' } })} />
+                <RowAction label={t('account.verify')} onPress={() => router.push({ pathname: '/email', params: { mode: 'verify' } })} />
               ) : (
-                <RowAction label="Add" onPress={() => router.push({ pathname: '/email', params: { mode: 'change' } })} />
+                <RowAction label={t('account.add')} onPress={() => router.push({ pathname: '/email', params: { mode: 'change' } })} />
               )
             }
             onPress={account?.email ? () => router.push({ pathname: '/email', params: { mode: 'change' } }) : undefined}
@@ -168,13 +186,13 @@ export default function AccountScreen() {
                 <Icon name="phone" />
               </IconTile>
             }
-            title="Phone"
-            subtitle={account?.phoneNumber ?? 'Not added'}
+            title={t('account.phone')}
+            subtitle={account?.phoneNumber ?? t('account.notAdded')}
             trailing={
               account?.phoneNumber && account.phoneVerified ? (
-                <Badge label="Verified" tone="success" icon={<Icon name="check" size={12} color={theme.green} strokeWidth={3} />} />
+                <Badge label={t('account.verified')} tone="success" icon={<Icon name="check" size={12} color={theme.green} strokeWidth={3} />} />
               ) : (
-                <RowAction label={account?.phoneNumber ? 'Change' : 'Add'} onPress={() => router.push('/phone')} />
+                <RowAction label={t(account?.phoneNumber ? 'account.change' : 'account.add')} onPress={() => router.push('/phone')} />
               )
             }
             onPress={account?.phoneNumber ? () => router.push('/phone') : undefined}
@@ -183,7 +201,7 @@ export default function AccountScreen() {
       </View>
 
       <View style={styles.section}>
-        <SectionTitle>Sign-in methods</SectionTitle>
+        <SectionTitle>{t('account.signInMethods')}</SectionTitle>
         <Card>
           {account?.methods.includes('password') && (
             <>
@@ -193,8 +211,8 @@ export default function AccountScreen() {
                     <Icon name="key" />
                   </IconTile>
                 }
-                title="Password"
-                subtitle="Enabled"
+                title={t('auth.password')}
+                subtitle={t('account.enabled')}
               />
               <Divider />
             </>
@@ -212,8 +230,8 @@ export default function AccountScreen() {
               <Icon name="laptop" />
             </IconTile>
           }
-          title="Signed-in devices"
-          subtitle="Manage where you're signed in"
+          title={t('devices.title')}
+          subtitle={t('devices.subtitle')}
           trailing={<Icon name="chevron" size={20} color={theme.textSecondary} />}
           onPress={() => router.push('/devices')}
         />
@@ -222,7 +240,7 @@ export default function AccountScreen() {
       <View style={styles.bottom}>
         <Button
           variant="danger"
-          label="Sign out"
+          label={t('dialog.signOut')}
           icon={<Icon name="logout" size={20} color={theme.red} />}
           onPress={() => authClient.signOut()}
         />

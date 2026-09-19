@@ -7,6 +7,7 @@ import { Mascot } from '@/components/mascot/mascot';
 import { ThemedText } from '@/components/themed-text';
 import { IconTile, OptionCard } from '@/components/ui/controls';
 import { Icon } from '@/components/ui/icon';
+import { useT } from '@/lib/i18n';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { authClient } from '@/lib/auth-client';
@@ -16,6 +17,7 @@ import { authClient } from '@/lib/auth-client';
 // as soon as the session shows a verified contact.
 export default function VerifyContactScreen() {
   const theme = useTheme();
+  const { t } = useT();
   const { data: session } = authClient.useSession();
   if (!session) return null;
 
@@ -27,7 +29,7 @@ export default function VerifyContactScreen() {
       footer={
         <Pressable onPress={() => authClient.signOut()} accessibilityRole="button" style={styles.signOut}>
           <ThemedText type="link" themeColor="textSecondary">
-            Sign out
+            {t('dialog.signOut')}
           </ThemedText>
         </Pressable>
       }>
@@ -35,18 +37,14 @@ export default function VerifyContactScreen() {
         <Mascot mood="thinking" size={120} />
       </View>
       <TitleBlock
-        title="How can we reach you?"
-        subtitle={
-          hiddenAppleEmail
-            ? 'You chose to hide your email with Apple. Add an email or phone number so we can reach you and help you recover your account.'
-            : 'Verify your email or add a phone number to finish setting up your account.'
-        }
+        title={t('contact.reach.title')}
+        subtitle={t(hiddenAppleEmail ? 'contact.reach.apple' : 'contact.reach.body')}
       />
       <View style={styles.options}>
         {hasRealEmail && (
           <OptionCard
-            title={`Verify ${session.user.email}`}
-            description="We'll send a 6-digit code"
+            title={t('contact.verifyAddress', { address: session.user.email })}
+            description={t('contact.codeByEmail')}
             onPress={() => router.push({ pathname: '/email', params: { mode: 'verify' } })}
             leading={
               <IconTile tone="brand">
@@ -57,8 +55,8 @@ export default function VerifyContactScreen() {
           />
         )}
         <OptionCard
-          title={hasRealEmail ? 'Use a different email' : 'Add email'}
-          description="We'll send a 6-digit code"
+          title={t(hasRealEmail ? 'contact.email.useDifferent' : 'contact.email.addShort')}
+          description={t('contact.codeByEmail')}
           onPress={() => router.push({ pathname: '/email', params: { mode: 'change' } })}
           leading={
             <IconTile>
@@ -68,8 +66,8 @@ export default function VerifyContactScreen() {
           trailing={<Icon name="chevron" size={20} color={theme.textSecondary} />}
         />
         <OptionCard
-          title="Add phone number"
-          description="We'll text you a code"
+          title={t('contact.phone.addNumber')}
+          description={t('contact.codeBySms')}
           onPress={() => router.push('/phone')}
           leading={
             <IconTile>

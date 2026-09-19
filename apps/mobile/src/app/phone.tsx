@@ -5,7 +5,8 @@ import { useState } from 'react';
 import { ErrorText, Field, Screen, TitleBlock } from '@/components/auth-form';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
-import { BackHeader, HeroIcon, VerifyCodeScreen } from '@/components/verify-code';
+import { AuthBackHeader, HeroIcon, VerifyCodeScreen } from '@/components/verify-code';
+import { useT } from '@/lib/i18n';
 import { useTheme } from '@/hooks/use-theme';
 import { authClient, refreshSession } from '@/lib/auth-client';
 
@@ -13,6 +14,7 @@ import { authClient, refreshSession } from '@/lib/auth-client';
 // Signed in: add or replace the account's phone number.
 export default function PhoneScreen() {
   const theme = useTheme();
+  const { t } = useT();
   const { data: session } = authClient.useSession();
   const signedIn = !!session;
 
@@ -23,13 +25,13 @@ export default function PhoneScreen() {
 
   async function requestCode(phone: string): Promise<string | null> {
     const { error } = await authClient.phoneNumber.sendOtp({ phoneNumber: phone });
-    return error ? (error.message ?? 'Could not send code') : null;
+    return error ? (error.message ?? t('contact.error.send')) : null;
   }
 
   async function sendCode() {
     const phone = phoneNumber.replace(/[\s()-]/g, '');
     if (!E164_REGEX.test(phone)) {
-      setError('Enter your number with country code, e.g. +14165550123');
+      setError(t('contact.phone.hint'));
       return;
     }
     setError(null);
@@ -45,7 +47,7 @@ export default function PhoneScreen() {
     const { error } = await authClient.phoneNumber.verify(
       signedIn ? { phoneNumber, code, updatePhoneNumber: true, disableSession: true } : { phoneNumber, code },
     );
-    if (error) return error.message ?? 'Invalid code';
+    if (error) return error.message ?? t('contact.error.code');
     refreshSession();
     if (signedIn && router.canGoBack()) router.back();
     return null;
@@ -59,24 +61,24 @@ export default function PhoneScreen() {
         onVerify={verify}
         onResend={() => requestCode(phoneNumber)}
         onChangeDestination={() => setCodeSent(false)}
-        changeLabel="Change number"
+        changeLabel={t('contact.phone.changeShort')}
       />
     );
   }
 
   return (
     <Screen
-      header={<BackHeader />}
+      header={<AuthBackHeader />}
       footer={
         <>
           <ErrorText message={error} />
-          <Button label="Send code" onPress={sendCode} loading={loading} disabled={phoneNumber.length < 8} />
+          <Button label={t('contact.code.send')} onPress={sendCode} loading={loading} disabled={phoneNumber.length < 8} />
         </>
       }>
       <HeroIcon name="phone" />
       <TitleBlock
-        title={signedIn ? 'Add your phone' : 'Continue with phone'}
-        subtitle="We'll text you a 6-digit code. Include your country code."
+        title={t(signedIn ? 'contact.phone.add' : 'auth.continueWithPhone')}
+        subtitle={t('contact.phone.subtitle')}
       />
       <Field
         placeholder="+1 416 555 0123"

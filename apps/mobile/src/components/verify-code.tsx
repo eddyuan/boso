@@ -9,6 +9,7 @@ import { CodeInput } from '@/components/ui/code-input';
 import { BackButton } from '@/components/ui/controls';
 import { Icon, type IconName } from '@/components/ui/icon';
 import { Radius, Spacing } from '@/constants/theme';
+import { useT } from '@/lib/i18n';
 import { useTheme } from '@/hooks/use-theme';
 
 export const RESEND_SECONDS = 45;
@@ -23,7 +24,10 @@ export function HeroIcon({ name }: { name: IconName }) {
   );
 }
 
-export function BackHeader() {
+/** Named apart from `components/back-header.tsx`: this one falls back to the root
+ * rather than assuming there's history, which is what a deep-linked code screen
+ * needs. */
+export function AuthBackHeader() {
   return <BackButton onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} />;
 }
 
@@ -45,6 +49,7 @@ export function VerifyCodeScreen({
   changeLabel: string;
   footerExtra?: ReactNode;
 }) {
+  const { t } = useT();
   const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -76,16 +81,19 @@ export function VerifyCodeScreen({
 
   return (
     <Screen
-      header={<BackHeader />}
+      header={<AuthBackHeader />}
       footer={
         <>
           <ErrorText message={error} />
-          <Button label="Verify" onPress={() => verify()} loading={loading} disabled={code.length < 6} />
+          <Button label={t('contact.verify')} onPress={() => verify()} loading={loading} disabled={code.length < 6} />
           {footerExtra}
         </>
       }>
       <HeroIcon name={icon} />
-      <TitleBlock title="Enter your code" subtitle={`We sent a 6-digit code to ${destination}`} />
+      <TitleBlock
+        title={t('contact.code.title')}
+        subtitle={t('contact.code.sent', { contact: destination })}
+      />
       <View style={{ marginTop: Spacing.lg }}>
         <CodeInput
           value={code}
@@ -98,11 +106,11 @@ export function VerifyCodeScreen({
       <View style={styles.meta}>
         {secondsLeft > 0 ? (
           <ThemedText type="small" themeColor="textSecondary">
-            Resend code in 0:{String(secondsLeft).padStart(2, '0')}
+            {t('contact.code.resendIn', { seconds: secondsLeft })}
           </ThemedText>
         ) : (
           <Pressable onPress={resend} accessibilityRole="button">
-            <ThemedText type="linkPrimary">Resend code</ThemedText>
+            <ThemedText type="linkPrimary">{t('contact.code.resend')}</ThemedText>
           </Pressable>
         )}
         <Pressable onPress={onChangeDestination} accessibilityRole="button">

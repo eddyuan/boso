@@ -5,7 +5,8 @@ import { useEffect, useState } from 'react';
 import { ErrorText, Field, Screen, TitleBlock } from '@/components/auth-form';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
-import { BackHeader, HeroIcon, VerifyCodeScreen } from '@/components/verify-code';
+import { AuthBackHeader, HeroIcon, VerifyCodeScreen } from '@/components/verify-code';
+import { useT } from '@/lib/i18n';
 import { useTheme } from '@/hooks/use-theme';
 import { authClient, refreshSession } from '@/lib/auth-client';
 
@@ -14,6 +15,7 @@ import { authClient, refreshSession } from '@/lib/auth-client';
 //              a typo at sign-up). The code goes to the new address.
 export default function EmailScreen() {
   const theme = useTheme();
+  const { t } = useT();
   const { mode } = useLocalSearchParams<{ mode?: 'verify' | 'change' }>();
   const { data: session } = authClient.useSession();
   const currentEmail = session && getContactStatus(session.user).hasRealEmail ? session.user.email : null;
@@ -28,12 +30,12 @@ export default function EmailScreen() {
     const { error } = changing
       ? await authClient.emailOtp.requestEmailChange({ newEmail: address })
       : await authClient.emailOtp.sendVerificationOtp({ email: address, type: 'email-verification' });
-    return error ? (error.message ?? 'Could not send code') : null;
+    return error ? (error.message ?? t('contact.error.send')) : null;
   }
 
   async function sendCode() {
     const address = email.trim().toLowerCase() || currentEmail;
-    if (!address) return setError('Enter your email');
+    if (!address) return setError(t('contact.email.enter'));
     setError(null);
     setLoading(true);
     const message = await requestCode(address);
@@ -55,7 +57,7 @@ export default function EmailScreen() {
       : await authClient.emailOtp.verifyEmail({ email, otp });
     // An address that belongs to another account silently gets no code, and
     // the change fails here.
-    if (error) return error.message ?? 'Invalid code';
+    if (error) return error.message ?? t('contact.error.code');
     refreshSession();
     if (router.canGoBack()) router.back();
     return null;
@@ -69,24 +71,26 @@ export default function EmailScreen() {
         onVerify={verify}
         onResend={() => requestCode(email)}
         onChangeDestination={() => (changing ? setCodeSent(false) : router.setParams({ mode: 'change' }))}
-        changeLabel={changing ? 'Change email' : 'Use a different email'}
+        changeLabel={t(changing ? 'contact.email.changeShort' : 'contact.email.useDifferent')}
       />
     );
   }
 
   return (
     <Screen
-      header={<BackHeader />}
+      header={<AuthBackHeader />}
       footer={
         <>
           <ErrorText message={error} />
-          <Button label="Send code" onPress={sendCode} loading={loading} disabled={!email.includes('@')} />
+          <Button label={t('contact.code.send')} onPress={sendCode} loading={loading} disabled={!email.includes('@')} />
         </>
       }>
       <HeroIcon name="mail" />
       <TitleBlock
-        title={changing ? (currentEmail ? 'Change your email' : 'Add your email') : 'Verify your email'}
-        subtitle="We'll send a 6-digit code to confirm it's yours."
+        title={t(
+          changing ? (currentEmail ? 'contact.email.change' : 'contact.email.add') : 'contact.email.verify',
+        )}
+        subtitle={t('contact.email.subtitle')}
       />
       <Field
         placeholder="you@example.com"

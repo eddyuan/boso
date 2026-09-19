@@ -14,6 +14,7 @@ import { Icon } from '@/components/ui/icon';
 import { FontFamily, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { apiFetch } from '@/lib/api';
+import { useT } from '@/lib/i18n';
 
 const MAX_LENGTH = 500;
 // Show the counter only once it's worth worrying about.
@@ -30,6 +31,7 @@ type Photo = { url: string; thumbUrl: string; kind: 'image' };
 /** Writing a post as yourself. Your pet writes its own — see the pet's activity. */
 export default function ComposeScreen() {
   const theme = useTheme();
+  const { t } = useT();
   // Arriving from a place's thread ("be the first to post here"), the venue is
   // already decided — carried as params so compose doesn't have to re-fetch it.
   const params = useLocalSearchParams<{ placeId?: string; placeName?: string }>();
@@ -68,7 +70,7 @@ export default function ComposeScreen() {
     setError(null);
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      setError('Photo access is off. Turn it on in Settings to add pictures.');
+      setError(t('compose.error.photoPermission'));
       return;
     }
 
@@ -93,7 +95,7 @@ export default function ComposeScreen() {
         const stored = await apiFetch<Photo>('/api/uploads/post-media', { method: 'POST', body: form });
         setPhotos((prev) => [...prev, { url: stored.url, thumbUrl: stored.thumbUrl, kind: 'image' }]);
       } catch {
-        setError("Couldn't add one of those photos.");
+        setError(t('compose.error.photo'));
       }
       setUploading((n) => n - 1);
     }
@@ -109,13 +111,13 @@ export default function ComposeScreen() {
     try {
       const permission = await Location.requestForegroundPermissionsAsync();
       if (!permission.granted) {
-        setError('Location is off, so this post will not appear on the map.');
+        setError(t('compose.error.locationOff'));
         return;
       }
       const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
       setPlace({ latitude: position.coords.latitude, longitude: position.coords.longitude });
     } catch {
-      setError("Couldn't get your location.");
+      setError(t('map.error.location'));
     } finally {
       setLocating(false);
     }
@@ -136,7 +138,7 @@ export default function ComposeScreen() {
       });
       router.back();
     } catch {
-      setError("Couldn't post that. Try again.");
+      setError(t('compose.error.post'));
       setPosting(false);
     }
   }
@@ -148,7 +150,7 @@ export default function ComposeScreen() {
           <Pressable
             onPress={() => router.back()}
             accessibilityRole="button"
-            accessibilityLabel="Close"
+            accessibilityLabel={t('action.close')}
             style={({ pressed }) => [
               styles.close,
               { backgroundColor: theme.backgroundElement, opacity: pressed ? 0.7 : 1 },
@@ -156,9 +158,9 @@ export default function ComposeScreen() {
             <Icon name="close" />
           </Pressable>
           <ThemedText type="subtitle" style={{ flex: 1 }}>
-            New post
+            {t('compose.title')}
           </ThemedText>
-          <Button label="Post" onPress={post} disabled={!canPost} loading={posting} compact />
+          <Button label={t('compose.post')} onPress={post} disabled={!canPost} loading={posting} compact />
         </View>
       }>
       <View style={styles.author}>
@@ -166,14 +168,14 @@ export default function ComposeScreen() {
           <Icon name="person" color={theme.onPrimary} />
         </View>
         <ThemedText type="small" themeColor="textSecondary">
-          Posting as you, not your pet
+          {t('compose.asYou', { name: t('common.yourPet').toLowerCase() })}
         </ThemedText>
       </View>
 
       <TextInput
         value={content}
         onChangeText={setContent}
-        placeholder="What's happening?"
+        placeholder={t('compose.placeholder')}
         placeholderTextColor={theme.textSecondary}
         multiline
         autoFocus
@@ -182,7 +184,7 @@ export default function ComposeScreen() {
 
       {trimmed.length >= COUNTER_FROM && (
         <ThemedText type="small" style={{ color: tooLong ? theme.red : theme.textSecondary, textAlign: 'right' }}>
-          {trimmed.length} / {MAX_LENGTH}
+          {t('compose.counter', { used: trimmed.length, max: MAX_LENGTH })}
         </ThemedText>
       )}
 
@@ -194,7 +196,7 @@ export default function ComposeScreen() {
               <Pressable
                 onPress={() => setPhotos((prev) => prev.filter((p) => p.url !== photo.url))}
                 accessibilityRole="button"
-                accessibilityLabel="Remove photo"
+                accessibilityLabel={t('compose.a11y.removePhoto')}
                 hitSlop={8}
                 style={[styles.remove, { backgroundColor: theme.background }]}>
                 <Icon name="close" size={14} strokeWidth={3} />
@@ -210,11 +212,13 @@ export default function ComposeScreen() {
       )}
 
       {photos.length + uploading < MAX_PHOTOS && (
-        <Pressable onPress={addPhotos} accessibilityRole="button" accessibilityLabel="Add photos">
+        <Pressable onPress={addPhotos} accessibilityRole="button" accessibilityLabel={t('compose.addPhotos')}>
           <Card style={styles.place}>
             <Icon name="camera" color={theme.textSecondary} />
             <ThemedText type="small" style={{ flex: 1 }}>
-              {photos.length === 0 ? 'Add photos' : `Add another (${photos.length}/${MAX_PHOTOS})`}
+              {photos.length === 0
+                ? t('compose.addPhotos')
+                : t('compose.addAnother', { used: photos.length, max: MAX_PHOTOS })}
             </ThemedText>
           </Card>
         </Pressable>
@@ -223,12 +227,12 @@ export default function ComposeScreen() {
       <Pressable
         onPress={() => setPickerOpen(true)}
         accessibilityRole="button"
-        accessibilityLabel="Add a place">
+        accessibilityLabel={t('compose.addPlace')}>
         <Card style={[styles.place, venue ? { backgroundColor: theme.primarySoft } : null]}>
           <Icon name="pin" color={venue ? theme.primaryInk : theme.textSecondary} />
           <View style={{ flex: 1, minWidth: 0 }}>
             <ThemedText type="small" style={{ color: venue ? theme.primaryInk : theme.text }} numberOfLines={1}>
-              {venue ? venue.name : 'Add a place'}
+              {venue ? venue.name : t('compose.addPlace')}
             </ThemedText>
             {venue?.address ? (
               <ThemedText type="caption" themeColor="textSecondary" numberOfLines={1}>
@@ -240,7 +244,7 @@ export default function ComposeScreen() {
             <Pressable
               onPress={() => setVenue(null)}
               accessibilityRole="button"
-              accessibilityLabel="Remove place"
+              accessibilityLabel={t('compose.a11y.removePlace')}
               hitSlop={10}>
               <Icon name="close" size={18} color={theme.primaryInk} />
             </Pressable>
@@ -265,13 +269,15 @@ export default function ComposeScreen() {
             type="small"
             style={{ flex: 1, color: place && !venue ? theme.primaryInk : theme.text }}
             numberOfLines={1}>
-            {venue
-              ? 'Using the place above'
-              : locating
-                ? 'Finding you…'
-                : place
-                  ? 'This post will show on the map'
-                  : 'Or just use where you are'}
+            {t(
+              venue
+                ? 'compose.usingPlaceAbove'
+                : locating
+                  ? 'compose.findingYou'
+                  : place
+                    ? 'compose.willShowOnMap'
+                    : 'compose.useWhereYouAre',
+            )}
           </ThemedText>
           {place && !venue && <Icon name="check" size={18} color={theme.primaryInk} strokeWidth={3} />}
         </Card>
