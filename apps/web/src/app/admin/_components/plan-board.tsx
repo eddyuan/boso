@@ -25,6 +25,7 @@ const STATUS: Record<Status, { label: string; className: string }> = {
   shipped: { label: "Shipped", className: "bg-success-soft text-success" },
   ready: { label: "Ready", className: "bg-info-soft text-info" },
   blocked: { label: "Waiting", className: "bg-secondary text-muted-foreground" },
+  "needs-input": { label: "Needs you", className: "bg-primary-soft text-primary-ink" },
 };
 
 function Impact({ value }: { value: number }) {
@@ -135,7 +136,9 @@ export function PlanBoard() {
   const counts = useMemo(() => {
     const ready = ALL_ITEMS.filter((i) => i.status === "ready").length;
     const blocked = ALL_ITEMS.filter((i) => i.status === "blocked").length;
-    return { total: ALL_ITEMS.length, ready, blocked };
+    const shipped = ALL_ITEMS.filter((i) => i.status === "shipped").length;
+    const needsYou = ALL_ITEMS.filter((i) => i.status === "needs-input").length;
+    return { total: ALL_ITEMS.length, ready, blocked, shipped, needsYou };
   }, []);
 
   return (
@@ -149,7 +152,8 @@ export function PlanBoard() {
           fill the world, close the loop, earn the return, then give long-term players something to chase.
         </p>
         <p className="text-[13px] font-semibold text-muted-foreground">
-          {counts.total} items · {counts.ready} ready to pick up · {counts.blocked} waiting on something earlier
+          {counts.total} items · {counts.shipped} shipped · {counts.ready} ready to pick up ·{" "}
+          {counts.blocked} waiting on something earlier · {counts.needsYou} need something only you can supply
         </p>
       </header>
 
@@ -176,9 +180,12 @@ export function PlanBoard() {
           })}
         </div>
         <p className="mt-3 max-w-[70ch] text-[13px] text-muted-foreground">
-          All three are unblocked, all three are mostly-built already, and none of them needs the level system to
-          exist. Hold the whole XP economy until these are live and there&apos;s real engagement data to tune it
-          against.
+          Everything buildable from the code has shipped. These four are what&apos;s left, and none of them is a
+          coding task: the native map needs a Mapbox <code className="font-mono">sk.</code> download token and a
+          device build, the legal pages need real terms and privacy copy, cosmetics and event decorations need 3D
+          art, and the calendar permission needs a decision — use it or drop the onboarding step before App Store
+          review. Separately, nothing scheduled has yet run under a live Inngest scheduler and no mobile screen has
+          been seen on a device; both are verification gaps rather than plan items.
         </p>
       </section>
 

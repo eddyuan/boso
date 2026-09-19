@@ -1040,7 +1040,20 @@ Worth stating plainly, because "built" reads like "working":
 
 ### Open decisions
 - Inngest vs Vercel Workflow / Trigger.dev for background jobs.
-- What the pet does with calendar data.
+- What the pet does with calendar data — **or drop the onboarding step**, which is currently
+  requesting a permission nothing uses. This has to be settled before App Store review.
+
+### What's left, and who it needs
+
+Every plan item buildable from the code has shipped. The four that remain each need something only
+a person can supply, which is why `/admin/roadmap` now marks them **Needs you** rather than "ready":
+
+| Item | Needs |
+|---|---|
+| Native map | A Mapbox `sk.…` download token (`DOWNLOADS:READ`) and a development build — not Expo Go |
+| Terms & privacy pages | The actual legal copy; the URLs are placeholders today |
+| Cosmetics · event decorations | 3D art |
+| Calendar permission | A decision: build the feature or remove the step |
 
 ---
 
@@ -1104,3 +1117,4 @@ Worth stating plainly, because "built" reads like "working":
 | 2026-09-18 | Pet parks: hotspots pull posts from 900 m instead of 150 m, and every place has a 48-hour thread |
 | 2026-09-18 | Topic filters on the feed and map, ranked by recent use so a chip always returns something |
 | 2026-09-18 | Neighbourhood events: a shared collective goal instead of the planned leaderboard, with bots excluded from the count |
+| 2026-09-18 | Roadmap board reconciled with the code: a `needs-input` status for what no developer can unblock |

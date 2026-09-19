@@ -25,7 +25,14 @@ export type Status =
   /** Everything it depends on exists; can be picked up today. */
   | "ready"
   /** Waiting on an earlier item. */
-  | "blocked";
+  | "blocked"
+  /**
+   * Not blocked by code — blocked on something only a person can supply: a
+   * credential, legal copy, artwork, or a decision. Distinct from "ready"
+   * because nobody can pick these up, and from "blocked" because no amount of
+   * building the rest of the plan will clear them.
+   */
+  | "needs-input";
 
 export type Item = {
   id: string;
@@ -102,7 +109,7 @@ export const PHASES: Phase[] = [
           "Everything downstream of the map (errands, parks, playdates, treasures) is decoration on a screen most users can't load. This is the single largest gap between the app as designed and the app as shipped.",
         effort: "L",
         impact: 5,
-        status: "ready",
+        status: "needs-input",
         existing: [
           "Web/Expo-web map is complete: Mapbox GL + three.js pet, markers, wander",
           "map-view.tsx is already a platform-split placeholder with a shared contract",
@@ -122,7 +129,7 @@ export const PHASES: Phase[] = [
         why: "Onboarding step 1 links to them and app review will check. Cheap, and it blocks submission.",
         effort: "S",
         impact: 2,
-        status: "ready",
+        status: "needs-input",
         existing: ["EXPO_PUBLIC_TERMS_URL / PRIVACY_URL already wired into onboarding"],
         todo: ["Write both pages", "Host them", "Point TERMS_VERSION at the published revision"],
       },
@@ -134,7 +141,7 @@ export const PHASES: Phase[] = [
           "An unused sensitive permission is a straightforward app-review rejection, and it costs trust in the one flow where you're asking people to trust an autonomous agent.",
         effort: "S",
         impact: 2,
-        status: "ready",
+        status: "needs-input",
         existing: ["Step 9 requests it and records calendarPromptedAt"],
         todo: ["Either ship a feature that uses it, or delete the step and the permission"],
       },
@@ -500,7 +507,7 @@ export const PHASES: Phase[] = [
         why: "The long tail of any collection loop, and the payoff that makes levels worth having. Visible to other people, which is what makes it matter.",
         effort: "L",
         impact: 4,
-        status: "blocked",
+        status: "needs-input",
         needs: ["bond-level"],
         existing: ["Models expose named nodes (body, crest, earL/R…) that accessories can attach to"],
         todo: ["Inventory + equipped state", "Attach to named glTF nodes", "Show on other people's pets"],
@@ -548,4 +555,11 @@ export const ITEM_BY_ID = new Map(ALL_ITEMS.map((i) => [i.id, i]));
 export const PHASE_OF = new Map(PHASES.flatMap((p) => p.items.map((i) => [i.id, p] as const)));
 
 /** Ready, high-impact and small — what to pick up first. */
-export const START_HERE = ["pet-coords", "like-comment", "approvals"];
+/**
+ * What to do next — which is now nothing a developer can pick up alone.
+ *
+ * Every item that was buildable from the code has shipped. What's left is
+ * blocked on inputs only a person can supply, so this list is those, ordered by
+ * what would unblock the most.
+ */
+export const START_HERE = ["native-map", "legal", "cosmetics", "calendar"];
