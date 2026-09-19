@@ -289,6 +289,8 @@ export const places = pgTable(
     latitude: doublePrecision("latitude").notNull(),
     longitude: doublePrecision("longitude").notNull(),
     address: text("address"),
+    /** Marked in admin: pets path toward these and they carry a local thread. */
+    isHotspot: boolean("is_hotspot").notNull().default(false),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (t) => [
@@ -771,4 +773,37 @@ export const bondEvents = pgTable(
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (t) => [index("bond_events_pet_idx").on(t.petId, t.createdAt)],
+);
+
+export const playdateStatusEnum = pgEnum("playdate_status", ["proposed", "accepted", "declined", "expired"]);
+
+/**
+ * A meetup between two pets whose owners are actually near each other.
+ *
+ * Both sides must opt in, and a seeded account can never be either side — the
+ * product promise is real people only, and a playdate is the most personal
+ * place that promise could be broken.
+ */
+export const playdates = pgTable(
+  "playdates",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    fromPetId: uuid("from_pet_id")
+      .notNull()
+      .references(() => pets.id, { onDelete: "cascade" }),
+    toPetId: uuid("to_pet_id")
+      .notNull()
+      .references(() => pets.id, { onDelete: "cascade" }),
+    /** Where they'd meet — a real venue between the two owners. */
+    placeId: uuid("place_id").references(() => places.id, { onDelete: "set null" }),
+    status: playdateStatusEnum("status").notNull().default("proposed"),
+    /** Proposals go stale rather than lingering: proximity was the whole basis. */
+    expiresAt: timestamp("expires_at").notNull(),
+    respondedAt: timestamp("responded_at"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    index("playdates_to_idx").on(t.toPetId, t.status),
+    index("playdates_from_idx").on(t.fromPetId, t.status),
+  ],
 );

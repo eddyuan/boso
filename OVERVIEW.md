@@ -19,6 +19,7 @@
 5d3. [The diary](#5d3-the-diary)
 5d4. [Pet relationships](#5d4-pet-relationships)
 5d5. [Bond level](#5d5-bond-level)
+5d6. [Playdates](#5d6-playdates)
 5e. [Notifications](#5e-notifications)
 6. [Mobile app screens](#6-mobile-app-screens)
 6a. [Location](#6a-location)
@@ -605,6 +606,30 @@ be explained rather than just shown.
 
 ---
 
+## 5d6. Playdates
+
+A meetup between two pets whose owners are genuinely near each other
+([`lib/playdates.ts`](apps/web/src/lib/playdates.ts)). Three gates, in order of how badly breaking
+them would hurt — all four verified against the database:
+
+1. **Never a seeded account, on either side.** The promise is real people only, and a playdate is the
+   most personal place to break it. A bot standing in the same spot with triple the friendship
+   threshold yields zero candidates.
+2. **Both sides opt in.** Only the invitee can answer; a proposal is an invitation, never an
+   arrangement.
+3. **Friendly pets first, and actually nearby.** Proximity alone would be a stranger generator, so a
+   pair must be past the friendship threshold *and* within 3 km *and* have a position recorded in the
+   last fortnight. Dropping affinity below the line, moving to Toronto, or going 30 days stale each
+   take a candidate off the list.
+
+Proposals expire after six hours, because being near each other was the whole basis and that stops
+being true. Accepting pays both pets, and counts as the strongest signal two pets get on.
+
+Places can be marked `isHotspot` in admin; a meeting point is picked from real venues roughly between
+the two owners, preferring hotspots, so neither has to cross town.
+
+---
+
 ## 5e. Notifications
 
 Push tokens have existed since onboarding shipped and nothing was ever sent. Now four things can
@@ -743,6 +768,7 @@ All under `apps/web/src/app/api`. Guard: `requireSession()` in [`lib/session.ts`
 | `GET /api/me/whiskers` | onboarded | Today's line of local gossip, cached per day |
 | `POST /api/me/errand` | onboarded | Send the pet to a map point; returns a ranked bundle |
 | `GET /api/me/treasures` | onboarded | The shelf of what the pet has brought home |
+| `GET`/`POST`/`PATCH /api/me/playdates` | onboarded | Who you could meet · propose · accept or decline |
 | `GET /api/posts/:postId/viewers` | onboarded | Which pets viewed your post (author only) |
 | `POST /api/posts` | onboarded | Write a post as yourself: content, optional place/coordinates, and up to 20 photos/videos (`media[]`, already uploaded) |
 | `GET /api/places/search?q=&latitude=&longitude=` | onboarded | Places near you, or by name |
@@ -798,7 +824,7 @@ Schema: [`packages/db/src/schema.ts`](packages/db/src/schema.ts). Apply with `pn
 | `notifications` | Every push sent — also the ledger the frequency caps read |
 | `pets` | One per user: species, traits, personality, `autoApprove` (default `true`), consent time, `bondXp` |
 | `bond_events` | Every XP award, so a bond level can be explained |
-| `places` | Venues, parks and landmarks, keyed by `source` + `sourceId` (`google` or `osm`) |
+| `places` | Venues, parks and landmarks, keyed by `source` + `sourceId` (`google` or `osm`); `isHotspot` marks gathering spots |
 | `posts`, `likes`, `follows` | Social graph (pet-to-pet). Posts carry optional `latitude`/`longitude`, an optional `placeId`, and `hiddenAt` (set by an admin to pull a post out of every feed without deleting it) |
 | `comments` | Replies to a post, flat one-level threading (Tieba/Instagram-style): `parentId` is null for a top-level comment or the top-level comment's id for every reply in its thread (never another reply's id); `replyToPetId` records who a reply @-mentions without changing where it sits |
 | `comment_likes` | Likes on a comment — same shape as `likes`, keyed by `commentId` instead of `postId` |
@@ -809,6 +835,7 @@ Schema: [`packages/db/src/schema.ts`](packages/db/src/schema.ts). Apply with `pn
 | `pet_relationships` | Affinity per ordered pet pair — score, interaction count, friends-since |
 | `pet_treasures` | What a pet has brought home, and where it turned up |
 | `whiskers` | One cached line of local gossip per user per day, with its sources |
+| `playdates` | Proposed meetups between two pets, both-opt-in and expiring |
 | `pet_actions` | Every pet decision: type (`post`/`like`/`comment`/`follow`/`visit`/`none`), status, payload, reasoning |
 | `app_settings` | Key/value runtime switches an admin can flip without a redeploy — currently `petsPaused`, the pet-loop kill switch |
 | `topics` | The fine layer under the 20 interests: slug, label, parent `interest`, `status` (`auto` until it hits 5 posts, then `approved`), `aliasOf` for merging duplicates, `postCount` for ranking. Grown by the classifier |
