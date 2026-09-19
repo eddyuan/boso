@@ -10,7 +10,10 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { CompanionArt } from '@/components/mascot/companions';
+import { usePetSummary } from '@/components/pet-summary';
 import { useTabBarVisibility } from '@/components/tab-bar-visibility';
+import { ThemedText } from '@/components/themed-text';
 import { Icon, type IconName } from '@/components/ui/icon';
 import { Elevation, Radius, Spacing, TabBar } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -45,7 +48,7 @@ function tabOffset(index: number): number {
 const ICONS: Record<string, IconName> = {
   index: 'map',
   feed: 'feed',
-  activity: 'bell',
+  pet: 'pet',
   profile: 'person',
 };
 
@@ -68,6 +71,10 @@ type TabBarProps = {
  * Icons only, with writing a post as the raised button in the middle: it's the
  * one thing here that isn't a destination, so it shouldn't look like one.
  *
+ * The pet's tab draws the pet itself rather than a glyph. Since the labels are
+ * hidden, the icon *is* the identity — and a tab with your own companion in it is
+ * the most distinctive thing this bar can say.
+ *
  * It slides down and fades out when a screen needs the space — the map's detail
  * sheet does this, since it covers the bottom of the screen.
  */
@@ -75,6 +82,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: TabBarProps) 
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { hidden } = useTabBarVisibility();
+  const { species, pendingAsks } = usePetSummary();
 
   const progress = useSharedValue(0);
   useEffect(() => {
@@ -137,12 +145,27 @@ export function FloatingTabBar({ state, descriptors, navigation }: TabBarProps) 
                   if (!focused) navigation.navigate(route.name);
                 }}
                 style={({ pressed }) => [styles.tab, pressed && !focused && { opacity: 0.6 }]}>
-                <Icon
-                  name={ICONS[route.name] ?? 'sparkle'}
-                  size={22}
-                  color={focused ? theme.primaryInk : theme.textSecondary}
-                  strokeWidth={focused ? 2.6 : 2.1}
-                />
+                {route.name === 'pet' && species ? (
+                  // Dimmed rather than recoloured when inactive: the art is full
+                  // colour, so a tint would just muddy it.
+                  <View style={{ opacity: focused ? 1 : 0.55 }}>
+                    <CompanionArt species={species} size={28} />
+                  </View>
+                ) : (
+                  <Icon
+                    name={ICONS[route.name] ?? 'sparkle'}
+                    size={22}
+                    color={focused ? theme.primaryInk : theme.textSecondary}
+                    strokeWidth={focused ? 2.6 : 2.1}
+                  />
+                )}
+                {/* Only asks get a badge. They're the one thing that is actually
+                    waiting on the person rather than merely new. */}
+                {route.name === 'pet' && pendingAsks > 0 && (
+                  <View style={[styles.badge, { backgroundColor: theme.red, borderColor: theme.surface }]}>
+                    <ThemedText style={styles.badgeText}>{pendingAsks > 9 ? '9+' : pendingAsks}</ThemedText>
+                  </View>
+                )}
               </Pressable>
             </Fragment>
           );
@@ -200,6 +223,19 @@ const styles = StyleSheet.create({
     height: TabBar.itemHeight,
     borderRadius: Radius.pill,
   },
+  badge: {
+    position: 'absolute',
+    top: 2,
+    right: 10,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  badgeText: { color: '#fff', fontSize: 10, lineHeight: 13, fontWeight: '800' },
   compose: {
     width: COMPOSE_SIZE,
     height: COMPOSE_SIZE,

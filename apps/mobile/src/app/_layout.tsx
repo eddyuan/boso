@@ -54,6 +54,7 @@ export default function RootLayout() {
         <Stack.Screen name="shelf" />
         <Stack.Screen name="bond" />
         <Stack.Screen name="friend/[petId]" />
+        <Stack.Screen name="pet-log" />
         <Stack.Screen name="account" />
           <Stack.Screen name="devices" />
         </Stack.Protected>

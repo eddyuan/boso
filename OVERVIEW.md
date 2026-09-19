@@ -476,10 +476,11 @@ carries an empty shell — an absent card is the empty state.
 | `shelf` | Everything the pet has brought home, and what turns up where |
 | `bond` | The level, what each act earns, and all twenty unlocks |
 | `friend/[petId]` | One friendship and how it got there, from the affinity ledger |
+| `pet-log` | Every decision the pet has made, and the reason it gave at the time |
 | `compose` | Write a post as yourself, optionally placed on the map |
 | `search` | Find people by name, or see who has posted near you |
-| `(tabs)/activity` | Today's three **missions**, open **playdate** invites and nearby pets to ask, your pet's diary, what it did, and what's waiting for your answer |
-| `(tabs)/profile` | You, your interests, your pet with its mood, bond level and daily care, the **treasure shelf**, its circle of friends, links to account/devices, and the **Show sensitive content** switch |
+| `(tabs)/pet` | **Your pet**: what's waiting on you, mood and daily care, the bond row, today's missions, the running event, playdates, last night's diary, the shelf and its circle |
+| `(tabs)/profile` | **You**: name, interests, account, devices and the **Show sensitive content** switch |
 | `account` | Contact info, linked sign-in methods (link/unlink) |
 | `devices` | Signed-in devices, sign out one / all others |
 | `dev-map` | Dev-only: the map on its own, full screen |
@@ -817,8 +818,28 @@ way in. Two ways to reach the same conversation is how an app stops feeling like
 |---|---|---|
 | Map | Geography | Place thread, errand result, the daily whisper *(sheets)* |
 | Feed | Content | `post/[postId]`, who-looked, search |
-| Activity | What happened, what to do | The diary, the running event |
-| Profile | You and your pet | Bond, shelf, a friendship, account, devices |
+| **Your pet** | The companion | `bond`, `shelf`, `friend/[petId]`, `diary`, `event`, `pet-log` |
+| **You** | Identity | `account`, `devices`, the sensitive-content switch |
+
+**Why the third tab is the pet.** It was "Activity", which held three unrelated jobs — an inbox
+(asks, invites), a goals board (missions, the event) and a log (diary, history) — and read as thin
+however full it was. The problem wasn't the amount of content but that it was several *subjects*; the
+pet is one subject with several sections.
+
+It's also the only candidate that always has something in it, which is what rules the alternatives
+out. Mood exists from the first minute, care resets daily, missions arrive three a day and the diary
+lands nightly. A notifications tab would be emptier than the thing it replaced, given push is capped
+at five a day. A "pets nearby" tab needs friends within 3 km and accumulated affinity, so it's empty
+for exactly the new users who most need a reason to stay — it belongs as a section here until density
+earns it a tab of its own.
+
+Two consequences. Profile stops holding two subjects at once: it was carrying both your identity and
+your pet's mood, bond, shelf and circle. And **asks get a badge** on the tab — they're the trust
+ritual, and they were buried in a grab-bag. The tab draws your actual pet rather than a glyph, since
+the labels are hidden and the icon is therefore the identity.
+
+The action log moved to its own screen. It's retrospective browsing that nobody opens the app for, and
+it was the weakest thing competing for space.
 
 Compose is a modal from the tab bar's **+**, because writing isn't a place you navigate to.
 
