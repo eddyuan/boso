@@ -1018,10 +1018,34 @@ an unknown slug returns nothing rather than everything.
 ## 6c. Language
 
 Three locales: **English** (`en`, the source), **Simplified Chinese** (`zh-Hans`) and **Traditional
-Chinese** (`zh-Hant`). The catalogue and
-runtime live in [`packages/shared/src/i18n`](packages/shared/src/i18n) so the server and both apps
-read one set of strings — push notifications are built on the server and screens are built on the
-device, and two catalogues would drift.
+Chinese** (`zh-Hant`). The catalogue and runtime live in
+[`packages/shared/src/i18n`](packages/shared/src/i18n) so the server and both apps read one set of
+strings — push notifications are built on the server and screens are built on the device, and two
+catalogues would drift.
+
+### English is the source
+
+**Tielo is an English-native app.** Copy is written in English first; every other locale is a
+translation *of* it. No locale is authored independently, and a translation never carries a string,
+a concept or a nuance that English doesn't already have. Settling a wording question means settling
+the English and translating that answer — not letting a translation drive the source.
+
+The compiler enforces it in both directions, so it isn't only a convention:
+
+| What you do | What happens |
+|---|---|
+| Add a key to a translation that isn't in `en.ts` | `TS2353: '…' does not exist in type` — a translation cannot drift ahead of English |
+| Add a key to `en.ts` | `TS2741: Property '…' is missing` in **every** translation, until each covers it |
+
+The second row is strict on purpose: an English-only string can't ship, even temporarily. The
+alternative — a `Partial<Record<…>>` — lets English render silently into the middle of a Chinese
+screen, which nobody notices until a user does. The cost is that adding copy means translating it in
+the same change; that's the trade, and it's the one that keeps translations from rotting.
+
+Two places stay English by design rather than by omission: the **shared constant tables**
+(`onboarding.ts`, `bond.ts`, `treasures.ts`, `missions.ts`, `relationships.ts`) keep their English
+`label` fields, because those feed AI prompts and the admin panel; and **admin/developer surfaces**
+(the dev-map screen, the restart-profile button, the Mapbox setup message) aren't translated at all.
 
 ### Language and region are separate questions
 
@@ -1616,3 +1640,4 @@ a person can supply, which is why `/admin/roadmap` now marks them **Needs you** 
 | 2026-09-19 | Locale codes are script-qualified: `zh-Hans`, not a bare `zh`, since Simplified and Traditional are different writing systems rather than different spellings. `resolveLocale` keeps the script and infers it from the region (`zh-TW` → Traditional), so adding `zh-Hant` is a catalogue plus one line. Fixed `measurementFor`, which read the second subtag as the region and so saw `hans` in `zh-Hans-US` — an American Chinese reader would have got metric |
 | 2026-09-19 | Traditional Chinese (`zh-Hant`), written out in full rather than spread over Simplified — 269 character forms converted plus genuine vocabulary differences (貼文, 追蹤, 按讚, 設定, 行事曆, 大頭貼, 國碼), targeting Taiwan usage. `zh-TW`/`zh-HK`/`zh-MO` now route to it by region alone |
 | 2026-09-19 | Distance is always `m` / `km`, in every language. `Intl`'s `style: "unit"` localises the unit name along with the number, which gave `2.4 公里` and `140 呎`; a unit symbol is notation rather than vocabulary. The imperial branch, `measurementFor` and `MeasurementSystem` are gone — only the number is still locale-formatted, for the decimal separator |
+| 2026-09-19 | Stated the authoring rule the catalogue already enforced: Tielo is English-native, every locale is a translation of `en.ts`, and nothing is authored in a translation. Verified the compiler catches drift in both directions — a translation-only key and an untranslated English key each fail the build |

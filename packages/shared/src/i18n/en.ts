@@ -1,9 +1,19 @@
 /**
  * The source catalogue.
  *
- * English is the base and the type: every other locale is checked against these
- * keys, so a missing or invented one is a compile error rather than a blank space
- * in the UI.
+ * **Tielo is an English-native app.** Copy is written here first, and every other
+ * locale is a translation *of* this file — never authored independently, and never
+ * carrying a string or a nuance that English doesn't already have. One canonical
+ * answer to "what does this screen say" is the thing that rots first when two
+ * locales get edited in parallel.
+ *
+ * That isn't only a convention. This file is the source *and* the `TranslationKey`
+ * type, so the compiler enforces both directions: a key that exists only in a
+ * translation fails with "does not exist in type", and a key added here fails every
+ * translation until it's covered. The second half is strict on purpose — an
+ * English-only string can't ship even temporarily — because the alternative is a
+ * `Partial` record that silently renders English into the middle of a Chinese
+ * screen, which nobody notices until a user does.
  *
  * Two rules, both of which exist because breaking them is only discovered after
  * translation:
