@@ -1017,7 +1017,8 @@ an unknown slug returns nothing rather than everything.
 
 ## 6c. Language
 
-Two locales: **English** (`en`, the source) and **Simplified Chinese** (`zh-Hans`). The catalogue and
+Three locales: **English** (`en`, the source), **Simplified Chinese** (`zh-Hans`) and **Traditional
+Chinese** (`zh-Hant`). The catalogue and
 runtime live in [`packages/shared/src/i18n`](packages/shared/src/i18n) so the server and both apps
 read one set of strings — push notifications are built on the server and screens are built on the
 device, and two catalogues would drift.
@@ -1045,10 +1046,9 @@ locale we have. Two rules, and the difference between them is the point:
 
 Script is also **inferred from the region** when the tag doesn't name one: `zh-TW`, `zh-HK` and
 `zh-MO` mean Traditional, and that's how it usually arrives from a device — far more often than an
-explicit `zh-Hant`. Those resolve to Simplified today, but by a *stated* fallback (`NEXT_BEST`)
-rather than by truncation: Simplified serves a Traditional reader far better than English. Adding
-`zh-Hant.ts` is a line in `LOCALES` and a catalogue entry — no resolver change — and `zh-TW` starts
-landing on it. Verified by doing exactly that against a throwaway catalogue.
+explicit `zh-Hant`. `zh-CN`, `zh-SG` and a bare `zh` go to Simplified. `NEXT_BEST` still names the
+cross-script fallback for the case where one catalogue is missing, since a reader of either script is
+better served by the other than by English.
 
 Subtags are identified by shape, not position: a script is four letters, a region is two letters or
 three digits. The region is the second subtag in `en-GB` but the third in `zh-Hans-CN`, and reading
@@ -1069,8 +1069,8 @@ the first screen renders in the right language instead of visibly switching.
    Chinese one, Arabic six; a hand-rolled `n === 1` mistranslates all of them without ever looking
    broken in development. `n()` only accepts a key that actually has plural forms — the type is
    derived from the keys ending `_other`.
-3. **`zh-Hans.ts` is a complete `Record<TranslationKey, string>`.** Adding an English string without a
-   Chinese one is a build error rather than English quietly appearing mid-screen.
+3. **Each translation is a complete `Record<TranslationKey, string>`.** Adding an English string
+   without translating it is a build error rather than English quietly appearing mid-screen.
 4. **Numbers in placeholders are formatted centrally** by `Intl.NumberFormat` — "13,460 XP" against
    "13.460 XP" — rather than at each call site, one of which would be missed.
 
@@ -1091,6 +1091,23 @@ companion without a label stops the build.
 
 `GET /api/me/missions`, `/api/me/relationships` and `/api/me/relationships/:petId` send ids alone
 rather than ids *and* their English labels, which was two answers to the same question.
+
+### Traditional is not a character conversion
+
+`zh-Hant.ts` is written out in full rather than spread over `zh-Hans` with overrides. A spread
+type-checks and would leave a Traditional reader looking at Simplified characters for every key
+nobody remembered to override — which reads as deliberate in a way an English fallback doesn't.
+
+It targets Taiwan usage (the largest Traditional market) while staying legible in Hong Kong, and the
+vocabulary differs as much as the glyphs: 帖子 → 貼文, 关注 → 追蹤, 点赞 → 按讚, 设置 → 設定,
+登录 → 登入, 邮箱 → 電子郵件, 短信 → 簡訊, 日历 → 行事曆, 相册 → 相簿, 头像 → 大頭貼,
+评论 → 留言, 国家区号 → 國碼, 支持 → 支援. Quotation marks follow the Traditional convention
+(「」rather than “”), and the phone-number example is a Taiwan number.
+
+The check that matters here isn't "does it look Traditional" but **internal consistency**: 269
+Simplified character forms were converted, and a script that diffs the two catalogues confirms none of
+them survives anywhere in `zh-Hant`. If 帖 became 貼 once, it became 貼 everywhere. 95 of the 608 keys
+are byte-identical in both, which is expected — they're script-neutral to begin with.
 
 ### The pet writes in your language
 
@@ -1478,7 +1495,7 @@ Worth stating plainly, because "built" reads like "working":
 - [ ] No step-up verification (fresh code) before unlinking providers or changing contact info.
 - [ ] Phone-only users can't set a password; no password reset UI yet.
 - [ ] Terms/Privacy URLs are placeholders; legal pages don't exist.
-- [ ] **No Traditional Chinese catalogue.** `zh-Hant`, `zh-TW`, `zh-HK` and `zh-MO` are recognised as Traditional and fall back to Simplified deliberately (closer than English for that reader). The remaining work is the translation itself: a `zh-Hant.ts` plus one `LOCALES` line, with no resolver change — confirmed against a throwaway catalogue.
+- [ ] **Neither Chinese translation has been read by a native speaker.** Both are structurally verified (complete key coverage, consistent character conversion, placeholders intact) but the register — warm and casual rather than stiff — is a judgement a reviewer should make. Traditional targets Taiwan usage; a Hong Kong reader may want different wording in places.
 - [ ] **Topic labels aren't localised.** Topics are database rows with a slug and one label; the slug is the canonical identity, so the shape is right, but a label per locale needs a `topic_labels` table. Feed chips show whatever the row says.
 - [ ] **Admin-authored content arrives in the language it was written in** — event titles, blurbs and goal names live in `live_events` as text. Fine while one team writes them; a per-locale field is the fix if that changes.
 - [ ] **The pet's voice hasn't been tuned per language.** The prompt names the language and the model complies, but the persona instructions ("playful, a little conspiratorial") were written and tested against English output.
@@ -1587,3 +1604,4 @@ a person can supply, which is why `/admin/roadmap` now marks them **Needs you** 
 | 2026-09-18 | Backfill photo handles lazily via Place Details, so venues imported before the field-mask change can get photos too |
 | 2026-09-19 | Two languages. Shared `i18n` catalogue + `Intl` runtime, `users.locale` (nullable = follow device), Language row on Profile, every app string extracted, Simplified Chinese as the first translation. Mood reasons and the game's vocabulary now travel as ids/phrases rather than English prose. Along the way: three push notifications still deep-linked to the `activity` tab removed in fd520a2, the age gate's heading hardcoded 18 next to an interpolated `MIN_AGE`, `MOVE_ICON` was keyed by the English word "Flies", the web map tested `moves === 'Flies'`, and signing a device out reported nothing when it failed |
 | 2026-09-19 | Locale codes are script-qualified: `zh-Hans`, not a bare `zh`, since Simplified and Traditional are different writing systems rather than different spellings. `resolveLocale` keeps the script and infers it from the region (`zh-TW` → Traditional), so adding `zh-Hant` is a catalogue plus one line. Fixed `measurementFor`, which read the second subtag as the region and so saw `hans` in `zh-Hans-US` — an American Chinese reader would have got metric |
+| 2026-09-19 | Traditional Chinese (`zh-Hant`), written out in full rather than spread over Simplified — 269 character forms converted plus genuine vocabulary differences (貼文, 追蹤, 按讚, 設定, 行事曆, 大頭貼, 國碼), targeting Taiwan usage. `zh-TW`/`zh-HK`/`zh-MO` now route to it by region alone |

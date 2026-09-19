@@ -1,7 +1,8 @@
 import { en, type TranslationKey } from "./en";
 import { zhHans } from "./zh-Hans";
+import { zhHant } from "./zh-Hant";
 
-export { en, zhHans };
+export { en, zhHans, zhHant };
 export * from "./content";
 export type { TranslationKey };
 
@@ -12,10 +13,10 @@ export type { TranslationKey };
  * and screens are built on the device — two catalogues would drift, and the one
  * that drifts is always the one you can't see.
  *
- * English is the source; `zh-Hans.ts` is the first translation and the proof that a
- * second locale is a file rather than a refactor. It's typed as a *complete*
- * record of `en`'s keys, so adding an English string without a Chinese one stops
- * the build rather than quietly shipping English into a Chinese screen.
+ * English is the source. `zh-Hans.ts` and `zh-Hant.ts` are each typed as a
+ * *complete* record of `en`'s keys, so adding an English string without translating
+ * it stops the build rather than quietly shipping English into a Chinese screen.
+ * A third locale is a file and one `LOCALES` line — no resolver change.
  */
 
 /**
@@ -27,6 +28,7 @@ export type { TranslationKey };
 export const LOCALES = [
   { code: "en", label: "English", endonym: "English" },
   { code: "zh-Hans", label: "Simplified Chinese", endonym: "简体中文" },
+  { code: "zh-Hant", label: "Traditional Chinese", endonym: "繁體中文" },
 ] as const;
 
 export type Locale = (typeof LOCALES)[number]["code"];
@@ -34,7 +36,7 @@ export type Locale = (typeof LOCALES)[number]["code"];
 export const DEFAULT_LOCALE: Locale = "en";
 
 /** Catalogues keyed by locale. New locales are checked against `en`'s keys. */
-const CATALOGUES: Record<Locale, Partial<Record<TranslationKey, string>>> = { en, "zh-Hans": zhHans };
+const CATALOGUES: Record<Locale, Partial<Record<TranslationKey, string>>> = { en, "zh-Hans": zhHans, "zh-Hant": zhHant };
 
 /**
  * Splits a BCP-47 tag into the parts we care about.
@@ -82,11 +84,12 @@ function preferredTag({ language, script, region }: ReturnType<typeof parseTag>)
 /**
  * When we don't have the preferred catalogue, the next best one — not English.
  *
- * A Traditional reader is far better served by Simplified than by a language they
- * may not read at all. Stated as a deliberate fallback rather than left to fall
- * out of a truncated tag, which is what it used to do.
+ * Both Chinese catalogues exist now, so nothing currently routes through this. It
+ * stays because the shape is the point: a reader of one script is far better served
+ * by the other than by a language they may not read at all, and that should be a
+ * stated fallback rather than something that falls out of a truncated tag.
  */
-const NEXT_BEST: Record<string, string> = { "zh-hant": "zh-hans" };
+const NEXT_BEST: Record<string, string> = { "zh-hant": "zh-hans", "zh-hans": "zh-hant" };
 
 /**
  * Narrows anything — a device tag like `en-GB` or `zh-Hant-TW`, a stored column,
