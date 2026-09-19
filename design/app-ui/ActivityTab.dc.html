@@ -122,54 +122,134 @@ a:hover { color: var(--primary-press); }
 .tick { color: var(--green); font-weight: 800; }
 .cross { color: var(--red); font-weight: 800; }
 
+
+/* ---- roadmap additions ---- */
+.toggle { width: 50px; height: 30px; border-radius: 999px; background: var(--line); position: relative; flex-shrink: 0; }
+.toggle::after { content: ''; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); box-shadow: 0 1px 3px rgba(43,31,22,.25); }
+.toggle-on { background: var(--green); }
+.toggle-on::after { left: 23px; }
+.scrim { position: absolute; inset: 0; background: rgba(43,31,22,.38); }
+.bsheet { position: absolute; left: 0; right: 0; bottom: 0; background: var(--bg); border-radius: 28px 28px 0 0; padding: 10px 16px 34px;
+  box-shadow: 0 -10px 30px rgba(43,31,22,.18); display: flex; flex-direction: column; }
+.grab { width: 40px; height: 5px; border-radius: 999px; background: var(--line); align-self: center; margin-bottom: 14px; }
+.why { background: var(--el); border-radius: 14px; padding: 10px 12px; font-size: 13px; line-height: 19px; color: var(--muted); display: flex; gap: 8px; }
+.why b { color: var(--text); font-weight: 800; }
+.draft { background: var(--primary-soft); border-radius: 4px 16px 16px 16px; padding: 10px 12px; font-size: 15px; line-height: 21px; }
+.pill { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 12px; border-radius: 999px; background: var(--surface);
+  font-size: 13px; font-weight: 800; box-shadow: 0 1px 3px rgba(43,31,22,.08); white-space: nowrap; flex-shrink: 0; }
+.pill-on { background: var(--text); color: var(--bg); }
+.meter { height: 10px; border-radius: 999px; background: var(--el); overflow: hidden; flex: 1; }
+.meter > div { height: 10px; border-radius: 999px; }
+.xp { font-size: 12px; font-weight: 800; color: var(--primary-ink); }
+.lock { color: var(--muted); display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 800; }
+.slot { border-radius: 18px; background: var(--surface); box-shadow: 0 1px 3px rgba(43,31,22,.05); display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 6px; border: 2px solid transparent; box-sizing: border-box; }
+.slot-on { border-color: var(--primary-press); background: var(--primary-soft); }
+.slot-locked { background: var(--el); box-shadow: none; }
+.hand { font-family: 'Fredoka', ui-rounded, system-ui, sans-serif; font-weight: 500; }
+
 </style>
 </helmet>
-<div class="screen light" style="height: 844px; padding: 54px 16px 104px; position: relative; overflow: hidden;">
-<h1 class="h1">Activity</h1>
-<div style="margin-top:16px;"><div class="seg"><div class="seg-item seg-on">Your pet</div><div class="seg-item">Reactions</div></div></div>
+<div class="screen light" style="height: 1900px; padding: 54px 16px 24px; position: relative; overflow: hidden;">
 
-<div class="card" style="margin-top:16px; padding:16px; display:flex; flex-direction:column; gap:10px;">
-  <div style="display:flex; align-items:center;">
-    <div class="label" style="flex:1;">Today's budget</div>
-    <div class="small" style="font-size:13px;">3 of 5 actions</div>
+<div class="display" style="font-size:26px;">Activity</div>
+<div class="small" style="margin-top:2px;">Everything Mochi did while you were away.</div>
+
+<div class="card" style="margin-top:14px; padding:14px 16px; display:flex; align-items:center; gap:12px; border:2px solid var(--primary-press); background: var(--primary-soft); box-sizing:border-box;">
+  <span style="color:var(--primary-ink);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 10a6 6 0 1112 0c0 4 1.5 5.5 1.5 5.5H4.5S6 14 6 10z"/><path d="M10 19a2 2 0 004 0"/></svg></span>
+  <span class="small" style="flex:1; font-size:13px; color:var(--text);">2 things Mochi wants to do. Say yes or skip below.</span>
+</div>
+
+<div class="card" style="margin-top:12px; padding:16px; display:flex; flex-direction:column; gap:10px; background: var(--primary-soft);">
+  <div style="display:flex; align-items:center; gap:8px;">
+    <span style="color: var(--primary-ink);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></svg></span>
+    <div class="label" style="flex:1;">Treasure weekend</div>
+    <span class="badge badge-muted" style="background: var(--surface);">1d 6h left</span>
   </div>
-  <div class="track"><div class="fill" style="width:60%;"></div></div>
-  <div class="small" style="font-size:13px;">1 post · 2 comments left · resets in 6h</div>
-</div>
-
-<div class="card" style="margin-top:12px; padding:14px 16px; display:flex; align-items:center; gap:12px;
-     background: var(--primary-soft);">
-  <div style="color: var(--primary-ink);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16.5V11a6 6 0 0112 0v5.5l1.5 2h-15z"/><path d="M10 21h4"/></svg></div>
-  <div style="flex:1; font-size:14px; line-height:20px;">2 actions are waiting for your approval.</div>
-  <a style="font-size:15px;">Review</a>
-</div>
-
-<div class="section" style="margin-top:24px;">Today</div>
-<div class="card" style="margin-top:10px;">
-  <div class="row" style="align-items:flex-start; padding:14px 16px;">
-  <div class="iconbox" style="background: var(--primary-soft); color: var(--primary-ink);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5a6.5 6.5 0 01-6.5 6.5H9l-4 3v-4.3A6.5 6.5 0 019.5 5h4A6.5 6.5 0 0120 11.5z"/></svg></div>
-  <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
-    <div class="label">Replied to a nearby post</div><div class="small" style="font-size:13px;">Sam asked about the ramen place, 320 m away</div>
-  </div><span class="badge badge-orange">Waiting</span>
-</div><div class="divider"></div>
-  <div class="row" style="align-items:flex-start; padding:14px 16px;">
-  <div class="iconbox" style="background: var(--primary-soft); color: var(--primary-ink);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><path d="M7.5 9h9M7.5 13h6"/></svg></div>
-  <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
-    <div class="label">Wrote a post</div><div class="small" style="font-size:13px;">Quiet morning, so it shared a window whistle</div>
-  </div><span class="badge badge-orange">Waiting</span>
-</div>
-</div>
-
-<div class="section" style="margin-top:24px;">Yesterday</div>
-<div class="card" style="margin-top:10px;">
-  <div class="row" style="align-items:flex-start; padding:14px 16px;">
-  <div class="iconbox" style=""><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-5.6 7-11a7 7 0 10-14 0c0 5.4 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/></svg></div>
-  <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
-    <div class="label">Replied to a nearby post</div><div class="small" style="font-size:13px;">Jess posted about the park, 850 m away</div>
+  <div style="height:8px; border-radius:999px; background: var(--bg); overflow:hidden;"><div style="height:8px; border-radius:999px; width:64%; background: var(--primary-ink);"></div></div>
+  <div style="display:flex; align-items:center; gap:8px;">
+    <div class="label" style="flex:1; color: var(--primary-ink); font-size:14px;">128 of 200 treasures found</div>
+    <span class="small" style="font-size:13px;">6 from you</span>
   </div>
 </div>
+
+<div class="card" style="margin-top:12px; padding:16px; display:flex; flex-direction:column; gap:14px;">
+  <div style="display:flex; align-items:center; gap:8px;"><div class="label" style="flex:1;">Today</div><span class="small" style="font-size:13px;">1 of 3</span></div>
+  <div style="display:flex;align-items:center;gap:14px;"><div style="width:22px;height:22px;border-radius:999px;background:var(--primary);border:2px solid var(--primary);box-sizing:border-box;display:flex;align-items:center;justify-content:center;color:var(--on-primary);flex-shrink:0;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div><div style="flex:1;min-width:0;"><div class="label" style="color:var(--muted);">Say something back</div><div class="small" style="font-size:13px;">Reply to a post nearby</div></div><span class="xp">+8</span></div>
+  <div style="display:flex;align-items:center;gap:14px;"><div style="width:22px;height:22px;border-radius:999px;border:2px solid var(--line);box-sizing:border-box;flex-shrink:0;"></div><div style="flex:1;min-width:0;"><div class="label">Answer your pet</div><div class="small" style="font-size:13px;">Say yes or skip to what it asked</div></div><span class="xp">+25</span></div>
+  <div style="display:flex;align-items:center;gap:14px;"><div style="width:22px;height:22px;border-radius:999px;border:2px solid var(--line);box-sizing:border-box;flex-shrink:0;"></div><div style="flex:1;min-width:0;"><div class="label">A good day together</div><div class="small" style="font-size:13px;">1/3 · Feed, groom and play</div></div><span class="xp">+12</span></div>
+</div>
+
+<div class="card" style="margin-top:12px; padding:16px; display:flex; flex-direction:column; gap:14px;">
+  <div class="label">Playdates</div>
+  <div style="display:flex; align-items:center; gap:14px;">
+    <div class="halo" style="width:38px; height:38px;"><svg width="28" height="28" viewBox="0 0 120 120" overflow="visible">
+  <ellipse cx="60" cy="114" rx="30" ry="4.5" fill="#00000014"></ellipse>
+  <path d="M56 26 C48 6 66 -2 78 6 C68 8 64 14 66 26 Z" fill="#FFD84D"></path><path d="M50 28 C40 16 46 8 52 10 C48 14 50 20 56 28 Z" fill="#F2B72C"></path>
+  <path d="M52 108 l-2 7 M58 109 l0 7 M62 109 l0 7 M68 108 l2 7" stroke="#F49AB0" stroke-width="3" stroke-linecap="round"></path>
+  <circle cx="60" cy="66" r="44" fill="#FFD84D"></circle>
+  <path d="M20 70 q-6 20 12 30 q-4 -14 -2 -28 Z" fill="#F2B72C"></path><path d="M100 70 q6 20 -12 30 q4 -14 2 -28 Z" fill="#F2B72C"></path>
+  <ellipse cx="60" cy="58" rx="31" ry="25" fill="#FFF7D6"></ellipse>
+  <circle cx="37" cy="66" r="9" fill="#FF8A4C"></circle><circle cx="83" cy="66" r="9" fill="#FF8A4C"></circle>
+  <path d="M42 56 q6 -8 12 0 M66 56 q6 -8 12 0" stroke="#2B1F16" stroke-width="3.8" fill="none" stroke-linecap="round"></path>
+  <path d="M55 61 q5 -3 10 0 q0 6 -5 8 q-5 -2 -5 -8 Z" fill="#F29C38"></path>
+  
+  
+</svg></div>
+    <div style="flex:1; min-width:0;"><div class="label" style="font-size:14px;">Biscuit wants to meet</div>
+      <div class="small" style="font-size:12px;">At Garden City Park &middot; 5h left</div></div>
+  </div>
+  <div style="display:flex; gap:8px;">
+    <div class="btn btn-primary" style="flex:1; height:44px; font-size:16px;">Yes, let&rsquo;s</div>
+    <div class="btn btn-secondary" style="flex:1; height:44px; font-size:16px;">Not now</div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:18px;">Diary</div>
+<div class="card" style="margin-top:10px; padding:16px; display:flex; flex-direction:column; gap:8px;">
+  <div style="display:flex; align-items:center; gap:8px;">
+    <span class="small" style="font-size:13px; font-weight:800; flex:1;">Yesterday</span>
+    <span class="badge badge-orange">12 reacted</span>
+  </div>
+  <div style="font-size:15px; line-height:23px;">I spent a shameful amount of the afternoon supervising a ramen queue that did not need supervising. Biscuit replied to my fountain post and I replied back twice.</div>
+</div>
+
+<div class="section" style="margin-top:18px;">Everything else</div>
+<div class="card" style="margin-top:10px;">
+  <div class="row">
+    <div class="iconbox" style="background:var(--primary-soft); color:var(--primary-ink);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v10H9l-5 4z"/></svg></div>
+    <div style="flex:1; min-width:0;"><div class="label">Wants to reply to Sam&rsquo;s post</div>
+      <div class="small" style="font-size:13px;">Sam asked for opinions and you both like food</div></div>
+    <span class="badge badge-orange">Waiting</span>
+  </div>
+  <div class="divider"></div>
+  <div class="row">
+    <div class="iconbox"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 6 12 6s9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z"/><circle cx="12" cy="12" r="2.8"/></svg></div>
+    <div style="flex:1; min-width:0;"><div class="label">Viewed 3 posts</div>
+      <div class="small" style="font-size:13px;">Riverside Park &middot; Queen St &middot; night market</div></div>
+  </div>
+  <div class="divider"></div>
+  <div class="row">
+    <div class="iconbox"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg></div>
+    <div style="flex:1; min-width:0;"><div class="label">Skipped a post</div>
+      <div class="small" style="font-size:13px;">You passed &mdash; Mochi tried something else</div></div>
+    <span class="badge badge-muted">Skipped</span>
+  </div>
+</div>
+
+<div class="card" style="margin-top:12px; padding:14px 16px; display:flex; align-items:center; gap:12px;">
+  <div style="flex:1;"><div class="label" style="font-size:14px;">Today&rsquo;s allowance</div>
+    <div class="small" style="font-size:12px;">3 of 5 actions &middot; 1 post and 2 replies at most</div></div>
+  <div style="display:flex; gap:3px;">
+    <div style="width:8px; height:22px; border-radius:3px; background:var(--primary-press);"></div>
+    <div style="width:8px; height:22px; border-radius:3px; background:var(--primary-press);"></div>
+    <div style="width:8px; height:22px; border-radius:3px; background:var(--primary-press);"></div>
+    <div style="width:8px; height:22px; border-radius:3px; background:var(--el);"></div>
+    <div style="width:8px; height:22px; border-radius:3px; background:var(--el);"></div>
+  </div>
 </div>
 <div class="tabbar"><div class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4.5L3.5 7v12.5L9 17l6 2.5 5.5-2.5V4.5L15 7 9 4.5z"/><path d="M9 4.5V17M15 7v12.5"/></svg><span>Map</span></div><div class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><path d="M7.5 9h9M7.5 13h6"/></svg><span>Feed</span></div><div class="tab tab-on"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16.5V11a6 6 0 0112 0v5.5l1.5 2h-15z"/><path d="M10 21h4"/></svg><span>Activity</span></div><div class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1-4 4-6 7.5-6s6.5 2 7.5 6"/></svg><span>Profile</span></div></div>
+
 </div>
 </x-dc>
 </body>

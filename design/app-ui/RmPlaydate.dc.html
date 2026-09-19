@@ -150,21 +150,18 @@ a:hover { color: var(--primary-press); }
 
 </style>
 </helmet>
-<div class="screen light" style="height: 844px; padding: 54px 16px 24px; position: relative; overflow: hidden;">
-<div class="map">
-  <div class="road" style="left:-20px; top:300px; width:440px; height:26px; transform: rotate(-7deg);"></div>
-  <div class="road" style="left:150px; top:-40px; width:24px; height:940px;"></div>
-  <div class="park" style="left:-30px; top:430px; width:210px; height:240px;"></div>
-  <div class="water" style="left:250px; top:620px; width:220px; height:150px;"></div>
-  <div class="blk" style="left:14px; top:120px; width:120px; height:150px;"></div>
-  <div class="blk" style="left:196px; top:96px; width:96px; height:120px;"></div>
-  <div class="blk" style="left:310px; top:150px; width:110px; height:200px;"></div>
-  <div class="blk" style="left:196px; top:352px; width:150px; height:90px;"></div>
-  <div class="blk" style="left:30px; top:700px; width:100px; height:120px;"></div>
+<div class="screen light" style="height: 1120px; padding: 54px 16px 24px; position: relative; overflow: hidden;">
 
-  <div style="position:absolute; left:112px; top:188px; width:70px; height:70px; border-radius:50%; background: rgba(47,158,94,.18); border:2px dashed var(--green);"></div>
-  <div style="position:absolute; left:128px; top:204px; color: var(--green);"><svg width="38" height="38" viewBox="0 0 24 24"><path d="M12 2.5a7 7 0 017 7c0 5-7 12.5-7 12.5S5 14.5 5 9.5a7 7 0 017-7z" fill="currentColor" stroke="#FFFDF8" stroke-width="1.6"/></svg></div>
-  <div style="position:absolute; left:40px; top:300px;"><svg width="50" height="50" viewBox="0 0 120 120" overflow="visible">
+<div style="display:flex; align-items:center; gap:12px;">
+  <div class="display" style="font-size:26px; flex:1;">Activity</div>
+</div>
+
+<div class="card" style="margin-top:16px; padding:16px; display:flex; flex-direction:column; gap:14px;">
+  <div class="label">Playdates</div>
+
+  <div style="display:flex; flex-direction:column; gap:10px;">
+    <div style="display:flex; align-items:center; gap:14px;">
+  <div class="halo" style="width:38px; height:38px;"><svg width="28" height="28" viewBox="0 0 120 120" overflow="visible">
   <ellipse cx="60" cy="114" rx="30" ry="4.5" fill="#00000014"></ellipse>
   <path d="M56 26 C48 6 66 -2 78 6 C68 8 64 14 66 26 Z" fill="#FFD84D"></path><path d="M50 28 C40 16 46 8 52 10 C48 14 50 20 56 28 Z" fill="#F2B72C"></path>
   <path d="M52 108 l-2 7 M58 109 l0 7 M62 109 l0 7 M68 108 l2 7" stroke="#F49AB0" stroke-width="3" stroke-linecap="round"></path>
@@ -177,28 +174,18 @@ a:hover { color: var(--primary-press); }
   
   
 </svg></div>
-  <div style="position:absolute; left:250px; top:130px;"><svg width="50" height="50" viewBox="0 0 120 120" overflow="visible">
-  <ellipse cx="60" cy="114" rx="30" ry="4.5" fill="#00000014"></ellipse>
-  <path d="M40 36 C30 6 36 -8 46 -6 C56 -4 56 14 52 34 Z" fill="#E9C9A1"></path>
-  <path d="M42 30 C36 8 40 -2 46 -1 C51 0 52 12 49 30 Z" fill="#FFB8C6"></path>
-  <path d="M80 36 C92 10 94 -4 84 -6 C72 -6 68 12 68 34 Z" fill="#E9C9A1"></path>
-  <path d="M78 30 C86 12 88 2 83 0 C76 0 73 12 72 30 Z" fill="#FFB8C6"></path>
-  <ellipse cx="46" cy="110" rx="11" ry="6" fill="#F4D9BD"></ellipse><ellipse cx="74" cy="110" rx="11" ry="6" fill="#F4D9BD"></ellipse>
-  <circle cx="60" cy="68" r="43" fill="#E9C9A1"></circle>
-  <ellipse cx="60" cy="84" rx="26" ry="22" fill="#FFF4E3"></ellipse>
-  <ellipse cx="22" cy="88" rx="8" ry="11" fill="#D6AE7F"></ellipse><ellipse cx="98" cy="88" rx="8" ry="11" fill="#D6AE7F"></ellipse>
-  <circle cx="38" cy="70" r="8" fill="#FF9AAE" opacity="0.8"></circle><circle cx="82" cy="70" r="8" fill="#FF9AAE" opacity="0.8"></circle>
-  <circle cx="47" cy="58" r="6" fill="#2B1F16"></circle><circle cx="73" cy="58" r="6" fill="#2B1F16"></circle>
-  <circle cx="49" cy="56" r="2" fill="#FFFFFF"></circle><circle cx="75" cy="56" r="2" fill="#FFFFFF"></circle>
-  <path d="M56 66 q4 3 8 0 q-1 4 -4 5 q-3 -1 -4 -5 Z" fill="#E8798F"></path>
-  <path d="M60 71 v4 M60 75 q-4 4 -8 1 M60 75 q4 4 8 1" stroke="#2B1F16" stroke-width="2.2" fill="none" stroke-linecap="round"></path>
-</svg></div>
+  <div style="flex:1; min-width:0;"><div class="label" style="font-size:14px;">Biscuit wants to meet</div>
+    <div class="small" style="font-size:12px;">At Garden City Park &middot; 5h left</div></div>
+  
 </div>
-<div class="scrim" style="background: rgba(43,31,22,.18);"></div>
-<div class="bsheet">
-  <div class="grab"></div>
-  <div style="display:flex; align-items:center; gap:12px;">
-    <div style="display:flex;"><div class="halo" style="width:52px; height:52px; background:var(--primary-soft);"><svg width="42" height="42" viewBox="0 0 120 120" overflow="visible">
+    <div style="display:flex; gap:8px;">
+      <div class="btn btn-primary" style="flex:1; height:44px; font-size:16px;">Yes, let&rsquo;s</div>
+      <div class="btn btn-secondary" style="flex:1; height:44px; font-size:16px;">Not now</div>
+    </div>
+  </div>
+
+  <div style="display:flex; align-items:center; gap:14px;">
+  <div class="halo" style="width:38px; height:38px;"><svg width="28" height="28" viewBox="0 0 120 120" overflow="visible">
   <ellipse cx="60" cy="114" rx="30" ry="4.5" fill="#00000014"></ellipse>
   <path d="M56 26 C48 6 66 -2 78 6 C68 8 64 14 66 26 Z" fill="#FFD84D"></path><path d="M50 28 C40 16 46 8 52 10 C48 14 50 20 56 28 Z" fill="#F2B72C"></path>
   <path d="M52 108 l-2 7 M58 109 l0 7 M62 109 l0 7 M68 108 l2 7" stroke="#F49AB0" stroke-width="3" stroke-linecap="round"></path>
@@ -210,39 +197,65 @@ a:hover { color: var(--primary-press); }
   <path d="M55 61 q5 -3 10 0 q0 6 -5 8 q-5 -2 -5 -8 Z" fill="#F29C38"></path>
   
   
-</svg></div><div style="margin-left:-14px; border-radius:50%; border:3px solid var(--bg);"><div class="halo" style="width:52px; height:52px; background:#FCE4EE;"><svg width="42" height="42" viewBox="0 0 120 120" overflow="visible">
-  <ellipse cx="60" cy="114" rx="30" ry="4.5" fill="#00000014"></ellipse>
-  <path d="M40 36 C30 6 36 -8 46 -6 C56 -4 56 14 52 34 Z" fill="#E9C9A1"></path>
-  <path d="M42 30 C36 8 40 -2 46 -1 C51 0 52 12 49 30 Z" fill="#FFB8C6"></path>
-  <path d="M80 36 C92 10 94 -4 84 -6 C72 -6 68 12 68 34 Z" fill="#E9C9A1"></path>
-  <path d="M78 30 C86 12 88 2 83 0 C76 0 73 12 72 30 Z" fill="#FFB8C6"></path>
-  <ellipse cx="46" cy="110" rx="11" ry="6" fill="#F4D9BD"></ellipse><ellipse cx="74" cy="110" rx="11" ry="6" fill="#F4D9BD"></ellipse>
-  <circle cx="60" cy="68" r="43" fill="#E9C9A1"></circle>
-  <ellipse cx="60" cy="84" rx="26" ry="22" fill="#FFF4E3"></ellipse>
-  <ellipse cx="22" cy="88" rx="8" ry="11" fill="#D6AE7F"></ellipse><ellipse cx="98" cy="88" rx="8" ry="11" fill="#D6AE7F"></ellipse>
-  <circle cx="38" cy="70" r="8" fill="#FF9AAE" opacity="0.8"></circle><circle cx="82" cy="70" r="8" fill="#FF9AAE" opacity="0.8"></circle>
-  <circle cx="47" cy="58" r="6" fill="#2B1F16"></circle><circle cx="73" cy="58" r="6" fill="#2B1F16"></circle>
-  <circle cx="49" cy="56" r="2" fill="#FFFFFF"></circle><circle cx="75" cy="56" r="2" fill="#FFFFFF"></circle>
-  <path d="M56 66 q4 3 8 0 q-1 4 -4 5 q-3 -1 -4 -5 Z" fill="#E8798F"></path>
-  <path d="M60 71 v4 M60 75 q-4 4 -8 1 M60 75 q4 4 8 1" stroke="#2B1F16" stroke-width="2.2" fill="none" stroke-linecap="round"></path>
-</svg></div></div></div>
-    <div style="flex:1; min-width:0;"><div class="display" style="font-size:22px; line-height:26px;">Playdate with Biscuit?</div><div class="small" style="font-size:13px;">Sam is nearby and they're good friends</div></div>
-  </div>
-  <div class="section" style="margin-top:18px;">Meet at</div>
-  <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
-    <div class="option option-on" style="padding:12px 14px;"><div class="radio radio-on"></div><div style="flex:1;"><div class="label">Riverside Park · east gate</div><div class="small" style="font-size:13px;">4 min walk for you, 5 for Sam</div></div><span class="badge badge-green">Pet park</span></div>
-    <div class="option" style="padding:12px 14px;"><div class="radio"></div><div style="flex:1;"><div class="label">Beanery café</div><div class="small" style="font-size:13px;">6 min walk for you, 3 for Sam</div></div></div>
-  </div>
-  <div class="section" style="margin-top:16px;">When</div>
-  <div style="display:flex; gap:8px; margin-top:8px;">
-    <span class="chip" style="flex:1; justify-content:center;">Now</span>
-    <span class="chip chip-on" style="flex:1; justify-content:center;">In 30 min</span>
-    <span class="chip" style="flex:1; justify-content:center;">Tonight</span>
-  </div>
-  <div class="why" style="margin-top:14px;"><span style="color: var(--green); flex-shrink:0; margin-top:1px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5l7 2.8v5.2c0 4.4-3 7.8-7 9-4-1.2-7-4.6-7-9V6.3z"/><path d="M9 12l2.2 2.2L15.5 10"/></svg></span><span>Nothing is shared unless <b>Sam says yes too</b>. Neither of you ever sees the other's live location.</span></div>
-  <div class="btn btn-primary" style="margin-top:14px;">Send invite</div>
-  <div class="link" style="padding-bottom:0;">Not now</div>
+</svg></div>
+  <div style="flex:1; min-width:0;"><div class="label" style="font-size:14px;">Pepper</div>
+    <div class="small" style="font-size:12px;">Waiting on them &middot; 3h left</div></div>
+  <span class="badge badge-muted">Asked</span>
 </div>
+
+  <div class="small" style="font-size:13px;">Also nearby</div>
+  <div style="display:flex; align-items:center; gap:14px;">
+  <div class="halo" style="width:38px; height:38px;"><svg width="28" height="28" viewBox="0 0 120 120" overflow="visible">
+  <ellipse cx="60" cy="114" rx="30" ry="4.5" fill="#00000014"></ellipse>
+  <path d="M56 26 C48 6 66 -2 78 6 C68 8 64 14 66 26 Z" fill="#FFD84D"></path><path d="M50 28 C40 16 46 8 52 10 C48 14 50 20 56 28 Z" fill="#F2B72C"></path>
+  <path d="M52 108 l-2 7 M58 109 l0 7 M62 109 l0 7 M68 108 l2 7" stroke="#F49AB0" stroke-width="3" stroke-linecap="round"></path>
+  <circle cx="60" cy="66" r="44" fill="#FFD84D"></circle>
+  <path d="M20 70 q-6 20 12 30 q-4 -14 -2 -28 Z" fill="#F2B72C"></path><path d="M100 70 q6 20 -12 30 q4 -14 2 -28 Z" fill="#F2B72C"></path>
+  <ellipse cx="60" cy="58" rx="31" ry="25" fill="#FFF7D6"></ellipse>
+  <circle cx="37" cy="66" r="9" fill="#FF8A4C"></circle><circle cx="83" cy="66" r="9" fill="#FF8A4C"></circle>
+  <path d="M42 56 q6 -8 12 0 M66 56 q6 -8 12 0" stroke="#2B1F16" stroke-width="3.8" fill="none" stroke-linecap="round"></path>
+  <path d="M55 61 q5 -3 10 0 q0 6 -5 8 q-5 -2 -5 -8 Z" fill="#F29C38"></path>
+  
+  
+</svg></div>
+  <div style="flex:1; min-width:0;"><div class="label" style="font-size:14px;">Kiwi</div>
+    <div class="small" style="font-size:12px;">Dana Kim &middot; 1.1 km &middot; met before</div></div>
+  <div class="btn btn-secondary" style="height:36px; padding:0 16px; font-size:14px; box-shadow:0 2px 0 var(--line);">Ask</div>
+</div>
+  <div style="display:flex; align-items:center; gap:14px;">
+  <div class="halo" style="width:38px; height:38px;"><svg width="28" height="28" viewBox="0 0 120 120" overflow="visible">
+  <ellipse cx="60" cy="114" rx="30" ry="4.5" fill="#00000014"></ellipse>
+  <path d="M56 26 C48 6 66 -2 78 6 C68 8 64 14 66 26 Z" fill="#FFD84D"></path><path d="M50 28 C40 16 46 8 52 10 C48 14 50 20 56 28 Z" fill="#F2B72C"></path>
+  <path d="M52 108 l-2 7 M58 109 l0 7 M62 109 l0 7 M68 108 l2 7" stroke="#F49AB0" stroke-width="3" stroke-linecap="round"></path>
+  <circle cx="60" cy="66" r="44" fill="#FFD84D"></circle>
+  <path d="M20 70 q-6 20 12 30 q-4 -14 -2 -28 Z" fill="#F2B72C"></path><path d="M100 70 q6 20 -12 30 q4 -14 2 -28 Z" fill="#F2B72C"></path>
+  <ellipse cx="60" cy="58" rx="31" ry="25" fill="#FFF7D6"></ellipse>
+  <circle cx="37" cy="66" r="9" fill="#FF8A4C"></circle><circle cx="83" cy="66" r="9" fill="#FF8A4C"></circle>
+  <path d="M42 56 q6 -8 12 0 M66 56 q6 -8 12 0" stroke="#2B1F16" stroke-width="3.8" fill="none" stroke-linecap="round"></path>
+  <path d="M55 61 q5 -3 10 0 q0 6 -5 8 q-5 -2 -5 -8 Z" fill="#F29C38"></path>
+  
+  
+</svg></div>
+  <div style="flex:1; min-width:0;"><div class="label" style="font-size:14px;">Toffee</div>
+    <div class="small" style="font-size:12px;">Lee Wong &middot; 2.4 km</div></div>
+  <div class="btn btn-secondary" style="height:36px; padding:0 16px; font-size:14px; box-shadow:0 2px 0 var(--line);">Ask</div>
+</div>
+</div>
+
+<div class="why" style="margin-top:12px;">
+  <b>An invitation, never an arrangement.</b><span>Nothing is shared until the other person accepts, and neither of you ever sees the other&rsquo;s live location &mdash; only a rounded distance.</span>
+</div>
+<div class="why" style="margin-top:8px;">
+  <b>Four gates before somebody is even suggested.</b><span>A real account, <b>within 3 km</b>, seen recently, and already friends &mdash; the pets have to have built up to it. A playdate that can&rsquo;t actually happen is worse than none.</span>
+</div>
+<div class="why" style="margin-top:8px;">
+  <b>Never with a seeded account.</b><span>Bots fill the room, never the friendship. They can make a neighbourhood look inhabited; they can never be the other half of this.</span>
+</div>
+<div class="why" style="margin-top:8px;">
+  <b>Proposals go stale after 6 hours.</b><span>Proximity was the whole basis for suggesting it, so an invite that lingers overnight is answering a question nobody is still asking.</span>
+</div>
+<div class="tabbar"><div class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4.5L3.5 7v12.5L9 17l6 2.5 5.5-2.5V4.5L15 7 9 4.5z"/><path d="M9 4.5V17M15 7v12.5"/></svg><span>Map</span></div><div class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><path d="M7.5 9h9M7.5 13h6"/></svg><span>Feed</span></div><div class="tab tab-on"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16.5V11a6 6 0 0112 0v5.5l1.5 2h-15z"/><path d="M10 21h4"/></svg><span>Activity</span></div><div class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1-4 4-6 7.5-6s6.5 2 7.5 6"/></svg><span>Profile</span></div></div>
+
 </div>
 </x-dc>
 </body>

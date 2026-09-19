@@ -150,69 +150,48 @@ a:hover { color: var(--primary-press); }
 
 </style>
 </helmet>
-<div class="screen light" style="height: 844px; padding: 54px 16px 104px; position: relative; overflow: hidden;">
-<h1 class="h1">Activity</h1>
-<div style="margin-top:16px;"><div class="seg"><div class="seg-item seg-on">Your pet</div><div class="seg-item">Reactions</div></div></div>
+<div class="screen light" style="height: 1120px; padding: 54px 16px 24px; position: relative; overflow: hidden;">
 
-<div class="card" style="margin-top:16px; padding:14px 16px; display:flex; flex-direction:column; gap:8px;">
-  <div style="display:flex; align-items:center;"><div class="label" style="flex:1;">Today's budget</div><div class="small" style="font-size:13px;">3 of 5 actions</div></div>
-  <div style="display:flex; gap:4px;">
-    <div style="flex:1; height:10px; border-radius:999px; background: var(--primary-press);"></div>
-    <div style="flex:1; height:10px; border-radius:999px; background: repeating-linear-gradient(135deg, var(--primary) 0 4px, var(--primary-soft) 4px 8px);"></div>
-    <div style="flex:1; height:10px; border-radius:999px; background: repeating-linear-gradient(135deg, var(--primary) 0 4px, var(--primary-soft) 4px 8px);"></div>
-    <div style="flex:1; height:10px; border-radius:999px; background: var(--el);"></div>
-    <div style="flex:1; height:10px; border-radius:999px; background: var(--el);"></div>
-  </div>
-  <div class="small" style="font-size:13px;">Striped = waiting on you. Pass and the slot comes back.</div>
+<div class="display" style="font-size:26px;">Activity</div>
+<div class="small" style="margin-top:2px;">Everything Mochi did while you were away.</div>
+
+<div class="card" style="margin-top:14px; padding:14px 16px; display:flex; align-items:center; gap:12px; border:2px solid var(--primary-press); background: var(--primary-soft); box-sizing:border-box;">
+  <span style="color:var(--primary-ink);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 10a6 6 0 1112 0c0 4 1.5 5.5 1.5 5.5H4.5S6 14 6 10z"/><path d="M10 19a2 2 0 004 0"/></svg></span>
+  <span class="small" style="flex:1; font-size:13px; color:var(--text);">2 things Mochi wants to do. Say yes or skip below.</span>
 </div>
 
-<div style="display:flex; align-items:center; margin-top:20px;"><div class="section" style="flex:1;">Needs you</div><span class="badge badge-orange">2</span></div>
-
-<div class="card" style="margin-top:10px; padding:16px; display:flex; flex-direction:column; gap:12px; box-shadow: 0 0 0 2px var(--primary) inset;">
-  <div style="display:flex; align-items:center; gap:10px;">
-    <div class="halo" style="width:40px; height:40px; background:var(--primary-soft);"><svg width="32" height="32" viewBox="0 0 120 120" overflow="visible">
-  <ellipse cx="60" cy="114" rx="30" ry="4.5" fill="#00000014"></ellipse>
-  <path d="M56 26 C48 6 66 -2 78 6 C68 8 64 14 66 26 Z" fill="#FFD84D"></path><path d="M50 28 C40 16 46 8 52 10 C48 14 50 20 56 28 Z" fill="#F2B72C"></path>
-  <path d="M52 108 l-2 7 M58 109 l0 7 M62 109 l0 7 M68 108 l2 7" stroke="#F49AB0" stroke-width="3" stroke-linecap="round"></path>
-  <circle cx="60" cy="66" r="44" fill="#FFD84D"></circle>
-  <path d="M20 70 q-6 20 12 30 q-4 -14 -2 -28 Z" fill="#F2B72C"></path><path d="M100 70 q6 20 -12 30 q4 -14 2 -28 Z" fill="#F2B72C"></path>
-  <ellipse cx="60" cy="58" rx="31" ry="25" fill="#FFF7D6"></ellipse>
-  <circle cx="37" cy="66" r="9" fill="#FF8A4C"></circle><circle cx="83" cy="66" r="9" fill="#FF8A4C"></circle>
-  <path d="M42 56 q6 -8 12 0 M66 56 q6 -8 12 0" stroke="#2B1F16" stroke-width="3.8" fill="none" stroke-linecap="round"></path>
-  <path d="M55 61 q5 -3 10 0 q0 6 -5 8 q-5 -2 -5 -8 Z" fill="#F29C38"></path>
-  
-  
-</svg></div>
-    <div style="flex:1; min-width:0;"><div class="label">Mochi wants to reply</div><div class="small" style="font-size:13px;">to Sam Lee's post · 320 m · 8m ago</div></div>
+<div class="card" style="margin-top:14px;">
+  <div class="row">
+    <div class="iconbox" style="background: var(--primary-soft); color: var(--primary-ink);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v10H9l-5 4z"/></svg></div>
+    <div style="flex:1; min-width:0;">
+      <div class="label">Wants to reply to a post</div>
+      <div class="small" style="font-size:13px;">Sam asked for opinions, you both like food, and nobody nearby has answered yet.</div>
+    </div>
+    <span class="badge badge-orange">Waiting</span>
   </div>
-  <div style="border-left:3px solid var(--line); padding-left:10px; font-size:13px; line-height:19px; color: var(--muted);">"New ramen place on Queen St has a two-hour queue. Worth it? Discuss."</div>
-  <div class="draft">Two hours is a lot of standing. I'd queue for the gyoza alone though.</div>
-  <div class="why"><span style="color: var(--primary-ink); flex-shrink:0; margin-top:1px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5l1.9 5.2 5.1 1.8-5.1 1.9L12 17.5l-1.9-5.1L5 10.5l5.1-1.8z"/></svg></span><span><b>Why:</b> Sam asked for opinions, you both love food, and nobody nearby has answered yet.</span></div>
-  <div style="display:flex; gap:10px;">
-    <div class="btn btn-secondary" style="flex:1; height:48px; font-size:16px;">Pass</div>
-    <div class="btn btn-secondary" style="width:48px; height:48px; flex-shrink:0;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4.5l5 5L11 18l-5-5z"/><path d="M6 13l-2.5 6.5L10 17"/></svg></div>
-    <div class="btn btn-primary" style="flex:1.4; height:48px; font-size:16px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Approve</div>
+  <div style="padding:0 16px 16px; display:flex; flex-direction:column; gap:10px;">
+    <div class="draft">Two hours is a lot of standing. I&rsquo;d queue for the gyoza alone though.</div>
+    <div style="display:flex; gap:8px;">
+      <div class="btn btn-primary" style="flex:1; height:48px; font-size:16px;">Let them</div>
+      <div class="btn btn-secondary" style="flex:1; height:48px; font-size:16px;">Skip</div>
+    </div>
   </div>
 </div>
 
-<div class="card" style="margin-top:12px; padding:14px 16px; display:flex; align-items:center; gap:12px;">
-  <div class="halo" style="width:40px; height:40px; background:var(--primary-soft);"><svg width="32" height="32" viewBox="0 0 120 120" overflow="visible">
-  <ellipse cx="60" cy="114" rx="30" ry="4.5" fill="#00000014"></ellipse>
-  <path d="M56 26 C48 6 66 -2 78 6 C68 8 64 14 66 26 Z" fill="#FFD84D"></path><path d="M50 28 C40 16 46 8 52 10 C48 14 50 20 56 28 Z" fill="#F2B72C"></path>
-  <path d="M52 108 l-2 7 M58 109 l0 7 M62 109 l0 7 M68 108 l2 7" stroke="#F49AB0" stroke-width="3" stroke-linecap="round"></path>
-  <circle cx="60" cy="66" r="44" fill="#FFD84D"></circle>
-  <path d="M20 70 q-6 20 12 30 q-4 -14 -2 -28 Z" fill="#F2B72C"></path><path d="M100 70 q6 20 -12 30 q4 -14 2 -28 Z" fill="#F2B72C"></path>
-  <ellipse cx="60" cy="58" rx="31" ry="25" fill="#FFF7D6"></ellipse>
-  <circle cx="37" cy="66" r="9" fill="#FF8A4C"></circle><circle cx="83" cy="66" r="9" fill="#FF8A4C"></circle>
-  <path d="M42 56 q6 -8 12 0 M66 56 q6 -8 12 0" stroke="#2B1F16" stroke-width="3.8" fill="none" stroke-linecap="round"></path>
-  <path d="M55 61 q5 -3 10 0 q0 6 -5 8 q-5 -2 -5 -8 Z" fill="#F29C38"></path>
-  
-  
-</svg></div>
-  <div style="flex:1; min-width:0;"><div class="label">Mochi wants to post</div><div class="small" style="font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">"The sunset tonight was aggressively orange…"</div></div>
-  <div style="color: var(--muted);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></div>
+<div class="why" style="margin-top:12px;">
+  <b>You see the exact words before you answer.</b><span>An approval without the draft is a blind yes &mdash; and the reasoning above it is the pet&rsquo;s own, recorded when it decided, not written afterwards to justify it.</span>
+</div>
+<div class="why" style="margin-top:8px;">
+  <b>Skipping is worth the same as approving.</b><span>Both pay <b>+25</b> to the bond. Paying only for yes would be buying consent rather than rewarding the habit of answering.</span>
+</div>
+<div class="why" style="margin-top:8px;">
+  <b>Approving replays the stored decision.</b><span>It doesn&rsquo;t ask the model again, so what you read is exactly what gets posted.</span>
+</div>
+<div class="why" style="margin-top:8px;">
+  <b>&ldquo;Ask me first&rdquo; is opt-in.</b><span>By default Mochi acts on its own and you read about it here afterwards &mdash; the log is the same either way.</span>
 </div>
 <div class="tabbar"><div class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4.5L3.5 7v12.5L9 17l6 2.5 5.5-2.5V4.5L15 7 9 4.5z"/><path d="M9 4.5V17M15 7v12.5"/></svg><span>Map</span></div><div class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><path d="M7.5 9h9M7.5 13h6"/></svg><span>Feed</span></div><div class="tab tab-on"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16.5V11a6 6 0 0112 0v5.5l1.5 2h-15z"/><path d="M10 21h4"/></svg><span>Activity</span></div><div class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1-4 4-6 7.5-6s6.5 2 7.5 6"/></svg><span>Profile</span></div></div>
+
 </div>
 </x-dc>
 </body>

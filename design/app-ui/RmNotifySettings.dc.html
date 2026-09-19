@@ -150,49 +150,80 @@ a:hover { color: var(--primary-press); }
 
 </style>
 </helmet>
-<div class="screen light" style="height: 844px; padding: 54px 16px 24px; position: relative; overflow: hidden;">
+<div class="screen light" style="height: 1220px; padding: 54px 16px 24px; position: relative; overflow: hidden;">
+
 <div style="display:flex; align-items:center; gap:12px;">
   <div class="back"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></div>
   <div class="display" style="font-size:20px; flex:1;">Notifications</div>
 </div>
-<div class="small" style="margin-top:12px; font-size:14px;">Mochi only tells you about things that actually happened.</div>
 
-<div class="section" style="margin-top:20px;">How you hear</div>
-<div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
-  <div class="option option-on"><div class="radio radio-on"></div><div style="flex:1;"><div class="label">Morning digest</div><div class="small" style="font-size:13px;">One friendly recap at 8:00</div></div><span class="badge badge-green">Default</span></div>
-  <div class="option"><div class="radio"></div><div style="flex:1;"><div class="label">As it happens</div><div class="small" style="font-size:13px;">Live pings, up to 3 a day</div></div></div>
+<div class="card" style="margin-top:12px; padding:12px 14px; display:flex; align-items:center; gap:10px; background: var(--el);">
+  <span style="color:var(--muted);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 21V4h12l-2.5 4.5L18 13H6"/></svg></span>
+  <span class="small" style="flex:1; font-size:12px;"><b style="color:var(--text);">Not built yet.</b> Every rule below is already enforced on the server; none of it is adjustable, because this screen doesn&rsquo;t exist. Drawn here as the proposal.</span>
 </div>
 
-<div class="section" style="margin-top:22px;">What Mochi tells you</div>
+<div class="sub" style="margin-top:14px; font-size:15px;">Mochi only tells you about things that actually happened.</div>
+
+<div class="section" style="margin-top:16px;">What Mochi tells you &middot; and how often</div>
 <div class="card" style="margin-top:10px;">
   <div class="row">
-  <div class="iconbox"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16.5V11a6 6 0 0112 0v5.5l1.5 2h-15z"/><path d="M10 21h4"/></svg></div>
-  <div style="flex:1; min-width:0;"><div class="label">Asks for your OK</div><div class="small" style="font-size:13px;">Always live, even with the digest</div></div>
-  <div class="toggle toggle-on"></div>
+  <div style="flex:1; min-width:0;"><div class="label">Wants your OK</div>
+    <div class="small" style="font-size:13px;">At most 3 a day</div></div>
+  <span class="badge badge-muted">Always</span>
 </div>
   <div class="divider"></div>
   <div class="row">
-  <div class="iconbox"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.5" r="3.3"/><path d="M3 19.5c.8-3.4 3.2-5 6-5s5.2 1.6 6 5"/><path d="M15.5 5.5a3.2 3.2 0 010 6.2M17.5 14.8c1.8.6 3 2.2 3.5 4.7"/></svg></div>
-  <div style="flex:1; min-width:0;"><div class="label">New friends</div><div class="small" style="font-size:13px;">When Mochi bonds with a pet</div></div>
-  <div class="toggle toggle-on"></div>
+  <div style="flex:1; min-width:0;"><div class="label">Somebody replied</div>
+    <div class="small" style="font-size:13px;">At most 3 a day</div></div>
+  <span class="badge badge-muted">Always</span>
 </div>
   <div class="divider"></div>
   <div class="row">
-  <div class="iconbox"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="9" width="16" height="11" rx="2"/><path d="M3 9h18M12 9v11M12 9S10.5 4 8 4.5 7.5 9 12 9zM12 9s1.5-5 4-4.5S16.5 9 12 9z"/></svg></div>
-  <div style="flex:1; min-width:0;"><div class="label">Gifts & playdates</div><div class="small" style="font-size:13px;">Invites from real neighbours</div></div>
-  <div class="toggle toggle-on"></div>
+  <div style="flex:1; min-width:0;"><div class="label">Made a new friend</div>
+    <div class="small" style="font-size:13px;">At most 2 a day</div></div>
+  <span class="badge badge-muted">Always</span>
 </div>
   <div class="divider"></div>
   <div class="row">
-  <div class="iconbox"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-9.4A4 4 0 0112 8.2 4 4 0 0119 10.6c0 5-7 9.4-7 9.4z"/></svg></div>
-  <div style="flex:1; min-width:0;"><div class="label">Missing you</div><div class="small" style="font-size:13px;">At most once a week</div></div>
-  <div class="toggle"></div>
+  <div style="flex:1; min-width:0;"><div class="label">Missing you</div>
+    <div class="small" style="font-size:13px;">At most 1 a day, and rarely</div></div>
+  <span class="badge badge-muted">Always</span>
 </div>
 </div>
 
-<div class="card" style="margin-top:12px;">
-  <div class="row"><div class="iconbox"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 14.5A8 8 0 019.5 4.5a8 8 0 1010 10z"/></svg></div><div style="flex:1;"><div class="label">Quiet hours</div><div class="small" style="font-size:13px;">Nothing buzzes overnight</div></div><span class="label" style="color: var(--primary-ink);">22:00–08:00</span></div>
+<div class="card" style="margin-top:12px; padding:16px; display:flex; flex-direction:column; gap:10px;">
+  <div style="display:flex; align-items:baseline; gap:10px;">
+    <div class="display" style="font-size:30px;">5</div>
+    <div style="flex:1;"><div class="label">a day, across everything</div>
+      <div class="small" style="font-size:13px;">So several well-behaved categories can&rsquo;t gang up on you.</div></div>
+  </div>
+  <div style="display:flex; gap:4px;">
+    <div style="flex:1; height:8px; border-radius:999px; background:var(--primary-press);"></div>
+    <div style="flex:1; height:8px; border-radius:999px; background:var(--primary-press);"></div>
+    <div style="flex:1; height:8px; border-radius:999px; background:var(--el);"></div>
+    <div style="flex:1; height:8px; border-radius:999px; background:var(--el);"></div>
+    <div style="flex:1; height:8px; border-radius:999px; background:var(--el);"></div>
+  </div>
+  <div class="small" style="font-size:12px;">2 sent today.</div>
 </div>
+
+<div class="card" style="margin-top:12px; padding:16px; display:flex; align-items:center; gap:14px;">
+  <div class="iconbox"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></div>
+  <div style="flex:1;"><div class="label">Quiet hours</div>
+    <div class="small" style="font-size:13px;">Nothing buzzes 22:00&ndash;08:00</div></div>
+  <span class="badge badge-muted">Always</span>
+</div>
+
+<div class="why" style="margin-top:14px;">
+  <b>Local time is guessed from longitude, not stored.</b><span>Accurate to about an hour, which is all &ldquo;don&rsquo;t buzz at 3am&rdquo; needs. Neither app ever sends a timezone.</span>
+</div>
+<div class="why" style="margin-top:8px;">
+  <b>Unknown location sends anyway.</b><span>Staying silent would mean anybody who never granted location hears from their pet exactly never &mdash; a worse failure than one badly-timed buzz. The daily caps still apply.</span>
+</div>
+<div class="why" style="margin-top:8px;">
+  <b>The budget is only spent on a delivered push.</b><span>A failed send doesn&rsquo;t cost you one of the five.</span>
+</div>
+
 </div>
 </x-dc>
 </body>

@@ -150,63 +150,64 @@ a:hover { color: var(--primary-press); }
 
 </style>
 </helmet>
-<div class="screen light" style="height: 844px; padding: 54px 16px 24px; position: relative; overflow: hidden;">
+<div class="screen light" style="height: 1240px; padding: 54px 16px 24px; position: relative; overflow: hidden;">
+
 <div style="display:flex; align-items:center; gap:12px;">
-  <div class="back"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></div>
-  <div class="display" style="font-size:20px; flex:1;">Mochi</div>
-  <div class="rbtn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="18" cy="12" r="1.2"/></svg></div>
+  <div class="display" style="font-size:26px; flex:1;">You</div>
 </div>
-<div style="display:flex; flex-direction:column; align-items:center; margin-top:8px;">
-  <div class="halo" style="width:200px; height:200px;"><svg width="170" height="170" viewBox="0 0 120 120" overflow="visible">
+<div class="card" style="margin-top:14px; padding:18px; display:flex; align-items:center; gap:18px;">
+  <div class="halo" style="width:104px; height:104px;"><svg width="80" height="80" viewBox="0 0 120 120" overflow="visible">
   <ellipse cx="60" cy="114" rx="30" ry="4.5" fill="#00000014"></ellipse>
-  <path d="M58 26 C56 12 70 8 84 16 C74 16 68 20 66 28 Z" fill="#FFD84D"></path><path d="M52 28 C48 18 56 12 64 14 C58 18 56 22 58 28 Z" fill="#F2B72C"></path>
+  <path d="M56 26 C48 6 66 -2 78 6 C68 8 64 14 66 26 Z" fill="#FFD84D"></path><path d="M50 28 C40 16 46 8 52 10 C48 14 50 20 56 28 Z" fill="#F2B72C"></path>
   <path d="M52 108 l-2 7 M58 109 l0 7 M62 109 l0 7 M68 108 l2 7" stroke="#F49AB0" stroke-width="3" stroke-linecap="round"></path>
   <circle cx="60" cy="66" r="44" fill="#FFD84D"></circle>
   <path d="M20 70 q-6 20 12 30 q-4 -14 -2 -28 Z" fill="#F2B72C"></path><path d="M100 70 q6 20 -12 30 q4 -14 2 -28 Z" fill="#F2B72C"></path>
   <ellipse cx="60" cy="58" rx="31" ry="25" fill="#FFF7D6"></ellipse>
   <circle cx="37" cy="66" r="9" fill="#FF8A4C"></circle><circle cx="83" cy="66" r="9" fill="#FF8A4C"></circle>
-  <circle cx="48" cy="56" r="5.5" fill="#2B1F16"></circle><circle cx="72" cy="56" r="5.5" fill="#2B1F16"></circle><circle cx="50" cy="54" r="2" fill="#FFFFFF"></circle><circle cx="74" cy="54" r="2" fill="#FFFFFF"></circle><path d="M40 47 l12 -5 M80 47 l-12 -5" stroke="#2B1F16" stroke-width="3" stroke-linecap="round"></path>
-  <path d="M55 63 q5 -2 10 0 q0 5 -5 7 q-5 -2 -5 -7 Z" fill="#F29C38"></path>
-  <path d="M44 62 q-3 6 0 9 q3 -3 0 -9 Z" fill="#6FB3FF"></path>
+  <path d="M42 56 q6 -8 12 0 M66 56 q6 -8 12 0" stroke="#2B1F16" stroke-width="3.8" fill="none" stroke-linecap="round"></path>
+  <path d="M55 61 q5 -3 10 0 q0 6 -5 8 q-5 -2 -5 -8 Z" fill="#F29C38"></path>
+  
   
 </svg></div>
-</div>
-<div class="card" style="margin-top:14px; padding:16px; display:flex; flex-direction:column; gap:12px;">
-  <div style="display:flex; align-items:center; gap:10px;">
-    <div class="label" style="width:56px;">Mood</div>
-    <span class="badge" style="background:var(--primary-soft); color:var(--primary-ink);">Missed you</span>
-  </div>
-  <div class="why" style="margin-top:-2px;"><span style="color: var(--primary-ink); flex-shrink:0; margin-top:1px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5l1.9 5.2 5.1 1.8-5.1 1.9L12 17.5l-1.9-5.1L5 10.5l5.1-1.8z"/></svg></span><span><b>You've been away 3 days.</b> Mochi kept exploring, but a visit perks it right up.</span></div>
-  <div style="display:flex; align-items:center; gap:10px;">
-    <div class="label" style="width:56px;">Energy</div>
-    <div class="meter"><div style="width:38%; background: var(--green);"></div></div>
-    <span class="small" style="font-size:13px; font-weight:800; width:36px; text-align:right;">38%</span>
+  <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
+    <div class="display" style="font-size:22px;">Mochi</div>
+    <div class="small" style="font-size:13px;">Your cockatiel &middot; flies on the map</div>
+    <span class="badge badge-orange" style="align-self:flex-start; margin-top:2px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Posts on its own</span>
   </div>
 </div>
-<div class="section" style="margin-top:20px;">Daily care</div>
-<div style="display:flex; gap:10px; margin-top:10px;">
-  <div class="card" style="flex:1; padding:14px 8px; display:flex; flex-direction:column; align-items:center; gap:6px; ">
-  <div style="width:48px; height:48px; border-radius:16px; display:flex; align-items:center; justify-content:center; background: var(--primary); color: var(--on-primary); box-shadow: 0 3px 0 var(--primary-press);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 11h17a8.5 8.5 0 01-17 0z"/><path d="M9 7.5c0-1.5 1-2 1-3.5M13 7.5c0-1.5 1-2 1-3.5"/></svg></div>
-  <div class="label">Feed</div>
-  <div class="small" style="font-size:12px;">Tap</div>
+<div class="card" style="margin-top:12px; padding:16px; display:flex; flex-direction:column; gap:8px;">
+  <div style="display:flex; align-items:center; gap:8px;">
+    <div class="label" style="flex:1;">Mochi hasn&rsquo;t seen you in 3 days</div>
+    <span class="small" style="font-size:13px; font-weight:800;">10</span>
+  </div>
+  <div style="height:6px; border-radius:3px; background: var(--el); overflow:hidden;">
+    <div style="height:6px; border-radius:3px; width:10%; background:var(--red);"></div>
+  </div>
+  <div class="small" style="font-size:13px;">Mochi is waiting on an answer</div><div class="small" style="font-size:13px;">It&rsquo;s been quiet around here</div>
+  <div style="display:flex; align-items:center; gap:8px; margin-top:2px;">
+    <span class="small" style="font-size:13px; font-weight:800;">Bond 7</span>
+    <div style="width:54px; height:5px; border-radius:3px; background:var(--el); overflow:hidden;"><div style="height:5px; width:52%; background:var(--primary-ink);"></div></div>
+    <span class="small" style="font-size:13px; flex:1;">170 to scarf slot</span>
+  </div>
+  <div style="display:flex; gap:8px; margin-top:2px;"><div style="flex:1;height:38px;border-radius:999px;background:var(--primary-soft);display:flex;align-items:center;justify-content:center;color:var(--primary-ink);font-size:14px;font-weight:800;">Feed</div><div style="flex:1;height:38px;border-radius:999px;background:var(--primary-soft);display:flex;align-items:center;justify-content:center;color:var(--primary-ink);font-size:14px;font-weight:800;">Groom</div><div style="flex:1;height:38px;border-radius:999px;background:var(--primary-soft);display:flex;align-items:center;justify-content:center;color:var(--primary-ink);font-size:14px;font-weight:800;">Play</div></div>
 </div>
-  <div class="card" style="flex:1; padding:14px 8px; display:flex; flex-direction:column; align-items:center; gap:6px; ">
-  <div style="width:48px; height:48px; border-radius:16px; display:flex; align-items:center; justify-content:center; background: var(--primary); color: var(--on-primary); box-shadow: 0 3px 0 var(--primary-press);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4.5l5 5L11 18l-5-5z"/><path d="M6 13l-2.5 6.5L10 17"/></svg></div>
-  <div class="label">Groom</div>
-  <div class="small" style="font-size:12px;">Tap</div>
+<div class="why" style="margin-top:12px;">
+  <b>Always a reason in plain words.</b><span>A drooping face with no explanation is a guilt mechanic. &ldquo;Hasn&rsquo;t seen you in 3 days&rdquo; is information you can act on &mdash; and the forgotten part is said first, before anything cheerful.</span>
 </div>
-  <div class="card" style="flex:1; padding:14px 8px; display:flex; flex-direction:column; align-items:center; gap:6px; ">
-  <div style="width:48px; height:48px; border-radius:16px; display:flex; align-items:center; justify-content:center; background: var(--primary); color: var(--on-primary); box-shadow: 0 3px 0 var(--primary-press);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M5 7.5c3 1.5 4.5 4.5 4 9M19 16.5c-3-1.5-4.5-4.5-4-9"/></svg></div>
-  <div class="label">Play</div>
-  <div class="small" style="font-size:12px;">Tap</div>
+<div class="section" style="margin-top:16px;">What moved it</div>
+<div class="card" style="margin-top:10px; padding:4px 0;">
+  <div class="row" style="padding:9px 16px;"><div style="flex:1; font-size:14px;">Starts at</div><span class="small" style="font-weight:800;">55</span></div>
+  <div class="row" style="padding:9px 16px;"><div style="flex:1; font-size:14px;">Away 3 days</div><span class="xp" style="color:var(--red);">&minus;40</span></div>
+  <div class="row" style="padding:9px 16px;"><div style="flex:1; font-size:14px;">One answer still waiting</div><span class="xp" style="color:var(--red);">&minus;5</span></div>
+  <div class="row" style="padding:9px 16px;"><div style="flex:1; font-size:14px;">Nothing happened in 24 hours</div><span class="xp" style="color:var(--red);">&minus;5</span></div>
 </div>
+<div class="card" style="margin-top:12px; padding:16px; display:flex; flex-direction:column; gap:8px;">
+  <div class="label">It stops falling here</div>
+  <div class="small" style="font-size:13px;">Absence bottoms out at &minus;40, about three days in. Permanently miserable is just punishment &mdash; and by then Mochi has stopped acting anyway, so there&rsquo;s nothing left to report.</div>
 </div>
-<div class="small" style="font-size:13px; text-align:center; margin-top:12px;">Mood dips while you're away. Nothing you've earned ever does.</div>
-<div class="card" style="margin-top:auto; padding:12px 14px; display:flex; align-items:center; gap:12px;">
-  <div class="iconbox" style="background: var(--primary-soft); color: var(--primary-ink);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5.5" width="16" height="14.5" rx="3"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></svg></div>
-  <div style="flex:1; min-width:0;"><div class="label">Last night's diary</div><div class="small" style="font-size:13px;">The day I met a bunny</div></div>
-  <div style="color: var(--muted);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></div>
-</div>
+<div class="why" style="margin-top:12px;"><b>Mood dips. Nothing you earned ever does.</b><span>Bond level, treasures, friendships and titles are exactly where you left them. One visit lifts this back up.</span></div>
+<div class="tabbar"><div class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4.5L3.5 7v12.5L9 17l6 2.5 5.5-2.5V4.5L15 7 9 4.5z"/><path d="M9 4.5V17M15 7v12.5"/></svg><span>Map</span></div><div class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><path d="M7.5 9h9M7.5 13h6"/></svg><span>Feed</span></div><div class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16.5V11a6 6 0 0112 0v5.5l1.5 2h-15z"/><path d="M10 21h4"/></svg><span>Activity</span></div><div class="tab tab-on"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1-4 4-6 7.5-6s6.5 2 7.5 6"/></svg><span>Profile</span></div></div>
+
 </div>
 </x-dc>
 </body>
