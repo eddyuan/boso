@@ -14,6 +14,8 @@
  * drift out of step with reality.
  */
 
+import type { Phrase } from "./i18n";
+
 export const CARE_KINDS = ["feed", "groom", "play"] as const;
 export type CareKind = (typeof CARE_KINDS)[number];
 
@@ -43,27 +45,32 @@ export type Mood = {
   name: MoodName;
   /** 0–100. Exposed so the app can show a bar without re-deriving the rules. */
   score: number;
-  /** Plain-language causes, strongest first. Never empty. */
-  reasons: string[];
+  /**
+   * The causes, strongest first. Never empty.
+   *
+   * Phrases rather than sentences: which reason applies depends on signals only
+   * the server has, but the wording has to happen where the reader is.
+   */
+  reasons: Phrase[];
 };
 
 const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
 
-export function computeMood(signals: MoodSignals, petName = "Your pet"): Mood {
+export function computeMood(signals: MoodSignals): Mood {
   const { careToday, socialWins, hoursSinceOwnerActive, pendingAsks, actedRecently } = signals;
 
   let score = 55; // Contented by default: a pet nobody has touched isn't miserable.
-  const up: string[] = [];
-  const down: string[] = [];
+  const up: Phrase[] = [];
+  const down: Phrase[] = [];
 
   if (careToday > 0) {
     score += careToday * 8;
-    up.push(careToday >= 3 ? `You did everything with ${petName} today` : `You spent time with ${petName} today`);
+    up.push({ key: careToday >= 3 ? "mood.careAll" : "mood.careSome" });
   }
 
   if (socialWins > 0) {
     score += clamp(socialWins * 4, 0, 20);
-    up.push(socialWins === 1 ? "Someone reacted to a post" : `${socialWins} people reacted to ${petName}'s posts`);
+    up.push({ key: "mood.reacted", count: socialWins });
   }
 
   // The dominant signal, because being forgotten is the thing a companion
@@ -74,21 +81,21 @@ export function computeMood(signals: MoodSignals, petName = "Your pet"): Mood {
     score -= clamp(Math.round(days * 14), 0, 40);
     down.push(
       days < 1
-        ? `${petName} hasn't seen you today`
+        ? { key: "mood.notSeenToday" }
         : days < 2
-          ? `${petName} hasn't seen you since yesterday`
-          : `${petName} hasn't seen you in ${Math.floor(days)} days`,
+          ? { key: "mood.notSeenYesterday" }
+          : { key: "mood.notSeenDays", count: Math.floor(days) },
     );
   }
 
   if (pendingAsks > 0) {
     score -= clamp(pendingAsks * 5, 0, 15);
-    down.push(pendingAsks === 1 ? `${petName} is waiting on an answer` : `${petName} is waiting on ${pendingAsks} answers`);
+    down.push({ key: "mood.waiting", count: pendingAsks });
   }
 
   if (!actedRecently) {
     score -= 5;
-    down.push("It's been quiet around here");
+    down.push({ key: "mood.quiet" });
   }
 
   score = clamp(Math.round(score), 0, 100);
@@ -96,7 +103,7 @@ export function computeMood(signals: MoodSignals, petName = "Your pet"): Mood {
   // Ordered so the strongest cause leads; a pet that's both fed and forgotten
   // should say the forgotten part first.
   const reasons = [...down, ...up];
-  if (reasons.length === 0) reasons.push(`${petName} is pottering about happily`);
+  if (reasons.length === 0) reasons.push({ key: "mood.pottering" });
 
   return { name: nameFor(score, signals), score, reasons };
 }

@@ -17,14 +17,17 @@ import { FontFamily, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useT } from '@/lib/i18n';
 import { ApiError, apiFetch } from '@/lib/api';
-import { categoryLabel, shouldBlur, type ModerationStatus } from '@bsocial/shared';
+import { categoryLabel, shouldBlur, type ModerationStatus, type TranslationKey } from '@bsocial/shared';
 
 type Scope = 'nearby' | 'following' | 'discover';
 
+// Keys rather than words: a module-level constant can't call the hook, and a
+// table of labels frozen at import time is the classic way a screen ends up
+// half-translated.
 const SCOPES = [
-  { value: 'nearby' as const, label: 'Nearby' },
-  { value: 'following' as const, label: 'Following' },
-  { value: 'discover' as const, label: 'Discover' },
+  { value: 'nearby' as const, key: 'feed.scope.nearby' as const },
+  { value: 'following' as const, key: 'feed.scope.following' as const },
+  { value: 'discover' as const, key: 'feed.scope.discover' as const },
 ];
 
 type FeedPost = {
@@ -48,24 +51,15 @@ type FeedPost = {
   viewCount: number;
 };
 
-const EMPTY: Record<Scope, { title: string; message: string }> = {
-  nearby: {
-    title: 'Nothing around you yet',
-    message: 'Posts within 5 km show up here. Be the first — tap + to post something.',
-  },
-  following: {
-    title: 'You follow no one yet',
-    message: 'Follow people you meet nearby and their posts land here.',
-  },
-  discover: {
-    title: 'No one new nearby',
-    message: 'People near you who share your interests will show up here.',
-  },
+const EMPTY: Record<Scope, { title: TranslationKey; message: TranslationKey }> = {
+  nearby: { title: 'feed.empty.nearby.title', message: 'feed.empty.nearby.body' },
+  following: { title: 'feed.empty.following.title', message: 'feed.empty.following.body' },
+  discover: { title: 'feed.empty.discover.title', message: 'feed.empty.discover.body' },
 };
 
 export default function FeedTab() {
   const theme = useTheme();
-  const { distance, timeAgo } = useT();
+  const { t, distance, timeAgo } = useT();
   const [scope, setScope] = useState<Scope>('nearby');
   const [posts, setPosts] = useState<FeedPost[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -89,7 +83,7 @@ export default function FeedTab() {
           const asked = await Location.requestForegroundPermissionsAsync();
           if (!asked.granted) {
             setPosts([]);
-            setError('Turn on location to see what people are posting around you.');
+            setError(t('feed.error.location'));
             return;
           }
         }
@@ -102,10 +96,10 @@ export default function FeedTab() {
     } catch (e) {
       setPosts([]);
       setError(e instanceof ApiError && e.code === 'location_required'
-        ? 'Turn on location to see what people are posting around you.'
-        : "Couldn't load the feed.");
+        ? t('feed.error.location')
+        : t('feed.error.load'));
     }
-  }, []);
+  }, [t]);
 
   const toggleLike = useCallback(async (post: FeedPost) => {
     // Optimistic — the round trip is what makes a heart feel unresponsive.
@@ -145,28 +139,32 @@ export default function FeedTab() {
       header={
         <View style={styles.header}>
           <ThemedText type="title" style={{ flex: 1 }}>
-            Feed
+            {t('feed.title')}
           </ThemedText>
           {/* Writing a post lives in the tab bar, so it isn't repeated here. */}
           <RoundButton
             icon={<Icon name="search" size={20} />}
             onPress={() => router.push('/search')}
-            accessibilityLabel="Search"
+            accessibilityLabel={t('search.title')}
           />
         </View>
       }>
-      <Segmented options={SCOPES} value={scope} onChange={setScope} />
+      <Segmented
+        options={SCOPES.map((scopeOption) => ({ value: scopeOption.value, label: t(scopeOption.key) }))}
+        value={scope}
+        onChange={setScope}
+      />
 
       {/* Only offered once there's a vocabulary to offer; an empty filter row
           is worse than none. Tapping the selected chip clears it. */}
       {topics.length > 0 && (
         <ChipGroup gap={8}>
-          {topics.map((t) => (
+          {topics.map((item) => (
             <Chip
-              key={t.slug}
-              label={t.label}
-              selected={topic === t.slug}
-              onPress={() => setTopic((prev) => (prev === t.slug ? null : t.slug))}
+              key={item.slug}
+              label={item.label}
+              selected={topic === item.slug}
+              onPress={() => setTopic((prev) => (prev === item.slug ? null : item.slug))}
             />
           ))}
         </ChipGroup>
@@ -181,11 +179,17 @@ export default function FeedTab() {
         (topic ? (
           <EmptyState
             mood="thinking"
-            title={`Nothing about ${topics.find((t) => t.slug === topic)?.label ?? 'that'} yet`}
-            message="Tap the topic again to see everything."
+            title={t('feed.empty.topic.title', {
+              topic: topics.find((x) => x.slug === topic)?.label ?? t('common.none'),
+            })}
+            message={t('feed.empty.topic.body')}
           />
         ) : (
-          <EmptyState mood="thinking" {...EMPTY[scope]} />
+          <EmptyState
+            mood="thinking"
+            title={t(EMPTY[scope].title)}
+            message={t(EMPTY[scope].message)}
+          />
         ))}
 
       {posts?.map((post) => {
@@ -217,7 +221,7 @@ export default function FeedTab() {
                   {post.authoredByAgent && (
                     <Badge
                       tone="brand"
-                      label="by pet"
+                      label={t('feed.byPet')}
                       icon={<Icon name="sparkle" size={11} color={theme.primaryInk} strokeWidth={2.6} />}
                     />
                   )}
@@ -233,7 +237,7 @@ export default function FeedTab() {
             <Pressable
               onPress={() => router.push(`/post/${post.id}`)}
               accessibilityRole="button"
-              accessibilityLabel={`Open ${authorName}'s post`}
+              accessibilityLabel={t('feed.a11y.openPost', { name: authorName })}
               style={{ gap: Spacing.md }}>
               <ThemedText>{post.content}</ThemedText>
               {post.media.length > 0 && (
@@ -255,7 +259,7 @@ export default function FeedTab() {
                 hitSlop={8}
                 style={styles.metric}
                 accessibilityRole="button"
-                accessibilityLabel={post.likedByMe ? 'Unlike post' : 'Like post'}>
+                accessibilityLabel={t(post.likedByMe ? 'feed.a11y.unlike' : 'feed.a11y.like')}>
                 <Icon name="heart" size={18} color={post.likedByMe ? theme.red : theme.textSecondary} />
                 <ThemedText type="smallBold" themeColor={post.likedByMe ? 'red' : 'textSecondary'}>
                   {post.likeCount}
@@ -266,7 +270,7 @@ export default function FeedTab() {
                 hitSlop={8}
                 style={styles.metric}
                 accessibilityRole="button"
-                accessibilityLabel="Replies">
+                accessibilityLabel={t('feed.a11y.replies')}>
                 <Icon name="bubble" size={18} color={theme.textSecondary} />
                 <ThemedText type="smallBold" themeColor="textSecondary">
                   {post.commentCount}
@@ -280,7 +284,7 @@ export default function FeedTab() {
                   hitSlop={8}
                   style={styles.metric}
                   accessibilityRole="button"
-                  accessibilityLabel="Who looked at this post">
+                  accessibilityLabel={t('feed.a11y.whoLooked')}>
                   <Icon name="eye" size={18} color={theme.textSecondary} />
                   <ThemedText type="smallBold" themeColor="textSecondary">
                     {post.viewCount}

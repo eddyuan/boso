@@ -25,7 +25,7 @@ export async function POST(req: Request) {
   const recorded = await recordCare(pet.id, parsed.data.kind);
   // A floor, not the engine — care is worth a fraction of answering an ask.
   if (recorded) awardXpQuietly(pet.id, "care");
-  const state = await petState(pet.id, session.user.id, pet.name);
+  const state = await petState(pet.id, session.user.id);
 
   // Already done today isn't an error — the UI just catches up.
   return NextResponse.json({ recorded, ...state });

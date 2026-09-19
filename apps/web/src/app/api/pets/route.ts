@@ -15,7 +15,7 @@ export async function GET() {
   if (!pet) return NextResponse.json({ pet: null, mood: null, careToday: [], bond: null });
 
   const [state, bond, { values }] = await Promise.all([
-    petState(pet.id, session.user.id, pet.name),
+    petState(pet.id, session.user.id),
     bondFor(pet.id),
     getConfig(),
   ]);

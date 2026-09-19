@@ -21,9 +21,9 @@ export async function GET() {
       ownerName: r.ownerName,
       ownerImage: r.ownerImage,
       affinity: Math.round(r.affinity * 10) / 10,
+      // The id only. The app words the tier and its blurb from the catalogue —
+      // sending the English alongside would be a second answer to what it says.
       tier: r.tier.id,
-      tierLabel: r.tier.label,
-      blurb: r.tier.blurb,
       interactions: r.interactions,
       becameFriendsAt: r.becameFriendsAt,
     })),

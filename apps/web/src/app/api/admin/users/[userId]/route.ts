@@ -189,7 +189,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ userId:
         relationshipsFor(pet.id, 8),
         // Derived on read, exactly as the app derives it — so this page can't
         // show a mood the owner isn't seeing.
-        petState(pet.id, userId, pet.name).catch(() => null),
+        petState(pet.id, userId).catch(() => null),
         getConfig(),
       ])
     : [[], [], [], [], [], [], null, { values: {} as Record<string, number> }];

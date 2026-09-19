@@ -3,6 +3,7 @@
 import { use } from "react";
 import Link from "next/link";
 import { ArrowLeft, Bot, EyeOff, FileText, KeyRound, Monitor, PawPrint, ShieldCheck, User } from "lucide-react";
+import { translatePhrase, type Phrase } from "@bsocial/shared";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EmptyState, Loading, Muted, PageHeader, Panel, TimeAgo } from "../../_components/ui";
@@ -47,7 +48,7 @@ type Detail = {
     bond: { level: number; xp: number; intoLevel: number; levelSpan: number; xpToNext: number; next: { unlock: string } | null };
     ledgerAgrees: boolean;
     ledgerSum: number;
-    mood: { name: string; score: number; reasons: string[] } | null;
+    mood: { name: string; score: number; reasons: Phrase[] } | null;
     careToday: string[];
     ledger: { event: string; amount: number; createdAt: string }[];
     xpBySource: { event: string; awards: number; xp: number }[];
@@ -347,9 +348,14 @@ export default function UserDetailPage({ params }: { params: Promise<{ userId: s
                     <span className="text-[13px] tabular-nums text-muted-foreground">{data.game.mood.score}/100</span>
                   </div>
                   <ul className="mt-2 space-y-0.5">
-                    {data.game.mood.reasons.map((r) => (
-                      <li key={r} className="text-[13px] text-muted-foreground">{r}</li>
-                    ))}
+                    {data.game.mood.reasons.map((r) => {
+                      // The server sends the reason, not the sentence. Resolved
+                      // here in English, the same catalogue the app reads.
+                      const line = translatePhrase("en", { ...r, vars: { name: data.pet?.name ?? "the pet", ...r.vars } });
+                      return (
+                        <li key={line} className="text-[13px] text-muted-foreground">{line}</li>
+                      );
+                    })}
                   </ul>
                   <p className="mt-2 text-[11px] text-muted-foreground">
                     Derived on read, the same way the owner sees it — this can&apos;t show a mood they aren&apos;t.

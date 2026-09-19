@@ -25,7 +25,6 @@ function startOfDay(now: Date): Date {
 export async function petState(
   petId: string,
   userId: string,
-  petName: string,
   now: Date = new Date(),
 ): Promise<PetState> {
   const dayStart = startOfDay(now);
@@ -70,16 +69,15 @@ export async function petState(
   const careToday = CARE_KINDS.filter((k) => careRows.some((r) => r.kind === k));
 
   return {
-    mood: computeMood(
-      {
-        careToday: careToday.length,
-        socialWins: wins,
-        hoursSinceOwnerActive,
-        pendingAsks: pending[0]?.count ?? 0,
-        actedRecently: (acted[0]?.count ?? 0) > 0,
-      },
-      petName,
-    ),
+    // The pet's name is no longer passed in: the reasons come back as phrases
+    // and whoever renders them supplies it, in their own language.
+    mood: computeMood({
+      careToday: careToday.length,
+      socialWins: wins,
+      hoursSinceOwnerActive,
+      pendingAsks: pending[0]?.count ?? 0,
+      actedRecently: (acted[0]?.count ?? 0) > 0,
+    }),
     careToday,
   };
 }

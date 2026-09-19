@@ -8,6 +8,8 @@ import {
   translatorFor,
   type Locale,
   type MeasurementSystem,
+  type Phrase,
+  type PluralKey,
   type TVars,
   type TranslationKey,
 } from '@bsocial/shared';
@@ -43,7 +45,12 @@ type I18n = {
   measurement: MeasurementSystem;
   t: (key: TranslationKey, vars?: TVars) => string;
   /** Count-aware; picks the plural form and exposes `{count}`. */
-  n: (key: TranslationKey, count: number, vars?: TVars) => string;
+  n: (key: PluralKey, count: number, vars?: TVars) => string;
+  /**
+   * Renders a phrase the server chose — a mood reason, for instance. The server
+   * decides *which* sentence applies; this decides what it says.
+   */
+  p: (phrase: Phrase) => string;
   /** "320 m" or "1,050 ft", in the device's units. */
   distance: (metres: number) => string;
   /** "now", "12 min ago", "5 days ago". */
@@ -67,7 +74,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     const region = device?.regionCode;
     const tag = region ? `${locale}-${region}` : locale;
     const measurement = measurementFor(tag);
-    const { t, n } = translatorFor(locale);
+    const { t, n, p } = translatorFor(locale);
 
     return {
       locale,
@@ -76,6 +83,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       measurement,
       t,
       n,
+      p,
       distance: (metres) => formatDistanceShared(metres, tag, measurement),
       timeAgo: (iso) => formatTimeAgoShared(iso, tag),
       day: (day) => formatDayShared(day, locale, tag),

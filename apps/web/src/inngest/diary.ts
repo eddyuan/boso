@@ -75,7 +75,7 @@ export const writeDiaries = inngest.createFunction(
         // owner's language rather than translated after the fact.
         const entry = await writeEntry(pet.name, pet.species, pet.personality, material, resolveLocale(pet.locale));
         if (!entry) continue;
-        const { mood } = await petState(pet.petId, pet.userId, pet.name);
+        const { mood } = await petState(pet.petId, pet.userId);
 
         await db
           .insert(petDiary)

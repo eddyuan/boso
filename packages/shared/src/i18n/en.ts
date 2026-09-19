@@ -26,6 +26,7 @@ export const en = {
   "common.yesterday": "Yesterday",
   "common.never": "never",
   "common.none": "none",
+  "common.yourPet": "Your pet",
 
   // ------------------------------------------------------------------ tabs
   "tab.map": "Map",
@@ -153,6 +154,30 @@ export const en = {
   "pet.a11y.shelf": "The whole shelf",
   "pet.a11y.friend": "{name} — how they got here",
 
+  // ------------------------------------------------------------------ mood
+  //
+  // Which of these applies is decided on the server, from signals the app never
+  // sees; the wording happens here. See `Phrase` in i18n/index.ts.
+  "mood.careAll": "You did everything with {name} today",
+  "mood.careSome": "You spent time with {name} today",
+  "mood.reacted_one": "Someone reacted to a post",
+  "mood.reacted_other": "{count} people reacted to {name}’s posts",
+  "mood.notSeenToday": "{name} hasn’t seen you today",
+  "mood.notSeenYesterday": "{name} hasn’t seen you since yesterday",
+  "mood.notSeenDays_one": "{name} hasn’t seen you in a day",
+  "mood.notSeenDays_other": "{name} hasn’t seen you in {count} days",
+  "mood.waiting_one": "{name} is waiting on an answer",
+  "mood.waiting_other": "{name} is waiting on {count} answers",
+  "mood.quiet": "It’s been quiet around here",
+  "mood.pottering": "{name} is pottering about happily",
+  "mood.name.excited": "Excited",
+  "mood.name.love": "Smitten",
+  "mood.name.happy": "Happy",
+  "mood.name.thinking": "Thoughtful",
+  "mood.name.shy": "Shy",
+  "mood.name.sleepy": "Sleepy",
+  "mood.name.sad": "Down",
+
   // ---------------------------------------------------------------- missions
   "missions.today": "Today",
   "missions.progress": "{done} of {total}",
@@ -160,10 +185,24 @@ export const en = {
   // ------------------------------------------------------------------- bond
   "bond.title": "Bond with {name}",
   "bond.level": "BOND LEVEL",
+  "bond.short": "Bond {level}",
   "bond.xp": "{xp} XP",
   "bond.toNext": "{xp} XP · {remaining} to level {level}",
   "bond.neverGoesDown": "Never goes down",
   "bond.earnsMost": "What earns the most",
+  "bond.plainTitle": "Bond",
+  // Keyed by the ledger event, so the list and the award can't disagree.
+  "bond.earns.new_friendship": "Make a new friend",
+  "bond.earns.answer_ask": "Answer what your pet asked",
+  "bond.earns.answer_ask.note": "Yes or no — both count",
+  "bond.earns.errand_returned": "An errand comes home with something",
+  "bond.earns.wrote_post": "You post",
+  "bond.earns.wrote_reply": "You reply to somebody",
+  "bond.earns.received_reaction": "Someone reacts to your pet’s post",
+  "bond.earns.read_diary": "Read last night’s diary",
+  "bond.earns.read_diary.note": "Once a day",
+  "bond.earns.care": "Each daily care",
+  "bond.earns.care.note": "Three a day",
   "bond.unlocks": "Unlocks",
   "bond.youAreHere": "You are here",
   "bond.elder": "Elder bond",
@@ -295,6 +334,147 @@ export const en = {
   // ------------------------------------------------------- sensitive cover
   "sensitive.marked": "Marked sensitive",
   "sensitive.viewAnyway": "View anyway",
+  "sensitive.title": "Sensitive content",
+  "sensitive.tapToView": "Tap to view",
+
+  // ---------------------------------------------------------------- search
+  "search.title": "Search",
+  "search.placeholder": "Nickname, or something you’re into",
+  "search.byInterest": "Browse by interest",
+  "search.results": "Results",
+  "search.peopleNearYou": "People near you",
+  "search.nobodyNearby": "No one has posted near you yet. Try searching by nickname.",
+  "search.noResults": "Nothing matched “{query}”.",
+  "search.someone": "Someone",
+  "search.awayFrom": "{distance} away",
+  "search.error.load": "Couldn’t search just now.",
+
+  // ------------------------------------------------------------ place picker
+  "placePicker.title": "Add a place",
+  "placePicker.placeholder": "Search for a place",
+  "placePicker.none": "No places mapped around you yet.",
+  "placePicker.poweredByGoogle": "Powered by Google",
+  "placePicker.error.load": "Couldn’t load places nearby.",
+
+  // -------------------------------------------------------------------- auth
+  //
+  // Everything before someone has an account. The wording here is load-bearing
+  // twice over: it is the first thing anyone reads, and it is where a person is
+  // most likely to give up, so an error has to say what to do next rather than
+  // just that something failed.
+  "auth.appName": "Tielo",
+  "auth.tagline": "Your pet keeps your social life going.",
+  "auth.signIn": "Sign in",
+  "auth.signUp": "Sign up",
+  "auth.createAccount": "Create an account",
+  "auth.newHere": "New here?",
+  "auth.haveAccount": "Already have an account?",
+  "auth.email": "Email",
+  "auth.password": "Password",
+  "auth.passwordHint": "At least 8 characters",
+  "auth.continueWithPhone": "Continue with phone",
+  "auth.continueWithGoogle": "Continue with Google",
+  "auth.continueWithApple": "Continue with Apple",
+  "auth.or": "or",
+  "auth.a11y.showPassword": "Show password",
+  "auth.a11y.hidePassword": "Hide password",
+  "auth.error.signIn": "Sign in failed",
+  "auth.error.signUp": "Sign up failed",
+
+  // --------------------------------------------------------- contact + codes
+  "contact.email.add": "Add your email",
+  "contact.email.enter": "Enter your email",
+  "contact.email.change": "Change your email",
+  "contact.email.verify": "Verify your email",
+  "contact.email.useDifferent": "Use a different email",
+  "contact.phone.add": "Add your phone",
+  "contact.phone.hint": "Enter your number with country code, e.g. +14165550123",
+  "contact.code.sent": "We sent a code to {contact}.",
+  "contact.code.label": "Code",
+  "contact.code.resend": "Resend code",
+  "contact.code.resendIn": "Resend in {seconds}s",
+  "contact.error.send": "Couldn’t send the code. Try again.",
+  "contact.error.code": "That code isn’t right.",
+
+  // -------------------------------------------------------------- onboarding
+  "onboarding.continue": "Continue",
+  "onboarding.notNow": "Not now",
+  "onboarding.finish": "Finish",
+  "onboarding.skip": "Skip",
+  "onboarding.webOnly.contacts": "Finding friends from contacts is available in the mobile app.",
+  "onboarding.webOnly.calendar": "Calendar access is available in the mobile app.",
+
+  "onboarding.terms.title": "Welcome to Tielo",
+  "onboarding.terms.body": "Your AI pet keeps your social life going, even when you’re away.",
+  "onboarding.terms.terms": "Terms of Service",
+  "onboarding.terms.privacy": "Privacy Policy",
+
+  "onboarding.birthday.title": "Confirm your birthday",
+  "onboarding.birthday.confirm": "Confirm",
+  "onboarding.birthday.invalid": "Enter a valid date",
+  "onboarding.birthday.select": "Select your birthday",
+  "onboarding.birthday.scroll": "Scroll to select your birthday",
+  "onboarding.birthday.yearTip": "Tip: tap the year at the top of the calendar to jump to your birth year.",
+  "onboarding.birthday.month": "Month",
+  "onboarding.birthday.day": "Day",
+  "onboarding.birthday.year": "Year",
+
+  "onboarding.profile.nickname": "Nickname",
+  "onboarding.profile.displayName": "Display name",
+  "onboarding.profile.addPhoto": "Add photo (optional)",
+  "onboarding.profile.changePhoto": "Change photo",
+
+  "onboarding.pet.couldBeA": "It could be a",
+  "onboarding.pet.notTheOne": "Not the one?",
+  "onboarding.pet.change": "Change",
+  "onboarding.pet.name": "Name",
+  "onboarding.pet.editLater": "Edit later",
+  "onboarding.pet.autoPost": "Posts on its own",
+  "onboarding.pet.askFirst": "Asks you before posting",
+
+  "onboarding.contacts.find": "Find friends",
+  "onboarding.contacts.none": "No friends here yet",
+
+  "onboarding.notifications.example": "Your pet wants to post",
+
+  "onboarding.calendar.connect": "Connect calendar",
+  "onboarding.calendar.private": "Your calendar is never shared or posted.",
+  "onboarding.calendar.exampleTitle": "Your pet posts for you",
+  "onboarding.calendar.exampleEvent": "Concert",
+
+  // ----------------------------------------------------------------- account
+  "account.title": "Account",
+  "account.contact": "Contact",
+  "account.signInMethods": "Sign-in methods",
+  "account.linked": "Linked",
+  "account.notLinked": "Not linked",
+  "account.notAdded": "Not added",
+  "account.link": "Link",
+  "account.unlink": "Unlink",
+  "account.change": "Change",
+  "account.verify": "Verify",
+  "account.error.link": "Couldn’t link that account.",
+  "account.error.unlink": "Couldn’t unlink that account.",
+  "account.error.lastMethod": "This is your only way to sign in, so it can’t be removed.",
+
+  "devices.title": "Signed-in devices",
+  "devices.thisDevice": "This device",
+  "devices.unknown": "Unknown device",
+  "devices.lastUsed": "Last used {when}",
+  "devices.signOutThis": "Sign out of this device?",
+  "devices.signOutOthers": "Sign out all other devices?",
+  "devices.note": "You stay signed in on each device for up to a year. Sign out anything you don’t recognise.",
+  "devices.error.load": "Couldn’t load your devices.",
+  "devices.error.signOut": "Couldn’t sign that out.",
+
+  "ageGate.title": "Tielo is for over-13s",
+  "ageGate.body": "The birthday you entered puts you under 13, so this account can’t be used.",
+
+  // --------------------------------------------------------- shared dialogs
+  "dialog.areYouSure": "Are you sure?",
+  "dialog.cancel": "Cancel",
+  "dialog.confirm": "Confirm",
+  "dialog.signOut": "Sign out",
 
   // ------------------------------------------------------------ push (server)
   // Every one of these is composed on the server, which cannot read the phone's
@@ -316,6 +496,135 @@ export const en = {
   "care.groom.done": "Groomed",
   "care.play.verb": "Play",
   "care.play.done": "Played",
+  // -------------------------------------------------------- content: species
+  //
+  // The tables in onboarding.ts, bond.ts, treasures.ts and the rest keep the id as
+  // the canonical identity and the wording here, keyed by that id. A key is built
+  // from the id by a typed helper (`speciesLabelKey` and friends), so adding an id
+  // without its wording is a compile error rather than a blank row.
+  "species.cockatiel.label": "Cockatiel",
+  "species.cockatiel.moves": "Flies",
+  "species.bunny.label": "Bunny",
+  "species.bunny.moves": "Hops",
+  "species.cat.label": "Cat",
+  "species.cat.moves": "Trots",
+  "species.puppy.label": "Puppy",
+  "species.puppy.moves": "Runs",
+
+  // ------------------------------------------------------ content: interests
+  "interest.music": "Music",
+  "interest.movies": "Movies & TV",
+  "interest.gaming": "Gaming",
+  "interest.sports": "Sports",
+  "interest.fitness": "Fitness",
+  "interest.food": "Food",
+  "interest.travel": "Travel",
+  "interest.fashion": "Fashion",
+  "interest.art": "Art & Design",
+  "interest.photography": "Photography",
+  "interest.books": "Books",
+  "interest.tech": "Tech",
+  "interest.science": "Science",
+  "interest.nature": "Nature",
+  "interest.animals": "Animals",
+  "interest.humor": "Memes & Humor",
+  "interest.anime": "Anime",
+  "interest.cars": "Cars",
+  "interest.finance": "Money & Finance",
+  "interest.wellness": "Wellness",
+
+  // --------------------------------------------------------- content: gender
+  "gender.male": "Male",
+  "gender.female": "Female",
+  "gender.other": "Other",
+  "gender.prefer_not_to_say": "Prefer not to say",
+
+  // ----------------------------------------------- content: friendship tiers
+  "tier.acquaintance.label": "Acquaintance",
+  "tier.acquaintance.blurb": "They’ve crossed paths",
+  "tier.friend.label": "Friend",
+  "tier.friend.blurb": "They seek each other out",
+  "tier.close.label": "Close friend",
+  "tier.close.blurb": "Inseparable, frankly",
+  "tier.best.label": "Best friend",
+  "tier.best.blurb": "The bond of the neighbourhood",
+
+  // ------------------------------------------------------ content: treasures
+  "treasure.bottle-cap": "Bottle cap",
+  "treasure.smooth-pebble": "Smooth pebble",
+  "treasure.lost-button": "Lost button",
+  "treasure.ticket-stub": "Ticket stub",
+  "treasure.coffee-sleeve": "Coffee sleeve",
+  "treasure.bright-feather": "Bright feather",
+  "treasure.sea-glass": "Sea glass",
+  "treasure.pressed-flower": "Pressed flower",
+  "treasure.old-postcard": "Old postcard",
+  "treasure.tiny-key": "Tiny key",
+  "treasure.fossil-chip": "Fossil chip",
+  "treasure.brass-compass": "Brass compass",
+  "rarity.common": "Common",
+  "rarity.uncommon": "Uncommon",
+  "rarity.rare": "Rare",
+  "rarity.legendary": "Legendary",
+
+  // ------------------------------------------------------- content: missions
+  "mission.answer_ask.label": "Answer your pet",
+  "mission.answer_ask.hint": "Say yes or skip to what it asked",
+  "mission.care_all.label": "A good day together",
+  "mission.care_all.hint": "Feed, groom and play",
+  "mission.say_hello.label": "Say something back",
+  "mission.say_hello.hint": "Reply to a post nearby",
+  "mission.write_post.label": "Share something",
+  "mission.write_post.hint": "Post from where you are",
+  "mission.send_errand.label": "Send them out",
+  "mission.send_errand.hint": "Run one errand on the map",
+  "mission.read_diary.label": "Catch up",
+  "mission.read_diary.hint": "Read last night’s diary",
+  "mission.meet_someone.label": "Make a friend",
+  "mission.meet_someone.hint": "Meet a pet you haven’t before",
+
+  // --------------------------------------------------- content: bond unlocks
+  "unlock.1": "Everything social, from the first minute",
+  "unlock.2": "Give your pet a nickname",
+  "unlock.3": "Treasure shelf — finds start coming home",
+  "unlock.4": "Two starter collars",
+  "unlock.5": "Diary share cards",
+  "unlock.6": "Errands reach further across the map",
+  "unlock.7": "Scarf slot",
+  "unlock.8": "Uncommon treasures start appearing",
+  "unlock.9": "Second collar set",
+  "unlock.10": "Hat slot; bigger errand bundles",
+  "unlock.11": "Diary keeps a full year",
+  "unlock.12": "Rare treasures start appearing",
+  "unlock.13": "Seasonal collar patterns",
+  "unlock.14": "Custom shelf arrangement",
+  "unlock.15": "Friendship titles for your closest bonds",
+  "unlock.16": "Errands reach the whole neighbourhood",
+  "unlock.17": "Legendary treasures become possible",
+  "unlock.18": "Pet portrait frames",
+  "unlock.19": "Keepsake case for retired treasures",
+  "unlock.20": "Elder crown, kept forever",
+  "unlockKind.expression": "Expression",
+  "unlockKind.collection": "Collection",
+  "unlockKind.cosmetic": "Cosmetic",
+  "unlockKind.range": "Range",
+  "unlockKind.title": "Title",
+
+  // ------------------------------------------- content: sensitive categories
+  "category.adult.label": "Adult content",
+  "category.adult.blurb": "Nudity or sexual content",
+  "category.violence.label": "Graphic violence",
+  "category.violence.blurb": "Gore or graphic injury",
+  "category.political.label": "Political",
+  "category.political.blurb": "Political or electoral content",
+  "category.hate.label": "Hateful conduct",
+  "category.hate.blurb": "Slurs or attacks on a protected group",
+  "category.self_harm.label": "Self-harm",
+  "category.self_harm.blurb": "Suicide or self-injury",
+  "category.illegal.label": "Illegal goods",
+  "category.illegal.blurb": "Drugs, weapons or other regulated sales",
+  "category.spam.label": "Spam",
+  "category.spam.blurb": "Scams, bait or bulk repetition",
 } as const;
 
 export type TranslationKey = keyof typeof en;

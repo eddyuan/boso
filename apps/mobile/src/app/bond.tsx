@@ -1,4 +1,11 @@
-import { LEVELS, type BondProgress, type XpEvent } from '@bsocial/shared';
+import {
+  LEVELS,
+  unlockKey,
+  unlockKindKey,
+  type BondProgress,
+  type TranslationKey,
+  type XpEvent,
+} from '@bsocial/shared';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
@@ -11,21 +18,34 @@ import { Icon } from '@/components/ui/icon';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { apiFetch } from '@/lib/api';
+import { useT } from '@/lib/i18n';
 
 type Pet = { id: string; name: string; species: string };
 type Response = { pet: Pet | null; bond: BondProgress | null; xpValues: Record<XpEvent, number> | null };
 
-/** What each act is called, in the order the list should read. */
-const EARNS: { event: XpEvent; label: string; note?: string }[] = [
-  { event: 'new_friendship', label: 'Make a new friend' },
-  { event: 'answer_ask', label: 'Answer what your pet asked', note: 'Yes or no — both count' },
-  { event: 'errand_returned', label: 'An errand comes home with something' },
-  { event: 'wrote_post', label: 'You post' },
-  { event: 'wrote_reply', label: 'You reply to somebody' },
-  { event: 'received_reaction', label: 'Someone reacts to your pet\u2019s post' },
-  { event: 'read_diary', label: 'Read last night\u2019s diary', note: 'Once a day' },
-  { event: 'care', label: 'Each daily care', note: 'Three a day' },
+/**
+ * The order the list should read in — biggest award first.
+ *
+ * The ordering is the only thing this table carries now; the wording is looked up
+ * per event, so the list can't disagree with the catalogue.
+ */
+const EARNS: XpEvent[] = [
+  'new_friendship',
+  'answer_ask',
+  'errand_returned',
+  'wrote_post',
+  'wrote_reply',
+  'received_reaction',
+  'read_diary',
+  'care',
 ];
+
+/** The two awards that come with a cap worth stating. Everything else is plain. */
+const XP_NOTES: Partial<Record<XpEvent, TranslationKey>> = {
+  answer_ask: 'bond.earns.answer_ask.note',
+  read_diary: 'bond.earns.read_diary.note',
+  care: 'bond.earns.care.note',
+};
 
 /**
  * The bond, and what it unlocks.
@@ -36,6 +56,7 @@ const EARNS: { event: XpEvent; label: string; note?: string }[] = [
  */
 export default function BondScreen() {
   const theme = useTheme();
+  const { t } = useT();
   const [data, setData] = useState<Response | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,15 +64,15 @@ export default function BondScreen() {
     useCallback(() => {
       apiFetch<Response>('/api/pets')
         .then(setData)
-        .catch(() => setError("Couldn't load the bond."));
-    }, []),
+        .catch(() => setError(t('bond.error.load')));
+    }, [t]),
   );
 
   const bond = data?.bond;
   const pct = bond && bond.levelSpan > 0 ? Math.round((bond.intoLevel / bond.levelSpan) * 100) : 100;
 
   return (
-    <Screen header={<Back title={data?.pet ? `Bond with ${data.pet.name}` : 'Bond'} />}>
+    <Screen header={<Back title={data?.pet ? t('bond.title', { name: data.pet.name }) : t('bond.plainTitle')} />}>
       <ErrorText message={error} />
       {!data && !error && <ActivityIndicator color={theme.primaryPress} />}
 
@@ -63,34 +84,36 @@ export default function BondScreen() {
             </View>
             <View style={{ flex: 1, gap: 4 }}>
               <ThemedText type="caption" themeColor="textSecondary">
-                BOND LEVEL
+                {t('bond.level')}
               </ThemedText>
               <ThemedText style={styles.big}>{bond.level}</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
-                {bond.xp.toLocaleString()} XP
-                {bond.next ? ` · ${bond.xpToNext} to level ${bond.level + 1}` : ''}
+                {bond.next
+                  ? t('bond.toNext', { xp: bond.xp, remaining: bond.xpToNext, level: bond.level + 1 })
+                  : t('bond.xp', { xp: bond.xp })}
               </ThemedText>
               <View style={[styles.track, { backgroundColor: theme.backgroundElement }]}>
                 <View style={[styles.fill, { width: `${pct}%`, backgroundColor: theme.primaryInk }]} />
               </View>
-              <Badge tone="brand" label="Never goes down" />
+              <Badge tone="brand" label={t('bond.neverGoesDown')} />
             </View>
           </Card>
 
           <ThemedText type="label" style={styles.section}>
-            What earns the most
+            {t('bond.earnsMost')}
           </ThemedText>
           <Card style={styles.list}>
-            {EARNS.map((e) => {
-              const amount = data.xpValues?.[e.event];
+            {EARNS.map((event) => {
+              const amount = data.xpValues?.[event];
               if (amount === undefined) return null;
+              const note = XP_NOTES[event];
               return (
-                <View key={e.event} style={styles.row}>
+                <View key={event} style={styles.row}>
                   <View style={{ flex: 1, minWidth: 0 }}>
-                    <ThemedText type="small">{e.label}</ThemedText>
-                    {e.note && (
+                    <ThemedText type="small">{t(`bond.earns.${event}`)}</ThemedText>
+                    {note && (
                       <ThemedText type="caption" themeColor="textSecondary">
-                        {e.note}
+                        {t(note)}
                       </ThemedText>
                     )}
                   </View>
@@ -102,12 +125,11 @@ export default function BondScreen() {
             })}
           </Card>
           <ThemedText type="small" themeColor="textSecondary" style={styles.note}>
-            Saying no pays the same as saying yes. Paying only for &ldquo;yes&rdquo; would be buying
-            agreement rather than rewarding the habit of answering.
+            {t('bond.rejectingPays')}
           </ThemedText>
 
           <ThemedText type="label" style={styles.section}>
-            Unlocks
+            {t('bond.unlocks')}
           </ThemedText>
           <Card style={styles.list}>
             {LEVELS.map((l) => {
@@ -132,16 +154,16 @@ export default function BondScreen() {
                   </View>
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <ThemedText type="small" style={have ? undefined : { color: theme.textSecondary }}>
-                      {l.unlock}
+                      {t(unlockKey(l.level))}
                     </ThemedText>
                     {current && (
                       <ThemedText type="caption" themeColor="textSecondary">
-                        You are here
+                        {t('bond.youAreHere')}
                       </ThemedText>
                     )}
                   </View>
                   <ThemedText type="caption" themeColor="textSecondary">
-                    {l.kind}
+                    {t(unlockKindKey(l.kind))}
                   </ThemedText>
                 </View>
               );
@@ -149,9 +171,7 @@ export default function BondScreen() {
           </Card>
 
           <ThemedText type="small" themeColor="textSecondary" style={styles.note}>
-            Every unlock is something your pet wears, carries, collects or is called. Nothing here locks
-            who you can see, meet or talk to — the map, posting, replies, friendships, playdates and
-            errands are all open from the first minute.
+            {t('bond.expressionOnly')}
           </ThemedText>
         </>
       )}
@@ -161,12 +181,13 @@ export default function BondScreen() {
 
 function Back({ title }: { title: string }) {
   const theme = useTheme();
+  const { t } = useT();
   return (
     <View style={styles.top}>
       <Pressable
         onPress={() => router.back()}
         accessibilityRole="button"
-        accessibilityLabel="Back"
+        accessibilityLabel={t('action.back')}
         style={({ pressed }) => [styles.back, { backgroundColor: theme.backgroundElement, opacity: pressed ? 0.7 : 1 }]}>
         <Icon name="back" />
       </Pressable>

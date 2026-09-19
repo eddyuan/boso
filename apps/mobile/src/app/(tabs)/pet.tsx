@@ -1,10 +1,17 @@
 import {
   CARE_KINDS,
-  CARE_LABEL,
+  careDoneKey,
+  careVerbKey,
   getPetSpecies,
+  speciesLabelKey,
+  speciesMovesKey,
+  tierBlurbKey,
+  tierLabelKey,
+  unlockKey,
   type BondProgress,
   type CareKind,
   type Mood,
+  type RelationshipTier,
 } from '@bsocial/shared';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -24,6 +31,7 @@ import { Icon } from '@/components/ui/icon';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { apiFetch } from '@/lib/api';
+import { useT } from '@/lib/i18n';
 
 type Pet = { id: string; name: string; species: string; autoApprove: boolean };
 type PetResponse = { pet: Pet | null; mood: Mood | null; careToday: CareKind[]; bond: BondProgress | null };
@@ -31,8 +39,7 @@ type Relationship = {
   petId: string;
   petName: string;
   species: string;
-  tierLabel: string;
-  blurb: string;
+  tier: RelationshipTier;
   affinity: number;
   interactions: number;
 };
@@ -59,6 +66,7 @@ type DiaryEntry = { id: string; day: string; entry: string; stats: { received: n
  */
 export default function PetTab() {
   const theme = useTheme();
+  const { t, n, p } = useT();
   const { refresh: refreshBadge } = usePetSummary();
 
   const [pet, setPet] = useState<Pet | null>(null);
@@ -80,8 +88,8 @@ export default function PetTab() {
     () =>
       apiFetch<{ actions: PetAction[] }>('/api/me/pet-actions')
         .then((r) => setActions(r.actions))
-        .catch(() => setError("Couldn't load what your pet has been doing.")),
-    [],
+        .catch(() => setError(t('pet.error.load'))),
+    [t],
   );
   const loadPlaydates = useCallback(
     () => apiFetch<Playdates>('/api/me/playdates').then(setPlaydates).catch(() => {}),
@@ -123,7 +131,7 @@ export default function PetTab() {
       // The tab badge counts these, so it has to hear about it too.
       refreshBadge();
     } catch {
-      setError(decision === 'approve' ? "Couldn't do that just now." : "Couldn't dismiss that.");
+      setError(t(decision === 'approve' ? 'pet.error.approve' : 'pet.error.reject'));
     }
     setBusyId(null);
   };
@@ -160,11 +168,14 @@ export default function PetTab() {
             <View style={{ flex: 1, gap: 4 }}>
               <ThemedText type="title">{pet.name}</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
-                Your {species.label.toLowerCase()} · {species.moves.toLowerCase()} on the map
+                {t('pet.yourSpecies', {
+                  species: t(speciesLabelKey(species.value)).toLowerCase(),
+                  moves: t(speciesMovesKey(species.value)).toLowerCase(),
+                })}
               </ThemedText>
               <Badge
                 tone="brand"
-                label={pet.autoApprove ? 'Posts on its own' : 'Asks you first'}
+                label={t(pet.autoApprove ? 'pet.postsOnItsOwn' : 'pet.asksYouFirst')}
                 icon={
                   <Icon
                     name={pet.autoApprove ? 'check' : 'bell'}
@@ -181,12 +192,12 @@ export default function PetTab() {
           {pending.length > 0 && (
             <>
               <ThemedText type="label" style={styles.section}>
-                {pending.length === 1 ? 'Waiting on you' : `${pending.length} waiting on you`}
+                {n('pet.waitingOnYou', pending.length)}
               </ThemedText>
               {pending.map((action) => (
                 <Card key={action.id} style={styles.ask}>
                   <ThemedText type="label">
-                    {action.type === 'comment' ? `${pet.name} wants to reply` : `${pet.name} wants to post`}
+                    {t(action.type === 'comment' ? 'pet.wantsToReply' : 'pet.wantsToPost', { name: pet.name })}
                   </ThemedText>
                   {action.reasoning && (
                     <ThemedText type="small" themeColor="textSecondary">
@@ -200,21 +211,21 @@ export default function PetTab() {
                   )}
                   <View style={styles.askButtons}>
                     <Button
-                      label="Let them"
+                      label={t('pet.letThem')}
                       onPress={() => decide(action, 'approve')}
                       disabled={busyId === action.id}
                       style={{ flex: 1 }}
                     />
                     <Button
                       variant="secondary"
-                      label="Skip"
+                      label={t('pet.skip')}
                       onPress={() => decide(action, 'reject')}
                       disabled={busyId === action.id}
                       style={{ flex: 1 }}
                     />
                   </View>
                   <ThemedText type="caption" themeColor="textSecondary">
-                    Skipping is worth the same as agreeing.
+                    {t('pet.skipIsEqual')}
                   </ThemedText>
                 </Card>
               ))}
@@ -226,7 +237,7 @@ export default function PetTab() {
             <Card style={styles.moodCard}>
               <View style={styles.moodHead}>
                 <ThemedText type="label" style={{ flex: 1 }}>
-                  {mood.reasons[0]}
+                  {p({ ...mood.reasons[0]!, vars: { name: pet.name, ...mood.reasons[0]!.vars } })}
                 </ThemedText>
                 <ThemedText type="smallBold" themeColor="textSecondary">
                   {mood.score}
@@ -240,20 +251,23 @@ export default function PetTab() {
                   ]}
                 />
               </View>
-              {mood.reasons.slice(1).map((reason) => (
-                <ThemedText key={reason} type="small" themeColor="textSecondary">
-                  {reason}
-                </ThemedText>
-              ))}
+              {mood.reasons.slice(1).map((reason) => {
+                const line = p({ ...reason, vars: { name: pet.name, ...reason.vars } });
+                return (
+                  <ThemedText key={line} type="small" themeColor="textSecondary">
+                    {line}
+                  </ThemedText>
+                );
+              })}
 
               {bond && (
                 <Pressable
                   onPress={() => router.push('/bond')}
                   accessibilityRole="button"
-                  accessibilityLabel="Bond level and unlocks"
+                  accessibilityLabel={t('pet.a11y.bond')}
                   style={styles.bondRow}>
                   <ThemedText type="smallBold" themeColor="textSecondary">
-                    Bond {bond.level}
+                    {t('bond.short', { level: bond.level })}
                   </ThemedText>
                   <View style={[styles.bondTrack, { backgroundColor: theme.backgroundElement }]}>
                     <View
@@ -267,7 +281,12 @@ export default function PetTab() {
                     />
                   </View>
                   <ThemedText type="small" themeColor="textSecondary" numberOfLines={1} style={{ flexShrink: 1 }}>
-                    {bond.next ? `${bond.xpToNext} to ${bond.next.unlock.toLowerCase()}` : 'Elder bond'}
+                    {bond.next
+                      ? t('bond.toUnlock', {
+                          xp: bond.xpToNext,
+                          unlock: t(unlockKey(bond.level + 1)).toLowerCase(),
+                        })
+                      : t('bond.elder')}
                   </ThemedText>
                   <Icon name="chevron" size={16} color={theme.textSecondary} />
                 </Pressable>
@@ -282,14 +301,14 @@ export default function PetTab() {
                       onPress={() => doCare(kind)}
                       disabled={done || caring !== null}
                       accessibilityRole="button"
-                      accessibilityLabel={done ? `${CARE_LABEL[kind].done} today` : CARE_LABEL[kind].verb}
+                      accessibilityLabel={t(done ? careDoneKey(kind) : careVerbKey(kind))}
                       style={[
                         styles.careButton,
                         { backgroundColor: done ? theme.backgroundElement : theme.primarySoft },
                       ]}>
                       {done && <Icon name="check" size={13} color={theme.textSecondary} strokeWidth={3} />}
                       <ThemedText type="smallBold" style={{ color: done ? theme.textSecondary : theme.primaryInk }}>
-                        {done ? CARE_LABEL[kind].done : CARE_LABEL[kind].verb}
+                        {t(done ? careDoneKey(kind) : careVerbKey(kind))}
                       </ThemedText>
                     </Pressable>
                   );
@@ -300,7 +319,7 @@ export default function PetTab() {
 
           {/* ------------------------------------------------ what to do today */}
           {liveEvent && (
-            <Pressable onPress={() => router.push('/event')} accessibilityRole="button" accessibilityLabel="Open the event">
+            <Pressable onPress={() => router.push('/event')} accessibilityRole="button" accessibilityLabel={t('event.title')}>
               <EventCard data={liveEvent} />
             </Pressable>
           )}
@@ -312,17 +331,17 @@ export default function PetTab() {
             <>
               <View style={styles.sectionRow}>
                 <ThemedText type="label" style={{ flex: 1 }}>
-                  Last night
+                  {t('pet.lastNight')}
                 </ThemedText>
                 <Pressable onPress={() => router.push('/diary')} hitSlop={8} accessibilityRole="button">
                   <ThemedText type="smallBold" style={{ color: theme.primaryInk }}>
-                    The whole diary
+                    {t('pet.wholeDiary')}
                   </ThemedText>
                 </Pressable>
               </View>
               <Card style={styles.diary}>
                 {diary[0]!.stats && diary[0]!.stats.received > 0 && (
-                  <Badge tone="brand" label={`${diary[0]!.stats.received} reacted`} />
+                  <Badge tone="brand" label={n('pet.reacted', diary[0]!.stats.received)} />
                 )}
                 <ThemedText>{diary[0]!.entry}</ThemedText>
               </Card>
@@ -330,20 +349,20 @@ export default function PetTab() {
           )}
 
           {treasures && treasures.treasures.length > 0 && (
-            <Pressable onPress={() => router.push('/shelf')} accessibilityRole="button" accessibilityLabel="The whole shelf">
+            <Pressable onPress={() => router.push('/shelf')} accessibilityRole="button" accessibilityLabel={t('pet.a11y.shelf')}>
               <TreasureShelf treasures={treasures.treasures} counts={treasures.counts} petName={pet.name} />
             </Pressable>
           )}
 
           {friends.length > 0 && (
             <Card style={styles.friendsCard}>
-              <ThemedText type="label">{pet.name}&apos;s circle</ThemedText>
+              <ThemedText type="label">{t('pet.circle', { name: pet.name })}</ThemedText>
               {friends.slice(0, 5).map((friend) => (
                 <Pressable
                   key={friend.petId}
                   onPress={() => router.push(`/friend/${friend.petId}`)}
                   accessibilityRole="button"
-                  accessibilityLabel={`${friend.petName} — how they got here`}
+                  accessibilityLabel={t('pet.a11y.friend', { name: friend.petName })}
                   style={styles.friendRow}>
                   <View style={[styles.friendArt, { backgroundColor: theme.primarySoft }]}>
                     <CompanionArt species={friend.species} size={28} />
@@ -353,10 +372,10 @@ export default function PetTab() {
                       {friend.petName}
                     </ThemedText>
                     <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-                      {friend.blurb} · {friend.interactions} together
+                      {`${t(tierBlurbKey(friend.tier))} · ${n('pet.together', friend.interactions)}`}
                     </ThemedText>
                   </View>
-                  <Badge tone={friend.affinity >= 12 ? 'brand' : 'muted'} label={friend.tierLabel} />
+                  <Badge tone={friend.affinity >= 12 ? 'brand' : 'muted'} label={t(tierLabelKey(friend.tier))} />
                   <Icon name="chevron" size={16} color={theme.textSecondary} />
                 </Pressable>
               ))}
@@ -369,9 +388,9 @@ export default function PetTab() {
                 <Icon name="feed" size={20} color={theme.text} />
               </View>
               <View style={{ flex: 1 }}>
-                <ThemedText type="label">Everything {pet.name} did</ThemedText>
+                <ThemedText type="label">{t('pet.everythingDid', { name: pet.name })}</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
-                  Every decision, and the reason for it
+                  {t('pet.everythingDidBody')}
                 </ThemedText>
               </View>
               <Icon name="chevron" size={20} color={theme.textSecondary} />

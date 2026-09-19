@@ -1,6 +1,7 @@
 import { en, type TranslationKey } from "./en";
 
 export { en };
+export * from "./content";
 export type { TranslationKey };
 
 /**
@@ -40,17 +41,36 @@ export function resolveLocale(input: string | null | undefined): Locale {
 export type TVars = Record<string, string | number>;
 
 /**
+ * The base of a plural family — `map.postsAround`, given `map.postsAround_one`
+ * and `map.postsAround_other` in the catalogue.
+ *
+ * Derived from the catalogue rather than declared, so `n()` accepts exactly the
+ * keys that actually have plural forms. Passing a key with no `_other` variant is
+ * then a compile error instead of a string that silently renders as its own key.
+ */
+export type PluralKey = TranslationKey extends unknown
+  ? Extract<TranslationKey, `${string}_other`> extends `${infer Base}_other`
+    ? Base
+    : never
+  : never;
+
+/**
  * Looks up a key and fills its placeholders.
  *
  * Falls back to English rather than to the key itself: a partially translated
  * locale should read as mixed language, not as `pet.circle`. A key that exists in
  * no catalogue returns the key, which is loud enough to catch in review.
  */
-export function translate(locale: Locale, key: TranslationKey, vars?: TVars, count?: number): string {
-  const resolved = count === undefined ? key : pluralKey(locale, key, count);
+export function translate(
+  locale: Locale,
+  key: TranslationKey | PluralKey,
+  vars?: TVars,
+  count?: number,
+): string {
+  const resolved = count === undefined ? (key as TranslationKey) : pluralKey(locale, key, count);
   const table = CATALOGUES[locale] ?? {};
-  const raw = table[resolved] ?? en[resolved] ?? table[key] ?? en[key] ?? key;
-  return interpolate(raw, count === undefined ? vars : { count, ...vars });
+  const raw = table[resolved] ?? en[resolved] ?? key;
+  return interpolate(locale, raw, count === undefined ? vars : { count, ...vars });
 }
 
 /**
@@ -60,19 +80,54 @@ export function translate(locale: Locale, key: TranslationKey, vars?: TVars, cou
  * and the shortcut mistranslates every language that isn't English without ever
  * looking broken in development.
  */
-function pluralKey(locale: Locale, key: TranslationKey, count: number): TranslationKey {
+function pluralKey(locale: Locale, key: TranslationKey | PluralKey, count: number): TranslationKey {
   const category = new Intl.PluralRules(locale).select(count);
   const candidate = `${key}_${category}` as TranslationKey;
   if (candidate in en) return candidate;
   const other = `${key}_other` as TranslationKey;
-  return other in en ? other : key;
+  // Falling back to the bare key covers the case where a caller passed a plain
+  // key with a count; it renders the singular wording rather than nothing.
+  return other in en ? other : (key as TranslationKey);
 }
 
-function interpolate(text: string, vars?: TVars): string {
+/**
+ * Fills `{placeholders}`, and runs numbers through `Intl.NumberFormat`.
+ *
+ * Numbers get grouped the way the locale groups them — `13,460` against `13.460`
+ * — which matters here because the counts on screen get into the thousands. Done
+ * centrally rather than at the call sites, since `{count}` reaches every plural
+ * in the catalogue and formatting it at each one would be forgotten somewhere.
+ *
+ * An unfilled placeholder is left as-is rather than blanked: `{name} is waiting`
+ * shows the bug, an empty string hides it.
+ */
+function interpolate(locale: Locale, text: string, vars?: TVars): string {
   if (!vars) return text;
-  return text.replace(/\{(\w+)\}/g, (whole, name: string) =>
-    name in vars ? String(vars[name]) : whole,
-  );
+  return text.replace(/\{(\w+)\}/g, (whole, name: string) => {
+    if (!(name in vars)) return whole;
+    const value = vars[name];
+    return typeof value === "number" ? new Intl.NumberFormat(locale).format(value) : String(value);
+  });
+}
+
+/**
+ * A sentence the server chose but the client words.
+ *
+ * Some sentences can only be *decided* where the data is — which of seven mood
+ * reasons applies depends on signals the client never sees — but must be
+ * *written* where the reader is. Passing a key and its values instead of a
+ * finished sentence is what lets both be true at once. Before this existed, the
+ * server sent English prose and the client had no way to translate it.
+ */
+export type Phrase = {
+  key: TranslationKey | PluralKey;
+  /** Set for a plural family; `key` is then the family base. */
+  count?: number;
+  vars?: TVars;
+};
+
+export function translatePhrase(locale: Locale, phrase: Phrase): string {
+  return translate(locale, phrase.key, phrase.vars, phrase.count);
 }
 
 /** A bound translator, so screens don't thread the locale through every call. */
@@ -80,7 +135,9 @@ export type Translator = {
   locale: Locale;
   t: (key: TranslationKey, vars?: TVars) => string;
   /** Count-aware: resolves the plural category and exposes `{count}`. */
-  n: (key: TranslationKey, count: number, vars?: TVars) => string;
+  n: (key: PluralKey, count: number, vars?: TVars) => string;
+  /** Renders a `Phrase` — a sentence chosen server-side. */
+  p: (phrase: Phrase) => string;
 };
 
 export function translatorFor(locale: Locale): Translator {
@@ -88,6 +145,7 @@ export function translatorFor(locale: Locale): Translator {
     locale,
     t: (key, vars) => translate(locale, key, vars),
     n: (key, count, vars) => translate(locale, key, vars, count),
+    p: (phrase) => translatePhrase(locale, phrase),
   };
 }
 

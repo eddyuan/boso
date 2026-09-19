@@ -33,7 +33,7 @@ type ErrandResult = { posts: MapPost[]; foundNothing: boolean };
 // as their photo.
 export default function MapTab() {
   const theme = useTheme();
-  const { distance, timeAgo } = useT();
+  const { t, n, distance, timeAgo } = useT();
   const [pet, setPet] = useState<Pet | null>(null);
   const [location, setLocation] = useState<LatLng | null>(null);
   const [permission, setPermission] = useState<Location.PermissionStatus | null>(null);
@@ -90,7 +90,7 @@ export default function MapTab() {
         .then((r) => setWhiskers(r.whiskers))
         .catch(() => {});
     } catch {
-      setError("Couldn't get your location.");
+      setError(t('map.error.location'));
     }
   }
 
@@ -106,7 +106,7 @@ export default function MapTab() {
       });
       setErrand(r);
     } catch {
-      setError("Couldn't send them out just now.");
+      setError(t('map.error.errand'));
     }
     setSending(false);
   }
@@ -208,7 +208,7 @@ export default function MapTab() {
   const handlePetMove = useCallback(({ distanceM }: { distanceM: number }) => {
     const next = distance(distanceM);
     setPetAway((prev) => (prev === next ? prev : next));
-  }, []);
+  }, [distance]);
 
   const species = pet ? getPetSpecies(pet.species) : null;
 
@@ -235,7 +235,7 @@ export default function MapTab() {
             onPress={() => location && mapRef.current?.focusOn(location)}
             disabled={!location}
             accessibilityRole="button"
-            accessibilityLabel="Centre the map on you"
+            accessibilityLabel={t('map.a11y.centreOnYou')}
             style={({ pressed }) => (pressed ? styles.pressed : null)}
           >
             <Card style={styles.youChip}>
@@ -248,7 +248,7 @@ export default function MapTab() {
                   </ThemedText>
                 </View>
               )}
-              <ThemedText type="smallBold">You</ThemedText>
+              <ThemedText type="smallBold">{t('map.you')}</ThemedText>
             </Card>
           </Pressable>
 
@@ -257,7 +257,7 @@ export default function MapTab() {
               // Follow the pet to wherever it has wandered off to.
               onPress={() => mapRef.current?.focusOnPet()}
               accessibilityRole="button"
-              accessibilityLabel={`Show ${pet.name} on the map`}
+              accessibilityLabel={t('map.a11y.showPet', { name: pet.name })}
               style={({ pressed }) => (pressed ? styles.pressed : null)}
             >
               <Card style={styles.petChip}>
@@ -268,10 +268,10 @@ export default function MapTab() {
                   <ThemedText type="smallBold">{pet.name}</ThemedText>
                   <ThemedText type="caption" themeColor="textSecondary">
                     {!location
-                      ? 'Waiting for your location'
+                      ? t('map.waitingForLocation')
                       : petAway === null
-                        ? `${species.moves} near you`
-                        : `${petAway} away`}
+                        ? t('map.petNearYou', { moves: species.moves })
+                        : t('map.petAway', { distance: petAway })}
                   </ThemedText>
                 </View>
                 {location && <Icon name="pin" size={18} color={theme.primary} />}
@@ -284,15 +284,13 @@ export default function MapTab() {
           <ErrorText message={error} />
           {!location ? (
             <Card style={styles.prompt}>
-              <ThemedText type="label">Put your pet on the map</ThemedText>
+              <ThemedText type="label">{t('map.prompt.title')}</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
-                {permission === 'denied'
-                  ? 'Location is off. Turn it on in Settings to see your pet and nearby posts.'
-                  : 'Share your location to see your pet and the posts around you.'}
+                {t(permission === 'denied' ? 'map.prompt.denied' : 'map.prompt.body')}
               </ThemedText>
               {permission !== 'denied' && (
                 <Button
-                  label="Use my location"
+                  label={t('map.prompt.action')}
                   onPress={askForLocation}
                   icon={<Icon name="pin" size={20} color={theme.onPrimary} />}
                 />
@@ -306,7 +304,7 @@ export default function MapTab() {
                 <Pressable
                   onPress={() => setWhiskersOpen(true)}
                   accessibilityRole="button"
-                  accessibilityLabel="Today's whisper, and where it came from"
+                  accessibilityLabel={t('map.a11y.whisper')}
                   style={{ alignSelf: 'stretch' }}>
                   <Card style={styles.whiskers}>
                     <Icon name="sparkle" size={16} color={theme.primaryInk} />
@@ -319,16 +317,16 @@ export default function MapTab() {
               )}
               <View style={styles.bottomRow} pointerEvents="box-none">
                 {posts.length > 0 ? (
-                  <Badge tone="brand" label={`${posts.length} post${posts.length === 1 ? '' : 's'} around you`} />
+                  <Badge tone="brand" label={n('map.postsAround', posts.length)} />
                 ) : places.length > 0 ? (
                   // Names what's on screen and what to do with it. "No posts" on
                   // its own invites the reader to conclude the app is broken.
-                  <Badge label={`Quiet here — tap a place to post first`} />
+                  <Badge label={t('map.quietHere')} />
                 ) : null}
                 {pet && (
                   <Button
                     variant="secondary"
-                    label={sending ? 'Off they go…' : `Send ${pet.name} out`}
+                    label={sending ? t('map.sendingOut') : t('map.sendOut', { name: pet.name })}
                     onPress={sendErrand}
                     disabled={sending}
                     icon={<Icon name="shuffle" size={18} color={theme.primaryInk} />}
@@ -358,7 +356,7 @@ export default function MapTab() {
                   {selected.authoredByAgent && (
                     <Badge
                       tone="brand"
-                      label="by pet"
+                      label={t('feed.byPet')}
                       icon={<Icon name="sparkle" size={11} color={theme.primaryInk} strokeWidth={2.6} />}
                     />
                   )}
@@ -384,7 +382,7 @@ export default function MapTab() {
                 onPress={() => selected.placeId && setThreadFor(selected.placeId)}
                 disabled={!selected.placeId}
                 accessibilityRole="button"
-                accessibilityLabel={`See what's happening at ${selected.placeName}`}>
+                accessibilityLabel={t('map.a11y.openPlace', { place: selected.placeName })}>
                 <View style={[styles.placeRow, { backgroundColor: theme.backgroundElement }]}>
                   <Icon name="pin" size={18} color={theme.primaryInk} />
                   <ThemedText type="smallBold" numberOfLines={1} style={{ flex: 1 }}>
@@ -409,7 +407,7 @@ export default function MapTab() {
             {/* The sheet is a peek; the conversation lives on its own screen. */}
             <Button
               variant="secondary"
-              label="Open the thread"
+              label={t('post.openThread')}
               icon={<Icon name="bubble" size={18} color={theme.text} />}
               onPress={() => {
                 const id = selected.id;
@@ -427,12 +425,12 @@ export default function MapTab() {
         header={
           <View style={{ gap: 2 }}>
             <ThemedText type="label">
-              {errand?.foundNothing ? 'Nothing doing' : `${errand?.posts.length} thing${errand?.posts.length === 1 ? '' : 's'} nearby`}
+              {errand?.foundNothing ? t('errand.nothing.title') : n('errand.found', errand?.posts.length ?? 0)}
             </ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              {errand?.foundNothing
-                ? `${pet?.name ?? 'Your pet'} had a good look around and came back empty-pawed.`
-                : `${pet?.name ?? 'Your pet'} brought these back from a few streets away.`}
+              {t(errand?.foundNothing ? 'errand.nothing.body' : 'errand.foundBody', {
+                name: pet?.name ?? t('common.yourPet'),
+              })}
             </ThemedText>
           </View>
         }>
@@ -462,7 +460,7 @@ export default function MapTab() {
 
       <WhiskersSheet
         whiskers={whiskers}
-        petName={pet?.name ?? 'Your pet'}
+        petName={pet?.name ?? t('common.yourPet')}
         open={whiskersOpen}
         onClose={() => setWhiskersOpen(false)}
       />
