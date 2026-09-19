@@ -24,6 +24,7 @@
 5d8. [Pet parks](#5d8-pet-parks)
 5d9. [Neighbourhood events](#5d9-neighbourhood-events)
 5d10. [The empty map](#5d10-the-empty-map)
+5d11. [Navigation](#5d11-navigation)
 5e. [Notifications](#5e-notifications)
 6. [Mobile app screens](#6-mobile-app-screens)
 6a. [Location](#6a-location)
@@ -468,7 +469,8 @@ carries an empty shell — an absent card is the empty state.
 | `age-restricted` | Shown to under-18 accounts |
 | `onboarding/*` | The 9 onboarding steps (`index` resumes at the next step) |
 | `(tabs)/index` | **Map** tab (main): your pet in 3D, a blue dot for you, posts as photo markers. Tapping a post opens a detail panel — a draggable sheet on phones, a side card from tablet width up. Also today's **whiskers** line and the **Send them out** errand button, both of which need a location |
-| `(tabs)/feed` | Nearby / Following / Discover segments; posts by people and by pets, with distances. Your own posts carry an eye count that opens **who looked** |
+| `(tabs)/feed` | Nearby / Following / Discover segments; posts by people and by pets, with distances. Tapping a post opens its thread; your own carry an eye count that opens **who looked** |
+| `post/[postId]` | One post and its whole conversation. Reachable by id, so a link or a notification can land here |
 | `compose` | Write a post as yourself, optionally placed on the map |
 | `search` | Find people by name, or see who has posted near you |
 | `(tabs)/activity` | Today's three **missions**, open **playdate** invites and nearby pets to ask, your pet's diary, what it did, and what's waiting for your answer |
@@ -801,6 +803,31 @@ a hotspot marked beyond the cap is promoted to first.
 
 ---
 
+## 5d11. Navigation
+
+Each detail screen belongs to exactly one tab — the tab whose *subject* it is — and has one obvious
+way in. Two ways to reach the same conversation is how an app stops feeling like it has a shape.
+
+| Tab | Subject | Owns |
+|---|---|---|
+| Map | Geography | Place thread, errand result, the daily whisper *(sheets)* |
+| Feed | Content | `post/[postId]`, who-looked, search |
+| Activity | What happened, what to do | The diary, the running event |
+| Profile | You and your pet | Bond, shelf, a friendship, account, devices |
+
+Compose is a modal from the tab bar's **+**, because writing isn't a place you navigate to.
+
+**A thread is a screen, not a sheet.** Replies used to open in a bottom sheet, which was fine for a
+quick answer and wrong for everything else: a flat Tieba-style thread gets long, and a sheet can't be a
+destination — a notification, a whisper's source or a shared link all need somewhere to land. The
+map's marker preview stays a sheet, because that *is* a peek, and it offers "Open the thread" rather
+than trying to be one.
+
+A post's venue chip pushes the map with that place's thread open, so `placeId` is a real link rather
+than a decoration.
+
+---
+
 ## 5e. Notifications
 
 Push tokens have existed since onboarding shipped and nothing was ever sent. Now four things can
@@ -960,6 +987,7 @@ All under `apps/web/src/app/api`. Guard: `requireSession()` in [`lib/session.ts`
 | `GET /api/me/treasures` | onboarded | The shelf of what the pet has brought home |
 | `GET`/`POST`/`PATCH /api/me/playdates` | onboarded | Who you could meet · propose · accept or decline |
 | `GET /api/me/missions` | onboarded | Today's three goals and their progress |
+| `GET /api/posts/:postId` | onboarded | One post, for the thread screen; feed visibility rules apply |
 | `GET /api/places/:placeId/posts` | onboarded | The last 48 hours at one place |
 | `GET /api/topics` | onboarded | Topics ranked by use in the last 14 days, for the filter chips |
 | `GET /api/me/event` | onboarded | The running event, the shared total and your own contribution |
@@ -1388,4 +1416,5 @@ a person can supply, which is why `/admin/roadmap` now marks them **Needs you** 
 | 2026-09-19 | Game ops 4/5 — player inspector: game state on the account page, with mood derived exactly as the app derives it and the bond ledger reconciled against the stored total |
 | 2026-09-19 | Game ops 5/5 — assets: storage reconciled against the database in both directions, scoped to our own prefixes because the bucket is shared with another product |
 | 2026-09-19 | Admin: denser sidebar (17 items, ~160px shorter, 32px narrower) and the platform UI font instead of the rounded display face — it's a tool, read at small sizes for hours |
+| 2026-09-19 | App navigation: one owner tab per detail screen; the post thread becomes a real screen reachable by id, replacing the reply sheet |
 | 2026-09-18 | Backfill photo handles lazily via Place Details, so venues imported before the field-mask change can get photos too |

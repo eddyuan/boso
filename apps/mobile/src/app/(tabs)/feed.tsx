@@ -7,7 +7,6 @@ import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { Screen } from '@/components/auth-form';
 import { EmptyState } from '@/components/empty-state';
 import { CompanionArt } from '@/components/mascot/companions';
-import { CommentSheet } from '@/components/comment-sheet';
 import { MediaGallery, type PostMedia } from '@/components/media-gallery';
 import { SensitiveCover } from '@/components/sensitive-cover';
 import { ThemedText } from '@/components/themed-text';
@@ -74,7 +73,6 @@ export default function FeedTab() {
   // The reader's standing preference, and the posts they've revealed this session.
   const [showSensitive, setShowSensitive] = useState(false);
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
-  const [commentsFor, setCommentsFor] = useState<string | null>(null);
   const [topics, setTopics] = useState<{ slug: string; label: string }[]>([]);
   const [topic, setTopic] = useState<string | null>(null);
 
@@ -129,10 +127,6 @@ export default function FeedTab() {
         ),
       );
     }
-  }, []);
-
-  const setCommentCount = useCallback((postId: string, total: number) => {
-    setPosts((prev) => (prev ?? []).map((p) => (p.id === postId ? { ...p, commentCount: total } : p)));
   }, []);
 
   useFocusEffect(
@@ -236,18 +230,24 @@ export default function FeedTab() {
               </View>
             </View>
 
-            <ThemedText>{post.content}</ThemedText>
-            {post.media.length > 0 && (
-              <View>
-                <MediaGallery media={post.media} height={180} blurred={covered} />
-                {covered && (
-                  <SensitiveCover
-                    categories={post.sensitiveCategories.map(categoryLabel)}
-                    onReveal={() => setRevealed((prev) => new Set(prev).add(post.id))}
-                  />
-                )}
-              </View>
-            )}
+            <Pressable
+              onPress={() => router.push(`/post/${post.id}`)}
+              accessibilityRole="button"
+              accessibilityLabel={`Open ${authorName}'s post`}
+              style={{ gap: Spacing.md }}>
+              <ThemedText>{post.content}</ThemedText>
+              {post.media.length > 0 && (
+                <View>
+                  <MediaGallery media={post.media} height={180} blurred={covered} />
+                  {covered && (
+                    <SensitiveCover
+                      categories={post.sensitiveCategories.map(categoryLabel)}
+                      onReveal={() => setRevealed((prev) => new Set(prev).add(post.id))}
+                    />
+                  )}
+                </View>
+              )}
+            </Pressable>
 
             <View style={styles.metrics}>
               <Pressable
@@ -262,7 +262,7 @@ export default function FeedTab() {
                 </ThemedText>
               </Pressable>
               <Pressable
-                onPress={() => setCommentsFor(post.id)}
+                onPress={() => router.push(`/post/${post.id}`)}
                 hitSlop={8}
                 style={styles.metric}
                 accessibilityRole="button"
@@ -293,13 +293,6 @@ export default function FeedTab() {
       })}
 
       <ViewersSheet postId={viewersFor} open={viewersFor !== null} onClose={() => setViewersFor(null)} />
-
-      <CommentSheet
-        postId={commentsFor}
-        open={commentsFor !== null}
-        onClose={() => setCommentsFor(null)}
-        onCountChange={setCommentCount}
-      />
     </Screen>
   );
 }

@@ -2,7 +2,6 @@ import { Image } from 'expo-image';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
-import { BottomSheet } from '@/components/bottom-sheet';
 import { CompanionArt } from '@/components/mascot/companions';
 import { ThemedText } from '@/components/themed-text';
 import { ErrorText } from '@/components/ui/controls';
@@ -13,9 +12,16 @@ import { apiFetch } from '@/lib/api';
 import { timeAgo } from '@/lib/time';
 
 /**
- * Replies to a post. Threading is one level deep: a reply to a reply joins the
- * same thread and @-mentions the pet it answers, rather than nesting — the
- * server normalises this, so the UI only ever draws two levels.
+ * Replies to a post, as pieces a screen can arrange.
+ *
+ * Threading is one level deep: a reply to a reply joins the same thread and
+ * @-mentions the pet it answers rather than nesting, so the UI only ever draws
+ * two levels. The server normalises that.
+ *
+ * Split into a hook, a list and a composer because the thread lives on a screen
+ * now, where the composer should stay pinned to the bottom rather than scrolling
+ * away with the conversation. Keeping them separate lets the screen decide,
+ * without two copies of the state that both need.
  */
 
 export type Comment = {
@@ -36,21 +42,14 @@ export type Comment = {
 };
 
 type Thread = Comment & { replies: Comment[] };
-
 type ReplyTarget = { parentId: string; petId: string; petName: string } | null;
 
-export function CommentSheet({
-  postId,
-  open,
-  onClose,
-  onCountChange,
-}: {
-  postId: string | null;
-  open: boolean;
-  onClose: () => void;
-  onCountChange?: (postId: string, total: number) => void;
-}) {
-  const theme = useTheme();
+const liked = (c: Comment, next: boolean) => ({
+  likedByMe: next,
+  likeCount: Math.max(0, c.likeCount + (next ? 1 : -1)),
+});
+
+export function useCommentThread(postId: string | null, onCountChange?: (postId: string, total: number) => void) {
   const [threads, setThreads] = useState<Thread[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
@@ -69,13 +68,13 @@ export function CommentSheet({
   }, [postId, onCountChange]);
 
   useEffect(() => {
-    if (!open || !postId) return;
+    if (!postId) return;
     setThreads(null);
     setError(null);
     setReplyTo(null);
     setDraft('');
     load();
-  }, [open, postId, load]);
+  }, [postId, load]);
 
   const send = async () => {
     const content = draft.trim();
@@ -118,16 +117,18 @@ export function CommentSheet({
 
   const total = threads?.reduce((n, t) => n + 1 + t.replies.length, 0) ?? 0;
 
+  return { threads, error, draft, setDraft, replyTo, setReplyTo, sending, send, toggleLike, total, reload: load };
+}
+
+export type CommentThreadState = ReturnType<typeof useCommentThread>;
+
+/** The conversation itself. */
+export function CommentList({ state }: { state: CommentThreadState }) {
+  const theme = useTheme();
+  const { threads, error, toggleLike, setReplyTo } = state;
+
   return (
-    <BottomSheet
-      open={open}
-      onClose={onClose}
-      contentKey={postId ?? undefined}
-      header={
-        <View style={styles.header}>
-          <ThemedText type="label">{total === 1 ? '1 reply' : `${total} replies`}</ThemedText>
-        </View>
-      }>
+    <>
       <ErrorText message={error} />
       {!threads && !error && <ActivityIndicator color={theme.primaryPress} />}
       {threads?.length === 0 && (
@@ -135,10 +136,13 @@ export function CommentSheet({
           No replies yet. Say something.
         </ThemedText>
       )}
-
       {threads?.map((thread) => (
         <View key={thread.id} style={styles.thread}>
-          <CommentRow comment={thread} onLike={toggleLike} onReply={() => setReplyTo({ parentId: thread.id, petId: thread.petId, petName: thread.petName })} />
+          <CommentRow
+            comment={thread}
+            onLike={toggleLike}
+            onReply={() => setReplyTo({ parentId: thread.id, petId: thread.petId, petName: thread.petName })}
+          />
           {thread.replies.map((reply) => (
             <View key={reply.id} style={styles.replyIndent}>
               <CommentRow
@@ -150,49 +154,52 @@ export function CommentSheet({
           ))}
         </View>
       ))}
-
-      <View style={[styles.composer, { borderTopColor: theme.line, backgroundColor: theme.surface }]}>
-        {replyTo && (
-          <View style={styles.replyingTo}>
-            <ThemedText type="small" themeColor="textSecondary" style={{ flex: 1 }}>
-              Replying to {replyTo.petName}
-            </ThemedText>
-            <Pressable onPress={() => setReplyTo(null)} hitSlop={10} accessibilityLabel="Cancel reply">
-              <Icon name="close" size={16} color={theme.textSecondary} />
-            </Pressable>
-          </View>
-        )}
-        <View style={styles.composerRow}>
-          <TextInput
-            value={draft}
-            onChangeText={setDraft}
-            placeholder={replyTo ? `Reply to ${replyTo.petName}…` : 'Add a reply…'}
-            placeholderTextColor={theme.textSecondary}
-            multiline
-            maxLength={500}
-            style={[styles.input, { color: theme.text, backgroundColor: theme.backgroundElement }]}
-          />
-          <Pressable
-            onPress={send}
-            disabled={!draft.trim() || sending}
-            accessibilityRole="button"
-            accessibilityLabel="Send reply"
-            style={[
-              styles.send,
-              { backgroundColor: draft.trim() ? theme.primary : theme.backgroundElement, opacity: sending ? 0.6 : 1 },
-            ]}>
-            <Icon name="chevron" size={18} color={draft.trim() ? theme.onPrimary : theme.textSecondary} />
-          </Pressable>
-        </View>
-      </View>
-    </BottomSheet>
+    </>
   );
 }
 
-const liked = (c: Comment, next: boolean) => ({
-  likedByMe: next,
-  likeCount: Math.max(0, c.likeCount + (next ? 1 : -1)),
-});
+/** The input. Pinned by the screen, so it doesn't scroll away mid-reply. */
+export function CommentComposer({ state }: { state: CommentThreadState }) {
+  const theme = useTheme();
+  const { draft, setDraft, replyTo, setReplyTo, sending, send } = state;
+
+  return (
+    <View style={[styles.composer, { borderTopColor: theme.line, backgroundColor: theme.surface }]}>
+      {replyTo && (
+        <View style={styles.replyingTo}>
+          <ThemedText type="small" themeColor="textSecondary" style={{ flex: 1 }}>
+            Replying to {replyTo.petName}
+          </ThemedText>
+          <Pressable onPress={() => setReplyTo(null)} hitSlop={10} accessibilityLabel="Cancel reply">
+            <Icon name="close" size={16} color={theme.textSecondary} />
+          </Pressable>
+        </View>
+      )}
+      <View style={styles.composerRow}>
+        <TextInput
+          value={draft}
+          onChangeText={setDraft}
+          placeholder={replyTo ? `Reply to ${replyTo.petName}…` : 'Add a reply…'}
+          placeholderTextColor={theme.textSecondary}
+          multiline
+          maxLength={500}
+          style={[styles.input, { color: theme.text, backgroundColor: theme.backgroundElement }]}
+        />
+        <Pressable
+          onPress={send}
+          disabled={!draft.trim() || sending}
+          accessibilityRole="button"
+          accessibilityLabel="Send reply"
+          style={[
+            styles.send,
+            { backgroundColor: draft.trim() ? theme.primary : theme.backgroundElement, opacity: sending ? 0.6 : 1 },
+          ]}>
+          <Icon name="chevron" size={18} color={draft.trim() ? theme.onPrimary : theme.textSecondary} />
+        </Pressable>
+      </View>
+    </View>
+  );
+}
 
 function CommentRow({
   comment,

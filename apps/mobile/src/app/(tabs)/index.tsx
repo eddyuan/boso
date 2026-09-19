@@ -1,7 +1,7 @@
 import { categoryLabel, getPetSpecies, shouldBlur } from '@bsocial/shared';
 import { Image } from 'expo-image';
 import * as Location from 'expo-location';
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -48,6 +48,8 @@ export default function MapTab() {
   const [sending, setSending] = useState(false);
   const [threadFor, setThreadFor] = useState<string | null>(null);
   const [places, setPlaces] = useState<MapPlace[]>([]);
+  // Arriving from a post's venue chip: open that place's thread straight away.
+  const { placeId } = useLocalSearchParams<{ placeId?: string }>();
   const { data: session } = authClient.useSession();
   const showSensitive = session?.user?.showSensitiveContent ?? false;
   const sheetCovered =
@@ -60,6 +62,7 @@ export default function MapTab() {
 
   useFocusEffect(
     useCallback(() => {
+      if (placeId) setThreadFor(placeId);
       apiFetch<{ pet: Pet | null }>('/api/pets')
         .then((r) => setPet(r.pet))
         .catch(() => {});
@@ -70,7 +73,7 @@ export default function MapTab() {
         })
         .catch(() => {});
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []),
+    }, [placeId]),
   );
 
   async function locate() {
@@ -394,6 +397,17 @@ export default function MapTab() {
                 )}
               </View>
             )}
+            {/* The sheet is a peek; the conversation lives on its own screen. */}
+            <Button
+              variant="secondary"
+              label="Open the thread"
+              icon={<Icon name="bubble" size={18} color={theme.text} />}
+              onPress={() => {
+                const id = selected.id;
+                setSelected(null);
+                router.push(`/post/${id}`);
+              }}
+            />
           </>
         )}
       </BottomSheet>
