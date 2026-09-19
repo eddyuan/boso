@@ -10,6 +10,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
+import { BackHeader } from '@/components/back-header';
 import { Screen } from '@/components/auth-form';
 import { CompanionArt } from '@/components/mascot/companions';
 import { ThemedText } from '@/components/themed-text';
@@ -72,7 +73,7 @@ export default function BondScreen() {
   const pct = bond && bond.levelSpan > 0 ? Math.round((bond.intoLevel / bond.levelSpan) * 100) : 100;
 
   return (
-    <Screen header={<Back title={data?.pet ? t('bond.title', { name: data.pet.name }) : t('bond.plainTitle')} />}>
+    <Screen header={<BackHeader title={data?.pet ? t('bond.title', { name: data.pet.name }) : t('bond.plainTitle')} />}>
       <ErrorText message={error} />
       {!data && !error && <ActivityIndicator color={theme.primaryPress} />}
 
@@ -179,24 +180,6 @@ export default function BondScreen() {
   );
 }
 
-function Back({ title }: { title: string }) {
-  const theme = useTheme();
-  const { t } = useT();
-  return (
-    <View style={styles.top}>
-      <Pressable
-        onPress={() => router.back()}
-        accessibilityRole="button"
-        accessibilityLabel={t('action.back')}
-        style={({ pressed }) => [styles.back, { backgroundColor: theme.backgroundElement, opacity: pressed ? 0.7 : 1 }]}>
-        <Icon name="back" />
-      </Pressable>
-      <ThemedText type="subtitle" style={{ flex: 1 }} numberOfLines={1}>
-        {title}
-      </ThemedText>
-    </View>
-  );
-}
 
 const styles = StyleSheet.create({
   top: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },

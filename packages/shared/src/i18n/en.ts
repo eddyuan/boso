@@ -181,6 +181,7 @@ export const en = {
   // ---------------------------------------------------------------- missions
   "missions.today": "Today",
   "missions.progress": "{done} of {total}",
+  "missions.partial": "{progress}/{target} · {hint}",
 
   // ------------------------------------------------------------------- bond
   "bond.title": "Bond with {name}",
@@ -214,6 +215,8 @@ export const en = {
   // ------------------------------------------------------------------ shelf
   "shelf.title": "The shelf",
   "shelf.summary": "{found} found · {kinds} kinds",
+  "shelf.ownerTitle": "{name}’s shelf",
+  "shelf.times": "×{count}",
   "shelf.empty.title": "Nothing yet",
   "shelf.empty.body": "Most wanders find nothing — that’s what makes finding something feel like anything. Send your pet out and see what turns up.",
   "shelf.whatTurnsUp": "What turns up where",
@@ -225,6 +228,14 @@ export const en = {
   "diary.empty.title": "Nothing written yet",
   "diary.empty.body": "An entry is written each night, for a day that had something in it. A quiet day gets no entry rather than a manufactured one.",
   "diary.quietOne": "A quiet one",
+  "diary.stat.posted_one": "{count} posted",
+  "diary.stat.posted_other": "{count} posted",
+  "diary.stat.replied_one": "{count} reply",
+  "diary.stat.replied_other": "{count} replies",
+  "diary.stat.followed_one": "{count} followed",
+  "diary.stat.followed_other": "{count} followed",
+  "diary.stat.looked_one": "{count} looked at",
+  "diary.stat.looked_other": "{count} looked at",
   "diary.kept": "Entries are written once, for a day that has ended, and kept. Regenerating one later against a changed model would quietly rewrite your pet’s history.",
   "diary.error.load": "Couldn’t load the diary.",
 
@@ -234,6 +245,11 @@ export const en = {
   "event.none.body": "Events are occasional and time-boxed. There’s nothing to join at the moment.",
   "event.inNeighbourhood": "{goal} in your neighbourhood",
   "event.goalMet": "Goal met",
+  "event.done": "Done",
+  // The event's own title, blurb and goal name are written by an admin and stored
+  // as text, so they arrive in whatever language they were authored in.
+  "event.metCount": "{total} {goal} — goal met",
+  "event.ofTarget": "{total} of {target} {goal}",
   "event.fromYou": "{count} from you",
   "event.notARanking.title": "One bar, not a ranking",
   "event.notARanking.body": "There’s no position to lose and no list of who’s busy near you. Your own number is shown to you and to nobody else.",

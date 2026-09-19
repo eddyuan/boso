@@ -69,8 +69,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ petId: 
       isReal: !row.ownerIsMock,
     },
     affinity,
-    tier: tierFor(affinity),
-    tiers: RELATIONSHIP_TIERS,
+    // Ids and thresholds only; the app words each tier from the catalogue.
+    tier: { id: tierFor(affinity).id, min: tierFor(affinity).min },
+    tiers: RELATIONSHIP_TIERS.map((t) => ({ id: t.id, min: t.min })),
     interactions: row.interactions,
     becameFriendsAt: row.becameFriendsAt,
     lastInteractionAt: row.lastInteractionAt,

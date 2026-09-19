@@ -2,6 +2,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
+import { BackHeader } from '@/components/back-header';
 import { Screen } from '@/components/auth-form';
 import { ThemedText } from '@/components/themed-text';
 import { Badge, Card, ErrorText } from '@/components/ui/controls';
@@ -41,7 +42,7 @@ export default function EventScreen() {
   const met = data?.event ? data.total >= data.event.target : false;
 
   return (
-    <Screen header={<Back title={data?.event?.title ?? 'Event'} />}>
+    <Screen header={<BackHeader title={data?.event?.title ?? 'Event'} />}>
       <ErrorText message={error} />
       {!data && !error && <ActivityIndicator color={theme.primaryPress} />}
 
@@ -115,24 +116,6 @@ function remaining(hours: number): string {
   return `${Math.round(hours / 24)}d left`;
 }
 
-function Back({ title, trailing }: { title: string; trailing?: React.ReactNode }) {
-  const theme = useTheme();
-  return (
-    <View style={styles.top}>
-      <Pressable
-        onPress={() => router.back()}
-        accessibilityRole="button"
-        accessibilityLabel="Back"
-        style={({ pressed }) => [styles.back, { backgroundColor: theme.backgroundElement, opacity: pressed ? 0.7 : 1 }]}>
-        <Icon name="back" />
-      </Pressable>
-      <ThemedText type="subtitle" style={{ flex: 1 }} numberOfLines={1}>
-        {title}
-      </ThemedText>
-      {trailing}
-    </View>
-  );
-}
 
 const styles = StyleSheet.create({
   top: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },

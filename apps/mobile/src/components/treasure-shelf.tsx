@@ -1,10 +1,11 @@
-import { TREASURE_BY_ID, rarityLabel } from '@bsocial/shared';
+import { TREASURE_BY_ID, rarityKey, treasureKey } from '@bsocial/shared';
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Badge, Card } from '@/components/ui/controls';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useT } from '@/lib/i18n';
 
 export type Treasure = {
   id: string;
@@ -30,6 +31,7 @@ export function TreasureShelf({
   petName: string;
 }) {
   const theme = useTheme();
+  const { t: translate, n, day } = useT();
   if (treasures.length === 0) return null;
 
   const distinct = Object.keys(counts).length;
@@ -39,10 +41,10 @@ export function TreasureShelf({
     <Card style={styles.card}>
       <View style={styles.head}>
         <ThemedText type="label" style={{ flex: 1 }}>
-          {petName}&apos;s shelf
+          {translate('shelf.ownerTitle', { name: petName })}
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
-          {total} found · {distinct} kinds
+          {translate('shelf.summary', { found: total, kinds: distinct })}
         </ThemedText>
       </View>
 
@@ -59,18 +61,18 @@ export function TreasureShelf({
             />
             <View style={styles.rowText}>
               <ThemedText type="smallBold" numberOfLines={1}>
-                {kind?.label ?? t.kind}
+                {translate(treasureKey(t.kind))}
               </ThemedText>
               <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-                {[t.placeName, foundWhen(t.foundAt)].filter(Boolean).join(' · ')}
+                {[t.placeName, day(t.foundAt)].filter(Boolean).join(' · ')}
               </ThemedText>
             </View>
             {/* Only worth a badge when it's actually uncommon; labelling every
                 bottle cap "Common" is noise. */}
-            {rare && <Badge tone="brand" label={rarityLabel(kind!.rarity)} />}
+            {rare && <Badge tone="brand" label={translate(rarityKey(kind!.rarity))} />}
             {counts[t.kind] > 1 && (
               <ThemedText type="small" themeColor="textSecondary">
-                ×{counts[t.kind]}
+                {translate('shelf.times', { count: counts[t.kind]! })}
               </ThemedText>
             )}
           </View>
@@ -78,14 +80,6 @@ export function TreasureShelf({
       })}
     </Card>
   );
-}
-
-function foundWhen(iso: string): string {
-  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
-  if (days <= 0) return 'today';
-  if (days === 1) return 'yesterday';
-  if (days < 30) return `${days} days ago`;
-  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
 const styles = StyleSheet.create({

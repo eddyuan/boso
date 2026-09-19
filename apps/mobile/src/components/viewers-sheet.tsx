@@ -36,7 +36,7 @@ export function ViewersSheet({
   onClose: () => void;
 }) {
   const theme = useTheme();
-  const { timeAgo } = useT();
+  const { t, n, timeAgo } = useT();
   const [viewers, setViewers] = useState<Viewer[] | null>(null);
   const [total, setTotal] = useState(0);
 
@@ -58,13 +58,15 @@ export function ViewersSheet({
       contentKey={postId ?? undefined}
       header={
         <View style={{ gap: 2 }}>
-          <ThemedText type="label">Who looked</ThemedText>
+          <ThemedText type="label">{t('viewers.title')}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
             {viewers === null
-              ? 'Having a look…'
+              ? t('viewers.looking')
               : total === 0
-                ? 'Nobody has come past yet.'
-                : `${total} ${total === 1 ? 'visit' : 'visits'}${total > viewers.length ? `, showing the last ${viewers.length}` : ''}`}
+                ? t('viewers.none')
+                : total > viewers.length
+                  ? t('viewers.showingLast', { count: total, shown: viewers.length })
+                  : n('viewers.count', total)}
           </ThemedText>
         </View>
       }>
@@ -85,7 +87,7 @@ export function ViewersSheet({
                 {v.ownerName?.trim() || v.petName}
               </ThemedText>
               <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-                {v.petName} came past · {timeAgo(v.viewedAt)}
+                {`${t('viewers.camePast', { name: v.petName })} · ${timeAgo(v.viewedAt)}`}
               </ThemedText>
             </View>
           </View>

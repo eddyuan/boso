@@ -1,3 +1,4 @@
+import type { Translator } from '@bsocial/shared';
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -5,6 +6,7 @@ import { Badge, Card } from '@/components/ui/controls';
 import { Icon } from '@/components/ui/icon';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useT } from '@/lib/i18n';
 
 export type LiveEvent = {
   event: {
@@ -30,6 +32,7 @@ export type LiveEvent = {
  */
 export function EventCard({ data }: { data: LiveEvent | null }) {
   const theme = useTheme();
+  const { t } = useT();
   if (!data) return null;
 
   const { event, total, yours, fraction, hoursLeft } = data;
@@ -42,7 +45,7 @@ export function EventCard({ data }: { data: LiveEvent | null }) {
         <ThemedText type="label" style={{ flex: 1 }} numberOfLines={1}>
           {event.title}
         </ThemedText>
-        {met ? <Badge tone="brand" label="Done" /> : <Badge label={remaining(hoursLeft)} />}
+        {met ? <Badge tone="brand" label={t('event.done')} /> : <Badge label={remaining(t, hoursLeft)} />}
       </View>
 
       {event.blurb ? (
@@ -59,14 +62,16 @@ export function EventCard({ data }: { data: LiveEvent | null }) {
 
       <View style={styles.foot}>
         <ThemedText type="smallBold" style={{ flex: 1, color: theme.primaryInk }}>
-          {met
-            ? `${total} ${event.goalLabel} — goal met`
-            : `${total} of ${event.target} ${event.goalLabel}`}
+          {t(met ? 'event.metCount' : 'event.ofTarget', {
+            total,
+            target: event.target,
+            goal: event.goalLabel,
+          })}
         </ThemedText>
         {/* Only ever your own number. Nobody else's is available anywhere. */}
         {yours > 0 && (
           <ThemedText type="small" themeColor="textSecondary">
-            {yours} from you
+            {t('event.fromYou', { count: yours })}
           </ThemedText>
         )}
       </View>
@@ -74,10 +79,10 @@ export function EventCard({ data }: { data: LiveEvent | null }) {
   );
 }
 
-function remaining(hours: number): string {
-  if (hours <= 0) return 'Ending';
-  if (hours < 24) return `${Math.round(hours)}h left`;
-  return `${Math.round(hours / 24)}d left`;
+function remaining(t: Translator['t'], hours: number): string {
+  if (hours <= 0) return t('event.endingSoon');
+  if (hours < 24) return t('event.hoursLeft', { hours: Math.round(hours) });
+  return t('event.daysLeft', { days: Math.round(hours / 24) });
 }
 
 const styles = StyleSheet.create({

@@ -2,6 +2,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
+import { BackHeader } from '@/components/back-header';
 import { Screen } from '@/components/auth-form';
 import { EmptyState } from '@/components/empty-state';
 import { ThemedText } from '@/components/themed-text';
@@ -30,15 +31,6 @@ const ACTION_ICON: Record<PetAction['type'], IconName> = {
   none: 'sparkle',
 };
 
-const ACTION_LABEL: Record<PetAction['type'], string> = {
-  post: 'Wrote a post',
-  like: 'Liked a post',
-  comment: 'Replied to a post',
-  follow: 'Followed a pet',
-  visit: 'Looked at a post',
-  none: 'Rested',
-};
-
 /**
  * Every decision the pet has made, and why.
  *
@@ -49,7 +41,7 @@ const ACTION_LABEL: Record<PetAction['type'], string> = {
  */
 export default function PetLogScreen() {
   const theme = useTheme();
-  const { timeAgo } = useT();
+  const { t, timeAgo } = useT();
   const [actions, setActions] = useState<PetAction[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -57,25 +49,14 @@ export default function PetLogScreen() {
     useCallback(() => {
       apiFetch<{ actions: PetAction[] }>('/api/me/pet-actions')
         .then((r) => setActions(r.actions))
-        .catch(() => setError("Couldn't load the log."));
-    }, []),
+        .catch(() => setError(t('petLog.error.load')));
+    }, [t]),
   );
 
   return (
     <Screen
       header={
-        <View style={styles.top}>
-          <Pressable
-            onPress={() => router.back()}
-            accessibilityRole="button"
-            accessibilityLabel="Back"
-            style={({ pressed }) => [styles.back, { backgroundColor: theme.backgroundElement, opacity: pressed ? 0.7 : 1 }]}>
-            <Icon name="back" />
-          </Pressable>
-          <ThemedText type="subtitle" style={{ flex: 1 }}>
-            What they did
-          </ThemedText>
-        </View>
+        <BackHeader title={t('petLog.title')} />
       }>
       <ErrorText message={error} />
       {!actions && !error && <ActivityIndicator color={theme.primaryPress} />}
@@ -83,8 +64,8 @@ export default function PetLogScreen() {
       {actions?.length === 0 && (
         <EmptyState
           mood="sleepy"
-          title="Nothing yet"
-          message="Your pet acts about once every few hours. Check back soon to see what it got up to."
+          title={t('petLog.empty.title')}
+          message={t('petLog.empty.body')}
         />
       )}
 
@@ -101,7 +82,7 @@ export default function PetLogScreen() {
                   />
                 </IconTile>
                 <View style={styles.rowText}>
-                  <ThemedText type="label">{ACTION_LABEL[action.type]}</ThemedText>
+                  <ThemedText type="label">{t(`petLog.action.${action.type}`)}</ThemedText>
                   {action.reasoning ? (
                     <ThemedText type="small" themeColor="textSecondary">
                       {action.reasoning}
@@ -112,11 +93,11 @@ export default function PetLogScreen() {
                   </ThemedText>
                 </View>
                 {action.status === 'pending' ? (
-                  <Badge label="Waiting" tone="brand" />
+                  <Badge label={t('petLog.waiting')} tone="brand" />
                 ) : action.status === 'failed' ? (
-                  <Badge label="Failed" />
+                  <Badge label={t('petLog.failed')} />
                 ) : action.status === 'rejected' ? (
-                  <Badge label="Skipped" />
+                  <Badge label={t('petLog.skipped')} />
                 ) : null}
               </View>
             </View>
@@ -126,8 +107,7 @@ export default function PetLogScreen() {
 
       {actions && actions.length > 0 && (
         <ThemedText type="small" themeColor="textSecondary" style={styles.note}>
-          Every line here was written when the decision was made, not afterwards. A rejected idea stays in
-          the log but never becomes a diary entry — the diary is written from what actually happened.
+          {t('petLog.note')}
         </ThemedText>
       )}
     </Screen>

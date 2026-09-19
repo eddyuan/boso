@@ -1,3 +1,4 @@
+import type { Translator } from '@bsocial/shared';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -8,6 +9,7 @@ import { Badge, Card } from '@/components/ui/controls';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { apiFetch } from '@/lib/api';
+import { useT } from '@/lib/i18n';
 
 export type PlaydateCandidate = {
   petId: string;
@@ -42,6 +44,7 @@ export type Playdates = {
  */
 export function PlaydatesCard({ data, onChange }: { data: Playdates; onChange: () => void }) {
   const theme = useTheme();
+  const { t, distance } = useT();
   const [busy, setBusy] = useState<string | null>(null);
 
   const { candidates, invites, sent } = data;
@@ -71,7 +74,7 @@ export function PlaydatesCard({ data, onChange }: { data: Playdates; onChange: (
 
   return (
     <Card style={styles.card}>
-      <ThemedText type="label">Playdates</ThemedText>
+      <ThemedText type="label">{t('playdates.title')}</ThemedText>
 
       {invites.map((invite) => (
         <View key={invite.id} style={styles.inviteBlock}>
@@ -81,23 +84,27 @@ export function PlaydatesCard({ data, onChange }: { data: Playdates; onChange: (
             </View>
             <View style={styles.rowText}>
               <ThemedText type="smallBold" numberOfLines={1}>
-                {invite.otherPetName} wants to meet
+                {t('playdates.wantsToMeet', { name: invite.otherPetName })}
               </ThemedText>
               <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-                {invite.placeName ? `At ${invite.placeName}` : 'Somewhere between you'} · {expiry(invite.expiresAt)}
+                {`${
+                  invite.placeName
+                    ? t('playdates.atPlace', { place: invite.placeName })
+                    : t('playdates.somewhereBetween')
+                } · ${expiry(t, invite.expiresAt)}`}
               </ThemedText>
             </View>
           </View>
           <View style={styles.buttons}>
             <Button
-              label="Yes, let's"
+              label={t('playdates.accept')}
               onPress={() => answer(invite.id, 'accept')}
               disabled={busy === invite.id}
               style={{ flex: 1 }}
             />
             <Button
               variant="secondary"
-              label="Not now"
+              label={t('playdates.decline')}
               onPress={() => answer(invite.id, 'decline')}
               disabled={busy === invite.id}
               style={{ flex: 1 }}
@@ -116,17 +123,17 @@ export function PlaydatesCard({ data, onChange }: { data: Playdates; onChange: (
               {invite.otherPetName}
             </ThemedText>
             <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-              Waiting on them · {expiry(invite.expiresAt)}
+              {`${t('playdates.waitingOnThem')} · ${expiry(t, invite.expiresAt)}`}
             </ThemedText>
           </View>
-          <Badge label="Asked" />
+          <Badge label={t('playdates.asked')} />
         </View>
       ))}
 
       {candidates.length > 0 && (
         <>
           <ThemedText type="small" themeColor="textSecondary">
-            {invites.length > 0 || sent.length > 0 ? 'Also nearby' : 'Nearby right now'}
+            {t(invites.length > 0 || sent.length > 0 ? 'playdates.alsoNearby' : 'playdates.nearbyNow')}
           </ThemedText>
           {candidates.slice(0, 4).map((c) => (
             <View key={c.petId} style={styles.row}>
@@ -140,10 +147,10 @@ export function PlaydatesCard({ data, onChange }: { data: Playdates; onChange: (
                 <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
                   {[
                     c.ownerName?.trim(),
-                    `${c.distanceKm.toFixed(1)} km`,
+                    distance(c.distanceKm * 1000),
                     // Familiarity is the useful signal here: asking someone your
                     // pet already knows is a different proposition to a stranger.
-                    c.affinity > 0 ? 'met before' : null,
+                    c.affinity > 0 ? t('playdates.metBefore') : null,
                   ]
                     .filter(Boolean)
                     .join(' · ')}
@@ -151,7 +158,7 @@ export function PlaydatesCard({ data, onChange }: { data: Playdates; onChange: (
               </View>
               <Button
                 variant="secondary"
-                label="Ask"
+                label={t('playdates.ask')}
                 onPress={() => propose(c.petId)}
                 disabled={busy === c.petId}
               />
@@ -164,12 +171,12 @@ export function PlaydatesCard({ data, onChange }: { data: Playdates; onChange: (
 }
 
 /** Proposals go stale, so the window is the useful part, not the timestamp. */
-function expiry(iso: string): string {
+function expiry(t: Translator['t'], iso: string): string {
   const hours = (new Date(iso).getTime() - Date.now()) / 3_600_000;
-  if (hours <= 0) return 'Expired';
-  if (hours < 1) return `${Math.round(hours * 60)} min left`;
-  if (hours < 24) return `${Math.round(hours)}h left`;
-  return `${Math.round(hours / 24)}d left`;
+  if (hours <= 0) return t('playdates.expired');
+  if (hours < 1) return t('playdates.minutesLeft', { minutes: Math.round(hours * 60) });
+  if (hours < 24) return t('event.hoursLeft', { hours: Math.round(hours) });
+  return t('event.daysLeft', { days: Math.round(hours / 24) });
 }
 
 const styles = StyleSheet.create({

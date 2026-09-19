@@ -69,8 +69,11 @@ export async function GET() {
 
   const missions = missionsFor(session.user.id, day, available, values["missions.perDay"]).map((m) => {
     const progress = counts.get(MISSION_PROGRESS_EVENT[m.id]) ?? 0;
+    // The id, not the wording: the app words it from the catalogue in the
+    // reader's language. `requires` is a server-side filter and has no reader.
     return {
-      ...m,
+      id: m.id,
+      target: m.target,
       xp: missionXp(m, liveXp),
       progress: Math.min(progress, m.target),
       done: progress >= m.target,
