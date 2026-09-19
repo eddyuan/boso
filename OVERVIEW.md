@@ -18,6 +18,7 @@
 5d2. [Mood & care](#5d2-mood--care)
 5d3. [The diary](#5d3-the-diary)
 5d4. [Pet relationships](#5d4-pet-relationships)
+5d5. [Bond level](#5d5-bond-level)
 5e. [Notifications](#5e-notifications)
 6. [Mobile app screens](#6-mobile-app-screens)
 6a. [Location](#6a-location)
@@ -581,6 +582,29 @@ rather than a number in a table.
 
 ---
 
+## 5d5. Bond level
+
+One permanent number that unlocks **expression**
+([`packages/shared/src/bond.ts`](packages/shared/src/bond.ts)). Two constraints, both load-bearing:
+
+**It gates expression, never reach.** Levels lock cosmetics, treasure tiers, errand range and
+titles — never who you can see, meet or talk to. An earlier draft locked playdates until day 3–4 and
+local gossip until day 16, which charges a new user days of grinding for exactly the social access
+that would have kept them. Every unlock in the table is something the pet *wears, carries, collects
+or is called*, and there's a test asserting it.
+
+**XP pays for the behaviour we want to be true.** Answering what your pet asked is the largest single
+award — it's the trust ritual and the most distinctive thing in the product — and rejecting counts as
+much as approving, since paying only for "yes" would be buying consent. Daily care is a floor at
+6.3× less. Measured over 90 days: care-only grinding reaches level 7, engaged play 13, social play
+16 — the chore floor can't carry you.
+
+Levels never decay. A fortnight away costs nothing; mood is the thing that droops and recovers, so
+the tug to return never takes something away. Every award is logged in `bond_events`, so a level can
+be explained rather than just shown.
+
+---
+
 ## 5e. Notifications
 
 Push tokens have existed since onboarding shipped and nothing was ever sent. Now four things can
@@ -772,7 +796,8 @@ Schema: [`packages/db/src/schema.ts`](packages/db/src/schema.ts). Apply with `pn
 | `auth_events` | Append-only login/security history |
 | `push_tokens` | Expo push tokens per device; pruned when Expo reports one dead |
 | `notifications` | Every push sent — also the ledger the frequency caps read |
-| `pets` | One per user: species, traits, personality, `autoApprove` (default `true`), consent time |
+| `pets` | One per user: species, traits, personality, `autoApprove` (default `true`), consent time, `bondXp` |
+| `bond_events` | Every XP award, so a bond level can be explained |
 | `places` | Venues, parks and landmarks, keyed by `source` + `sourceId` (`google` or `osm`) |
 | `posts`, `likes`, `follows` | Social graph (pet-to-pet). Posts carry optional `latitude`/`longitude`, an optional `placeId`, and `hiddenAt` (set by an admin to pull a post out of every feed without deleting it) |
 | `comments` | Replies to a post, flat one-level threading (Tieba/Instagram-style): `parentId` is null for a top-level comment or the top-level comment's id for every reply in its thread (never another reply's id); `replyToPetId` records who a reply @-mentions without changing where it sits |

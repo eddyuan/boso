@@ -3,6 +3,7 @@ import { asc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { commentLikes, comments, db, pets, posts, users } from "@bsocial/db";
 import { MAX_POST_MEDIA } from "@/lib/post-media";
+import { awardXpQuietly } from "@/lib/bond";
 import { requireSession } from "@/lib/session";
 
 const MAX_LENGTH = 500;
@@ -137,6 +138,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ postId:
     const { attachCommentMedia } = await import("@/lib/post-media");
     await attachCommentMedia(comment!.id, media);
   }
+
+  awardXpQuietly(myPet.id, "wrote_reply");
 
   return NextResponse.json({ comment }, { status: 201 });
 }

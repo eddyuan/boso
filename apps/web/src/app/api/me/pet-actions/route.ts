@@ -3,6 +3,7 @@ import { and, desc, eq, ne } from "drizzle-orm";
 import { db, petActions, pets } from "@bsocial/db";
 import { z } from "zod";
 import { executeAction, type PetAction } from "@/lib/actions";
+import { awardXp } from "@/lib/bond";
 import { requireSession } from "@/lib/session";
 
 // What your pet has been up to: the activity tab and the approvals queue.
@@ -73,7 +74,9 @@ export async function PATCH(req: Request) {
 
   if (decision === "reject") {
     await db.update(petActions).set({ status: "rejected" }).where(eq(petActions.id, id));
-    return NextResponse.json({ ok: true, status: "rejected" });
+    // Saying no is answering too — paying only for "yes" would buy consent.
+    const bond = await awardXp(pet.id, "answer_ask");
+    return NextResponse.json({ ok: true, status: "rejected", bond });
   }
 
   // The row stores the decision minus its discriminator, so rebuild it.
@@ -92,5 +95,8 @@ export async function PATCH(req: Request) {
   }
 
   await db.update(petActions).set({ status: "executed", executedAt: new Date() }).where(eq(petActions.id, id));
-  return NextResponse.json({ ok: true, status: "executed" });
+  // Answering is the trust ritual and the most distinctive thing here, so it's
+  // the biggest single award in the economy.
+  const bond = await awardXp(pet.id, "answer_ask");
+  return NextResponse.json({ ok: true, status: "executed", bond });
 }

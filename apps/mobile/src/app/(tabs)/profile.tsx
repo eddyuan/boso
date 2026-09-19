@@ -1,4 +1,13 @@
-import { CARE_KINDS, CARE_LABEL, INTERESTS, getDisplayName, getPetSpecies, type CareKind, type Mood } from '@bsocial/shared';
+import {
+  CARE_KINDS,
+  CARE_LABEL,
+  INTERESTS,
+  getDisplayName,
+  getPetSpecies,
+  type BondProgress,
+  type CareKind,
+  type Mood,
+} from '@bsocial/shared';
 import { Image } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -16,7 +25,7 @@ import { apiFetch } from '@/lib/api';
 import { authClient } from '@/lib/auth-client';
 
 type Pet = { id: string; name: string; species: string; autoApprove: boolean };
-type PetResponse = { pet: Pet | null; mood: Mood | null; careToday: CareKind[] };
+type PetResponse = { pet: Pet | null; mood: Mood | null; careToday: CareKind[]; bond: BondProgress | null };
 type Relationship = {
   petId: string;
   petName: string;
@@ -36,6 +45,7 @@ export default function ProfileTab() {
   const [careToday, setCareToday] = useState<CareKind[]>([]);
   const [caring, setCaring] = useState<CareKind | null>(null);
   const [friends, setFriends] = useState<Relationship[]>([]);
+  const [bond, setBond] = useState<BondProgress | null>(null);
   const [showSensitive, setShowSensitive] = useState(false);
   const [savingSensitive, setSavingSensitive] = useState(false);
 
@@ -46,6 +56,7 @@ export default function ProfileTab() {
           setPet(r.pet);
           setMood(r.mood);
           setCareToday(r.careToday);
+          setBond(r.bond);
         })
         .catch(() => {});
       apiFetch<{ relationships: Relationship[] }>('/api/me/relationships')
@@ -64,6 +75,7 @@ export default function ProfileTab() {
       });
       setMood(r.mood);
       setCareToday(r.careToday);
+      setBond(r.bond);
     } catch {
       // Care is a nicety; a failed tap shouldn't produce an error screen.
     }
@@ -175,6 +187,28 @@ export default function ProfileTab() {
               {reason}
             </ThemedText>
           ))}
+
+          {bond && (
+            <View style={styles.bondRow}>
+              <ThemedText type="smallBold" themeColor="textSecondary">
+                Bond {bond.level}
+              </ThemedText>
+              <View style={[styles.bondTrack, { backgroundColor: theme.backgroundElement }]}>
+                <View
+                  style={[
+                    styles.bondFill,
+                    {
+                      width: `${bond.levelSpan > 0 ? Math.round((bond.intoLevel / bond.levelSpan) * 100) : 100}%`,
+                      backgroundColor: theme.primaryInk,
+                    },
+                  ]}
+                />
+              </View>
+              <ThemedText type="small" themeColor="textSecondary" numberOfLines={1} style={{ flexShrink: 1 }}>
+                {bond.next ? `${bond.xpToNext} to ${bond.next.unlock.toLowerCase()}` : 'Elder bond'}
+              </ThemedText>
+            </View>
+          )}
 
           <View style={styles.careRow}>
             {CARE_KINDS.map((kind) => {
@@ -293,6 +327,9 @@ const styles = StyleSheet.create({
   moodTrack: { height: 6, borderRadius: 3, overflow: 'hidden' },
   moodFill: { height: '100%', borderRadius: 3 },
   careRow: { flexDirection: 'row', gap: Spacing.sm, marginTop: 2 },
+  bondRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: 2 },
+  bondTrack: { width: 54, height: 5, borderRadius: 3, overflow: 'hidden' },
+  bondFill: { height: '100%', borderRadius: 3 },
   careButton: {
     flex: 1,
     height: 38,

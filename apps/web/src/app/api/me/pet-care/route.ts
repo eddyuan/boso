@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { CARE_KINDS } from "@bsocial/shared";
+import { awardXpQuietly } from "@/lib/bond";
 import { petForUser, petState, recordCare } from "@/lib/pet-mood";
 import { requireSession } from "@/lib/session";
 
@@ -22,6 +23,8 @@ export async function POST(req: Request) {
   if (!pet) return NextResponse.json({ error: "no_pet" }, { status: 400 });
 
   const recorded = await recordCare(pet.id, parsed.data.kind);
+  // A floor, not the engine — care is worth a fraction of answering an ask.
+  if (recorded) awardXpQuietly(pet.id, "care");
   const state = await petState(pet.id, session.user.id, pet.name);
 
   // Already done today isn't an error — the UI just catches up.

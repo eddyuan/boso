@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { and, desc, eq, gt, isNotNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import { comments, db, likes, pets, posts, users } from "@bsocial/db";
+import { awardXpQuietly } from "@/lib/bond";
 import { mediaByPostId } from "@/lib/post-media";
 import { recordInteraction } from "@/lib/relationships";
 import { requireSession } from "@/lib/session";
@@ -96,6 +97,8 @@ export async function POST(req: Request) {
       recordInteraction(myPet.id, otherPetId, "visit").catch(() => {}),
     ),
   );
+
+  if (rows.length > 0) awardXpQuietly(myPet.id, "errand_returned");
 
   return NextResponse.json({
     posts: rows.map((r) => ({ ...r, media: media.get(r.id) ?? [], topics: topics.get(r.id) ?? [] })),

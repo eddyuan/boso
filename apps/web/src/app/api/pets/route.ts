@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { bondFor } from "@/lib/bond";
 import { petForUser, petState } from "@/lib/pet-mood";
 import { requireSession } from "@/lib/session";
 
@@ -9,8 +10,8 @@ export async function GET() {
   if (response) return response;
 
   const pet = await petForUser(session.user.id);
-  if (!pet) return NextResponse.json({ pet: null, mood: null, careToday: [] });
+  if (!pet) return NextResponse.json({ pet: null, mood: null, careToday: [], bond: null });
 
-  const state = await petState(pet.id, session.user.id, pet.name);
-  return NextResponse.json({ pet, ...state });
+  const [state, bond] = await Promise.all([petState(pet.id, session.user.id, pet.name), bondFor(pet.id)]);
+  return NextResponse.json({ pet, ...state, bond });
 }

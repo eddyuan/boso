@@ -238,6 +238,8 @@ export const pets = pgTable("pets", {
   // Optional free-text description of voice/interests, written by the user.
   // Combined with species + traits for the agent's system prompt.
   personality: text("personality").notNull().default(""),
+  /** Bond XP. Levels are derived from it and never decay (see @bsocial/shared/bond). */
+  bondXp: integer("bond_xp").notNull().default(0),
   // If true, pet actions post immediately; if false, they queue as "pending" for user review.
   autoApprove: boolean("auto_approve").notNull().default(true),
   // When the user consented to the pet acting on their behalf, and on what terms.
@@ -753,4 +755,20 @@ export const petTreasures = pgTable(
     foundAt: timestamp("found_at").notNull().defaultNow(),
   },
   (t) => [index("pet_treasures_pet_idx").on(t.petId, t.foundAt)],
+);
+
+/** Every XP award, so the bond level can be explained rather than just shown. */
+export const bondEvents = pgTable(
+  "bond_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    petId: uuid("pet_id")
+      .notNull()
+      .references(() => pets.id, { onDelete: "cascade" }),
+    /** An XP_VALUES key from @bsocial/shared. */
+    event: text("event").notNull(),
+    amount: integer("amount").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("bond_events_pet_idx").on(t.petId, t.createdAt)],
 );
