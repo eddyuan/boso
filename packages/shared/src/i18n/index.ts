@@ -1,7 +1,7 @@
 import { en, type TranslationKey } from "./en";
-import { zh } from "./zh";
+import { zhHans } from "./zh-Hans";
 
-export { en, zh };
+export { en, zhHans };
 export * from "./content";
 export type { TranslationKey };
 
@@ -12,7 +12,7 @@ export type { TranslationKey };
  * and screens are built on the device — two catalogues would drift, and the one
  * that drifts is always the one you can't see.
  *
- * English is the source; `zh.ts` is the first translation and the proof that a
+ * English is the source; `zh-Hans.ts` is the first translation and the proof that a
  * second locale is a file rather than a refactor. It's typed as a *complete*
  * record of `en`'s keys, so adding an English string without a Chinese one stops
  * the build rather than quietly shipping English into a Chinese screen.
@@ -26,7 +26,7 @@ export type { TranslationKey };
  */
 export const LOCALES = [
   { code: "en", label: "English", endonym: "English" },
-  { code: "zh", label: "Simplified Chinese", endonym: "简体中文" },
+  { code: "zh-Hans", label: "Simplified Chinese", endonym: "简体中文" },
 ] as const;
 
 export type Locale = (typeof LOCALES)[number]["code"];
@@ -34,21 +34,80 @@ export type Locale = (typeof LOCALES)[number]["code"];
 export const DEFAULT_LOCALE: Locale = "en";
 
 /** Catalogues keyed by locale. New locales are checked against `en`'s keys. */
-const CATALOGUES: Record<Locale, Partial<Record<TranslationKey, string>>> = { en, zh };
+const CATALOGUES: Record<Locale, Partial<Record<TranslationKey, string>>> = { en, "zh-Hans": zhHans };
 
 /**
- * Narrows anything — a device tag like `en-GB`, a stored column, `undefined` — to
- * a locale we actually have. Region is dropped: `en-GB` and `en-US` differ in
- * units and dates, which `Intl` handles from the full tag, not in wording.
+ * Splits a BCP-47 tag into the parts we care about.
  *
- * Script is dropped too, which is a real limitation rather than a simplification:
- * `zh-Hant` lands on Simplified. Closer than English, still not right, and the
- * fix is a `zh-Hant` catalogue rather than a change here.
+ * Positional indexing doesn't work here: the region is the second subtag in
+ * `en-GB` but the third in `zh-Hans-CN`, and reading `[1]` on the latter yields
+ * "hans". So each subtag is identified by its shape — a script is four letters, a
+ * region is two letters or three digits.
+ */
+function parseTag(input: string): { language: string; script?: string; region?: string } {
+  const [language = "", ...rest] = input.toLowerCase().split(/[-_]/);
+  let script: string | undefined;
+  let region: string | undefined;
+  for (const part of rest) {
+    if (!script && /^[a-z]{4}$/.test(part)) script = part;
+    else if (!region && /^([a-z]{2}|\d{3})$/.test(part)) region = part;
+  }
+  return { language, script, region };
+}
+
+/**
+ * Regions that imply a Chinese script when the tag doesn't name one.
+ *
+ * `zh-TW` carries no script subtag but unambiguously means Traditional, and a
+ * device set to Taiwan is the common way this arrives — far more common than the
+ * explicit `zh-Hant`. Without this, Taiwan and Hong Kong would land on Simplified
+ * for the wrong reason: not "we have no Traditional catalogue" but "we didn't
+ * look".
+ */
+const TRADITIONAL_REGIONS = new Set(["tw", "hk", "mo"]);
+
+/**
+ * What we'd serve if we had every catalogue, for a language where script matters.
+ *
+ * Separate from what we *do* have, so adding `zh-Hant.ts` is a line in `LOCALES`
+ * and nothing else: `zh-TW` already resolves through here and would start landing
+ * on it.
+ */
+function preferredTag({ language, script, region }: ReturnType<typeof parseTag>): string {
+  if (language !== "zh") return language;
+  if (script === "hant" || script === "hans") return `zh-${script}`;
+  return region && TRADITIONAL_REGIONS.has(region) ? "zh-hant" : "zh-hans";
+}
+
+/**
+ * When we don't have the preferred catalogue, the next best one — not English.
+ *
+ * A Traditional reader is far better served by Simplified than by a language they
+ * may not read at all. Stated as a deliberate fallback rather than left to fall
+ * out of a truncated tag, which is what it used to do.
+ */
+const NEXT_BEST: Record<string, string> = { "zh-hant": "zh-hans" };
+
+/**
+ * Narrows anything — a device tag like `en-GB` or `zh-Hant-TW`, a stored column,
+ * `undefined` — to a locale we actually have.
+ *
+ * Region is dropped, because `en-GB` and `en-US` differ in units and dates rather
+ * than in wording, and `Intl` handles that from the full tag. **Script is kept**,
+ * because it is wording: `zh-Hans` and `zh-Hant` are different writing systems,
+ * not different spellings, and collapsing them to a bare `zh` made the distinction
+ * unrepresentable.
  */
 export function resolveLocale(input: string | null | undefined): Locale {
   if (!input) return DEFAULT_LOCALE;
-  const base = input.toLowerCase().split(/[-_]/)[0];
-  return (LOCALES.find((l) => l.code === base)?.code ?? DEFAULT_LOCALE) as Locale;
+  const parsed = parseTag(input);
+  const wanted = preferredTag(parsed);
+  for (const candidate of [wanted, NEXT_BEST[wanted], parsed.language]) {
+    if (!candidate) continue;
+    const found = LOCALES.find((l) => l.code.toLowerCase() === candidate);
+    if (found) return found.code;
+  }
+  return DEFAULT_LOCALE;
 }
 
 export type TVars = Record<string, string | number>;
@@ -181,7 +240,9 @@ export type MeasurementSystem = "metric" | "imperial";
 
 /** Derived from the *full* tag, since `en-US` and `en-GB` differ from `en-DE`. */
 export function measurementFor(tag: string | null | undefined): MeasurementSystem {
-  const region = tag?.toUpperCase().split(/[-_]/)[1];
+  // Via `parseTag`, not `split()[1]`: on `zh-Hans-US` the second subtag is the
+  // script, and reading it as the region silently gave an American reader metric.
+  const region = tag ? parseTag(tag).region?.toUpperCase() : undefined;
   return region && IMPERIAL_REGIONS.has(region) ? "imperial" : "metric";
 }
 

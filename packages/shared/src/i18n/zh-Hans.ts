@@ -16,13 +16,15 @@
  *  - **Measure words are baked into the sentence** (条 for posts, 只 for pets, 位
  *    for people, 次 for occurrences), which is exactly why these are whole
  *    sentences rather than a noun glued to a number.
- *  - **`zh-Hant` resolves here too.** `resolveLocale` drops the region and script,
- *    so a Traditional reader gets Simplified. It's much closer than English, but
- *    it is not right; a `zh-Hant` catalogue is the fix.
+ *  - **Simplified specifically, hence `zh-Hans`.** A bare `zh` means "Chinese"
+ *    without saying which script, and the two are different writing systems rather
+ *    than different spellings. `zh-Hant` (Traditional) resolves here as a stated
+ *    fallback — better than English for a Traditional reader — and adding
+ *    `zh-Hant.ts` is a line in `LOCALES`, nothing more.
  */
 import type { TranslationKey } from "./en";
 
-export const zh: Record<TranslationKey, string> = {
+export const zhHans: Record<TranslationKey, string> = {
   "action.back": "返回",
   "action.close": "关闭",
   "common.today": "今天",

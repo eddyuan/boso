@@ -23,7 +23,7 @@ export type ThemedTextProps = TextProps & {
 };
 
 /**
- * Locales the bundled fonts can't draw.
+ * Languages the bundled fonts can't draw.
  *
  * Fredoka and Nunito have no CJK glyphs at all. Left alone, the platform falls
  * back per *glyph*, so one Chinese sentence with a name or a number in it comes
@@ -31,8 +31,12 @@ export type ThemedTextProps = TextProps & {
  * system face instead is the lesser evil — PingFang and Noto Sans CJK are both
  * good, and consistency beats keeping the rounded look on the Latin characters
  * that happen to be in the string.
+ *
+ * Keyed by the **language subtag**, not the locale, because what the fonts lack is
+ * a script: `zh-Hant` and `zh-Hans` are equally uncovered, and listing locales
+ * would mean this file silently needs editing every time one is added.
  */
-const NO_LATIN_FONT_COVERAGE = new Set(['zh']);
+const NO_LATIN_FONT_COVERAGE = new Set(['zh', 'ja', 'ko']);
 
 /**
  * With the family gone, so is the weight — Nunito_700Bold carried it in the name.
@@ -63,7 +67,7 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
 
   // `code` keeps its mono family: monospace is the point of it, and the system
   // mono faces cover CJK.
-  const systemFace = NO_LATIN_FONT_COVERAGE.has(locale) && type !== 'code';
+  const systemFace = NO_LATIN_FONT_COVERAGE.has(locale.split('-')[0]!) && type !== 'code';
 
   return (
     <Text
