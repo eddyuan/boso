@@ -1,6 +1,7 @@
 import { and, desc, eq, gt, inArray, isNotNull, isNull, ne, notInArray, sql } from "drizzle-orm";
-import { comments, db, follows, likes, petActions, pets, posts, users } from "@bsocial/db";
+import { comments, db, follows, likes, pets, postViews, posts, users } from "@bsocial/db";
 import { INTERESTS } from "@bsocial/shared";
+import { petCandidatePosts } from "./visibility";
 
 // Rule-based pet behaviour. Each hourly tick picks at most one action with
 // plain logic; AI is used only to write content (post text, comment replies)
@@ -14,7 +15,6 @@ export const POST_CHANCE_PER_ACTING_TICK = 0.15;
 // Relative weights among the social actions that have candidates.
 const ACTION_WEIGHTS = { like: 5, visit: 3, comment: 2, follow: 2 } as const;
 const LIKE_LOOKBACK_HOURS = 48;
-const VISIT_COOLDOWN_DAYS = 7;
 const CANDIDATE_LIMIT = 20;
 
 export type PetDecision =
@@ -23,7 +23,8 @@ export type PetDecision =
   // Text is written afterwards by the AI (lib/agent.ts generateComment).
   | { action: "comment"; postId: string; postAuthor: string; postContent: string; reasoning: string }
   | { action: "follow"; petId: string; reasoning: string }
-  | { action: "visit"; petId: string; reasoning: string }
+  // Viewing a post — recorded in post_views so its owner can see who viewed it.
+  | { action: "visit"; postId: string; reasoning: string }
   | { action: "none"; reasoning: string };
 
 type Candidate = { id: string; name: string; sharedInterests: string[] };
@@ -36,7 +37,7 @@ export type PlannerContext = {
   likeCandidates: PostCandidate[];
   commentCandidates: PostCandidate[];
   followCandidates: Candidate[];
-  visitCandidates: Candidate[];
+  visitCandidates: PostCandidate[];
 };
 
 const interestLabel = (value: string) => INTERESTS.find((i) => i.value === value)?.label ?? value;
@@ -102,7 +103,7 @@ export function planAction(ctx: PlannerContext, rng: () => number = Math.random)
     }
     case "visit": {
       const c = pickCandidate(ctx.visitCandidates, rng);
-      return { action: "visit", petId: c.id, reasoning: `Visited ${c.name}${because(c)}.` };
+      return { action: "visit", postId: c.postId, reasoning: `Viewed a post from ${c.name}${because(c)}.` };
     }
     case "follow": {
       const c = pickCandidate(ctx.followCandidates, rng);
@@ -129,8 +130,8 @@ export async function loadPlannerCandidates(
   // Only interact with pets whose owners are real, onboarded accounts.
   const eligibleOwner = and(isNotNull(users.onboardingCompletedAt), isNull(users.ageGateFailedAt));
 
-  // Like / comment: recent posts from followed pets this pet hasn't liked
-  // (or commented on) yet.
+  // Like / comment / visit: recent posts from followed pets this pet hasn't
+  // liked, commented on, or viewed yet.
   const recentFollowedPosts = followingIds.length
     ? await db
         .select({
@@ -141,16 +142,21 @@ export async function loadPlannerCandidates(
           interests: users.interests,
           liked: sql<boolean>`${likes.id} is not null`,
           commented: sql<boolean>`exists (select 1 from ${comments} where ${comments.postId} = ${posts.id} and ${comments.petId} = ${petId})`,
+          viewed: sql<boolean>`${postViews.id} is not null`,
         })
         .from(posts)
         .innerJoin(pets, eq(pets.id, posts.petId))
         .innerJoin(users, eq(users.id, pets.userId))
         .leftJoin(likes, and(eq(likes.postId, posts.id), eq(likes.petId, petId)))
+        .leftJoin(postViews, and(eq(postViews.postId, posts.id), eq(postViews.petId, petId)))
         .where(
           and(
             inArray(posts.petId, followingIds),
             gt(posts.createdAt, new Date(now - LIKE_LOOKBACK_HOURS * 3600 * 1000)),
             eligibleOwner,
+            // Stricter than a human reader gets: an agent never amplifies
+            // anything a human hasn't cleared.
+            petCandidatePosts(),
           ),
         )
         .orderBy(desc(posts.createdAt))
@@ -176,38 +182,11 @@ export async function loadPlannerCandidates(
     .orderBy(sql`random()`)
     .limit(CANDIDATE_LIMIT);
 
-  // Visit: followed pets and follow candidates not visited recently.
-  const recentVisits = await db
-    .select({ target: sql<string>`${petActions.payload}->>'petId'` })
-    .from(petActions)
-    .where(
-      and(
-        eq(petActions.petId, petId),
-        eq(petActions.type, "visit"),
-        gt(petActions.createdAt, new Date(now - VISIT_COOLDOWN_DAYS * 86400 * 1000)),
-      ),
-    );
-  const visited = new Set(recentVisits.map((v) => v.target));
-
-  const followedRows = followingIds.length
-    ? await db
-        .select({ id: pets.id, name: pets.name, interests: users.interests })
-        .from(pets)
-        .innerJoin(users, eq(users.id, pets.userId))
-        .where(and(inArray(pets.id, followingIds), eligibleOwner))
-        .limit(CANDIDATE_LIMIT)
-    : [];
-
   const toCandidate = (r: { id: string; name: string; interests: string[] }): Candidate => ({
     id: r.id,
     name: r.name,
     sharedInterests: shared(r.interests),
   });
-
-  const visitCandidates = new Map<string, Candidate>();
-  for (const r of [...followedRows, ...followRows]) {
-    if (!visited.has(r.id)) visitCandidates.set(r.id, toCandidate(r));
-  }
 
   return {
     likeCandidates: recentFollowedPosts
@@ -217,6 +196,8 @@ export async function loadPlannerCandidates(
       .filter((r) => !r.commented)
       .map((r) => ({ ...toCandidate(r), postId: r.postId, content: r.content })),
     followCandidates: followRows.map(toCandidate),
-    visitCandidates: [...visitCandidates.values()],
+    visitCandidates: recentFollowedPosts
+      .filter((r) => !r.viewed)
+      .map((r) => ({ ...toCandidate(r), postId: r.postId, content: r.content })),
   };
 }

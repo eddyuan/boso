@@ -2,12 +2,14 @@ import { Image } from 'expo-image';
 import * as Location from 'expo-location';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
 import { Screen } from '@/components/auth-form';
 import { EmptyState } from '@/components/empty-state';
 import { CompanionArt } from '@/components/mascot/companions';
+import { CommentSheet } from '@/components/comment-sheet';
 import { MediaGallery, type PostMedia } from '@/components/media-gallery';
+import { SensitiveCover } from '@/components/sensitive-cover';
 import { ThemedText } from '@/components/themed-text';
 import { Badge, Card, ErrorText, RoundButton, Segmented } from '@/components/ui/controls';
 import { Icon } from '@/components/ui/icon';
@@ -16,6 +18,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { ApiError, apiFetch } from '@/lib/api';
 import { formatDistance } from '@/lib/distance';
 import { timeAgo } from '@/lib/time';
+import { categoryLabel, shouldBlur, type ModerationStatus } from '@bsocial/shared';
 
 type Scope = 'nearby' | 'following' | 'discover';
 
@@ -31,6 +34,8 @@ type FeedPost = {
   media: PostMedia[];
   createdAt: string;
   authoredByAgent: boolean;
+  moderationStatus: ModerationStatus;
+  sensitiveCategories: string[];
   distanceM: number | null;
   petName: string;
   species: string;
@@ -38,6 +43,8 @@ type FeedPost = {
   ownerUsername: string | null;
   ownerImage: string | null;
   likeCount: number;
+  likedByMe: boolean;
+  commentCount: number;
 };
 
 const EMPTY: Record<Scope, { title: string; message: string }> = {
@@ -60,6 +67,10 @@ export default function FeedTab() {
   const [scope, setScope] = useState<Scope>('nearby');
   const [posts, setPosts] = useState<FeedPost[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // The reader's standing preference, and the posts they've revealed this session.
+  const [showSensitive, setShowSensitive] = useState(false);
+  const [revealed, setRevealed] = useState<Set<string>>(new Set());
+  const [commentsFor, setCommentsFor] = useState<string | null>(null);
 
   const load = useCallback(async (next: Scope) => {
     setPosts(null);
@@ -80,14 +91,41 @@ export default function FeedTab() {
         const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
         query += `&latitude=${position.coords.latitude}&longitude=${position.coords.longitude}`;
       }
-      const result = await apiFetch<{ posts: FeedPost[] }>(`/api/feed?${query}`);
+      const result = await apiFetch<{ posts: FeedPost[]; showSensitiveContent: boolean }>(`/api/feed?${query}`);
       setPosts(result.posts);
+      setShowSensitive(result.showSensitiveContent);
     } catch (e) {
       setPosts([]);
       setError(e instanceof ApiError && e.code === 'location_required'
         ? 'Turn on location to see what people are posting around you.'
         : "Couldn't load the feed.");
     }
+  }, []);
+
+  const toggleLike = useCallback(async (post: FeedPost) => {
+    // Optimistic — the round trip is what makes a heart feel unresponsive.
+    const next = !post.likedByMe;
+    setPosts((prev) =>
+      (prev ?? []).map((p) =>
+        p.id === post.id ? { ...p, likedByMe: next, likeCount: Math.max(0, p.likeCount + (next ? 1 : -1)) } : p,
+      ),
+    );
+    try {
+      const r = await apiFetch<{ likeCount: number }>(`/api/posts/${post.id}/like`, {
+        method: next ? 'POST' : 'DELETE',
+      });
+      setPosts((prev) => (prev ?? []).map((p) => (p.id === post.id ? { ...p, likeCount: r.likeCount } : p)));
+    } catch {
+      setPosts((prev) =>
+        (prev ?? []).map((p) =>
+          p.id === post.id ? { ...p, likedByMe: !next, likeCount: Math.max(0, p.likeCount + (next ? -1 : 1)) } : p,
+        ),
+      );
+    }
+  }, []);
+
+  const setCommentCount = useCallback((postId: string, total: number) => {
+    setPosts((prev) => (prev ?? []).map((p) => (p.id === postId ? { ...p, commentCount: total } : p)));
   }, []);
 
   useFocusEffect(
@@ -122,6 +160,7 @@ export default function FeedTab() {
         const distance = post.distanceM === null ? null : formatDistance(post.distanceM);
         // A post is either the person's own words or their pet's.
         const authorName = post.authoredByAgent ? post.petName : (post.ownerName?.trim() || post.petName);
+        const covered = shouldBlur(post.moderationStatus, showSensitive) && !revealed.has(post.id);
         return (
           <Card key={post.id} style={styles.post}>
             <View style={styles.head}>
@@ -160,19 +199,52 @@ export default function FeedTab() {
             </View>
 
             <ThemedText>{post.content}</ThemedText>
-            <MediaGallery media={post.media} height={180} />
+            {post.media.length > 0 && (
+              <View>
+                <MediaGallery media={post.media} height={180} blurred={covered} />
+                {covered && (
+                  <SensitiveCover
+                    categories={post.sensitiveCategories.map(categoryLabel)}
+                    onReveal={() => setRevealed((prev) => new Set(prev).add(post.id))}
+                  />
+                )}
+              </View>
+            )}
 
             <View style={styles.metrics}>
-              <View style={styles.metric}>
-                <Icon name="heart" size={18} color={theme.textSecondary} />
-                <ThemedText type="smallBold" themeColor="textSecondary">
+              <Pressable
+                onPress={() => toggleLike(post)}
+                hitSlop={8}
+                style={styles.metric}
+                accessibilityRole="button"
+                accessibilityLabel={post.likedByMe ? 'Unlike post' : 'Like post'}>
+                <Icon name="heart" size={18} color={post.likedByMe ? theme.red : theme.textSecondary} />
+                <ThemedText type="smallBold" themeColor={post.likedByMe ? 'red' : 'textSecondary'}>
                   {post.likeCount}
                 </ThemedText>
-              </View>
+              </Pressable>
+              <Pressable
+                onPress={() => setCommentsFor(post.id)}
+                hitSlop={8}
+                style={styles.metric}
+                accessibilityRole="button"
+                accessibilityLabel="Replies">
+                <Icon name="bubble" size={18} color={theme.textSecondary} />
+                <ThemedText type="smallBold" themeColor="textSecondary">
+                  {post.commentCount}
+                </ThemedText>
+              </Pressable>
             </View>
           </Card>
         );
       })}
+
+      <CommentSheet
+        postId={commentsFor}
+        open={commentsFor !== null}
+        onClose={() => setCommentsFor(null)}
+        onCountChange={setCommentCount}
+      />
     </Screen>
   );
 }

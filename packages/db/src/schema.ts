@@ -12,6 +12,8 @@ import {
   bigint,
   date,
   doublePrecision,
+  check,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
@@ -20,7 +22,7 @@ export const actionTypeEnum = pgEnum("action_type", [
   "follow",
   "like",
   "comment",
-  "visit", // pet viewed another pet's profile
+  "visit", // pet viewed a post (post_views)
   "none", // the pet did nothing this tick; logged, never counts toward limits
 ]);
 
@@ -33,6 +35,25 @@ export const actionStatusEnum = pgEnum("action_status", [
 ]);
 
 export const genderEnum = pgEnum("gender", ["male", "female", "other", "prefer_not_to_say"]);
+
+// Content classification ladder — rules live in @bsocial/shared/moderation.
+export const moderationStatusEnum = pgEnum("moderation_status", [
+  "pending",
+  "approved",
+  "sensitive",
+  "restricted",
+  "pending_review",
+  "blocked",
+]);
+
+export const topicStatusEnum = pgEnum("topic_status", ["auto", "approved", "hidden"]);
+
+export const notificationTypeEnum = pgEnum("notification_type", [
+  "pet_ask", // an "ask me first" pet wants permission
+  "pet_friend", // someone's pet followed yours
+  "pet_reply", // a pet replied to your post
+  "quiet_return", // you've been away a while and something happened
+]);
 
 // ---------------------------------------------------------------------------
 // Auth tables (Better Auth). Field keys must match Better Auth's model fields;
@@ -63,6 +84,21 @@ export const users = pgTable("users", {
   isMock: boolean("is_mock").notNull().default(false),
   // Last authenticated API request from any device (throttled, see apps/web/src/lib/session.ts)
   lastActiveAt: timestamp("last_active_at"),
+  /**
+   * Opt-in to seeing `sensitive` posts without the tap-to-reveal cover. Off by
+   * default and only surfaced in profile settings — never prompted for.
+   */
+  showSensitiveContent: boolean("show_sensitive_content").notNull().default(false),
+
+  /**
+   * Where the person is now, coarse (3dp, ~110 m) and overwritten rather than
+   * journaled — we keep a position, never a history. Used for proximity
+   * queries and as the anchor a pet's posts are shifted from; never published
+   * directly (see apps/web/src/lib/pet-location.ts).
+   */
+  lastLatitude: doublePrecision("last_latitude"),
+  lastLongitude: doublePrecision("last_longitude"),
+  lastLocationAt: timestamp("last_location_at"),
 
   // --- Onboarding (rules in @bsocial/shared/onboarding) ---
   termsVersion: text("terms_version"),
@@ -276,32 +312,61 @@ export const posts = pgTable("posts", {
   longitude: doublePrecision("longitude"),
   // Whether a human wrote this or the agent generated it (for transparency in the UI).
   authoredByAgent: boolean("authored_by_agent").notNull().default(false),
+  /**
+   * Set by an admin to take a post out of circulation without deleting it —
+   * every read path (feed, map, search, pet candidates) filters these out.
+   * Kept rather than deleted so a moderation call can be reversed and reviewed.
+   */
+  hiddenAt: timestamp("hidden_at"),
+  /**
+   * Set by the classification job (lib/classify.ts). `hiddenAt` stays separate:
+   * that's an admin's manual override, this is the pipeline's own verdict, and
+   * a reader needs both to come out clean.
+   */
+  moderationStatus: moderationStatusEnum("moderation_status").notNull().default("pending"),
+  /** Raw per-category confidences, kept so thresholds can move without re-running the model. */
+  moderationScores: jsonb("moderation_scores"),
+  /** The categories that tripped — drives the label on the blur cover. */
+  sensitiveCategories: text("sensitive_categories").array().notNull().default(sql`'{}'::text[]`),
+  moderatedAt: timestamp("moderated_at"),
+  moderationModel: text("moderation_model"),
+  // Human review outcome, when a post went through the admin queue.
+  reviewedBy: text("reviewed_by").references(() => users.id, { onDelete: "set null" }),
+  reviewedAt: timestamp("reviewed_at"),
+  reviewNote: text("review_note"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 export const postMediaKindEnum = pgEnum("post_media_kind", ["image", "video"]);
 
 /**
- * A post's photos/videos — a separate table rather than columns on `posts`,
- * since a post can carry up to `MAX_POST_MEDIA` (see src/lib/post-media in the
- * web app) rather than exactly one. `position` is display order, not upload
- * order, so an admin (or eventually a person) can reorder a gallery.
+ * A post's (or comment's) photos/videos — a separate table rather than
+ * columns on `posts`, since a post can carry up to `MAX_POST_MEDIA` (see
+ * src/lib/post-media in the web app) rather than exactly one. `position` is
+ * display order, not upload order, so an admin (or eventually a person) can
+ * reorder a gallery. Exactly one of `postId` / `commentId` is set.
  */
 export const postMedia = pgTable(
   "post_media",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    postId: uuid("post_id")
-      .notNull()
-      .references(() => posts.id, { onDelete: "cascade" }),
+    postId: uuid("post_id").references(() => posts.id, { onDelete: "cascade" }),
+    commentId: uuid("comment_id").references(() => comments.id, { onDelete: "cascade" }),
     kind: postMediaKindEnum("kind").notNull().default("image"),
     url: text("url").notNull(),
     /** Small WebP for markers and list rows; a video's poster frame for `video`. */
     thumbUrl: text("thumb_url"),
     position: integer("position").notNull().default(0),
+    /** Per-image scores: one bad photo in a gallery blurs itself, not the post. */
+    moderationScores: jsonb("moderation_scores"),
+    blurred: boolean("blurred").notNull().default(false),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
-  (t) => [index("post_media_post_idx").on(t.postId, t.position)],
+  (t) => [
+    index("post_media_post_idx").on(t.postId, t.position),
+    index("post_media_comment_idx").on(t.commentId, t.position),
+    check("post_media_one_owner", sql`(${t.postId} is null) != (${t.commentId} is null)`),
+  ],
 );
 
 export const follows = pgTable(
@@ -334,6 +399,30 @@ export const likes = pgTable(
   (t) => [uniqueIndex("likes_pair_idx").on(t.petId, t.postId)],
 );
 
+// A pet visiting (viewing) a post — powers "who viewed your post".
+export const postViews = pgTable(
+  "post_views",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    petId: uuid("pet_id")
+      .notNull()
+      .references(() => pets.id, { onDelete: "cascade" }),
+    postId: uuid("post_id")
+      .notNull()
+      .references(() => posts.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("post_views_pair_idx").on(t.petId, t.postId)],
+);
+
+/**
+ * Flat, one-level threading (Instagram/Tieba-style): every reply's `parentId`
+ * points at the top-level comment of its thread, never at another reply, so a
+ * thread never gets deeper than two levels. `replyToPetId` records who a
+ * specific reply is addressed to (for an "@Name" prefix) without changing
+ * where it sits in the thread — so replying to a reply still attaches to the
+ * same top-level comment, just @-mentioning that reply's author.
+ */
 export const comments = pgTable("comments", {
   id: uuid("id").primaryKey().defaultRandom(),
   postId: uuid("post_id")
@@ -342,10 +431,29 @@ export const comments = pgTable("comments", {
   petId: uuid("pet_id")
     .notNull()
     .references(() => pets.id, { onDelete: "cascade" }),
+  // Null for a top-level comment; the top-level comment's id for every reply in its thread.
+  parentId: uuid("parent_id").references((): AnyPgColumn => comments.id, { onDelete: "cascade" }),
+  // Who this reply @-mentions, when it's replying to another reply rather than the thread starter.
+  replyToPetId: uuid("reply_to_pet_id").references(() => pets.id, { onDelete: "set null" }),
   content: text("content").notNull(),
   authoredByAgent: boolean("authored_by_agent").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
+
+export const commentLikes = pgTable(
+  "comment_likes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    petId: uuid("pet_id")
+      .notNull()
+      .references(() => pets.id, { onDelete: "cascade" }),
+    commentId: uuid("comment_id")
+      .notNull()
+      .references(() => comments.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("comment_likes_pair_idx").on(t.petId, t.commentId)],
+);
 
 // Every autonomous decision the agent makes, before/after it's carried out.
 // This is what powers the "what my pet did while you were away" review UI.
@@ -408,4 +516,136 @@ export const mockProfiles = pgTable(
       .$onUpdate(() => new Date()),
   },
   (t) => [index("mock_profiles_user_idx").on(t.userId)],
+);
+
+// ---------------------------------------------------------------------------
+// Runtime settings — admin-flippable switches that must not need a redeploy
+// ---------------------------------------------------------------------------
+
+/**
+ * Small key/value store for operational flags (currently the pet-loop kill
+ * switch). Separate from env vars because an admin has to be able to stop the
+ * agents from the panel at 3am, which a redeploy cannot do quickly enough.
+ */
+export const appSettings = pgTable("app_settings", {
+  key: text("key").primaryKey(),
+  value: jsonb("value").notNull(),
+  updatedAt: timestamp("updated_at")
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
+
+// ---------------------------------------------------------------------------
+// Topics — the fine layer under the 20 onboarding interests
+// ---------------------------------------------------------------------------
+
+/**
+ * One row per distinct topic. The classifier creates these on the fly, so the
+ * vocabulary grows with what people actually post about; `status` keeps a topic
+ * out of the UI until it's popular enough to be worth showing, and `aliasOf`
+ * is the cleanup valve for the duplicates that will get through anyway.
+ */
+export const topics = pgTable(
+  "topics",
+  {
+    slug: text("slug").primaryKey(),
+    label: text("label").notNull(),
+    /** Parent interest (an INTERESTS value from @bsocial/shared). */
+    interest: text("interest").notNull(),
+    status: topicStatusEnum("status").notNull().default("auto"),
+    /** Points at the canonical topic when an admin merges duplicates. */
+    aliasOf: text("alias_of").references((): AnyPgColumn => topics.slug, { onDelete: "set null" }),
+    /** Denormalized popularity — what the topic ranking sorts by. */
+    postCount: integer("post_count").notNull().default(0),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("topics_rank_idx").on(t.interest, t.postCount)],
+);
+
+export const postTopics = pgTable(
+  "post_topics",
+  {
+    postId: uuid("post_id")
+      .notNull()
+      .references(() => posts.id, { onDelete: "cascade" }),
+    topic: text("topic")
+      .notNull()
+      .references(() => topics.slug, { onDelete: "cascade" }),
+    confidence: doublePrecision("confidence").notNull().default(1),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("post_topics_pair_idx").on(t.postId, t.topic),
+    index("post_topics_topic_idx").on(t.topic),
+  ],
+);
+
+/**
+ * Interests inferred from what someone actually posts, kept separate from the
+ * `users.interests` they picked at onboarding: that list is shown on their
+ * profile, and silently rewriting it with guesses would be unexplainable.
+ * Matching reads both. Scores decay (see @bsocial/shared/topics).
+ */
+export const userTopics = pgTable(
+  "user_topics",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    topic: text("topic")
+      .notNull()
+      .references(() => topics.slug, { onDelete: "cascade" }),
+    score: doublePrecision("score").notNull().default(0),
+    postCount: integer("post_count").notNull().default(0),
+    updatedAt: timestamp("updated_at")
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [
+    uniqueIndex("user_topics_pair_idx").on(t.userId, t.topic),
+    index("user_topics_rank_idx").on(t.userId, t.score),
+  ],
+);
+
+/**
+ * Every push we've sent. Doubles as the ledger the frequency caps read, which
+ * is why it's a table rather than fire-and-forget: without a record there's no
+ * way to honour "at most three of these a day" across serverless instances.
+ */
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    type: notificationTypeEnum("type").notNull(),
+    title: text("title").notNull(),
+    body: text("body").notNull(),
+    /** Deep-link target and anything the app needs to route, e.g. { actionId }. */
+    data: jsonb("data"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("notifications_user_created_idx").on(t.userId, t.createdAt)],
+);
+
+/**
+ * Daily care: feed, groom, play. One row per action, which makes "already done
+ * today" a query rather than a set of columns to reset, and leaves a history
+ * worth reading later.
+ */
+export const petCare = pgTable(
+  "pet_care",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    petId: uuid("pet_id")
+      .notNull()
+      .references(() => pets.id, { onDelete: "cascade" }),
+    /** A CARE_KINDS value from @bsocial/shared. */
+    kind: text("kind").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("pet_care_pet_created_idx").on(t.petId, t.createdAt)],
 );

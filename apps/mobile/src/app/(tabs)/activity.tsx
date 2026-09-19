@@ -1,11 +1,12 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
 import { Screen } from '@/components/auth-form';
 import { EmptyState } from '@/components/empty-state';
 import { ThemedText } from '@/components/themed-text';
 import { Badge, Card, Divider, ErrorText, IconTile } from '@/components/ui/controls';
+import { Button } from '@/components/ui/button';
 import { Icon, type IconName } from '@/components/ui/icon';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -25,7 +26,7 @@ const ACTION_ICON: Record<PetAction['type'], IconName> = {
   like: 'sparkle',
   comment: 'feed',
   follow: 'users',
-  visit: 'pin',
+  visit: 'eye',
   none: 'sparkle',
 };
 
@@ -34,7 +35,7 @@ const ACTION_LABEL: Record<PetAction['type'], string> = {
   like: 'Liked a post',
   comment: 'Replied to a post',
   follow: 'Followed a pet',
-  visit: 'Visited a profile',
+  visit: 'Viewed a post',
   none: 'Rested',
 };
 
@@ -42,14 +43,36 @@ export default function ActivityTab() {
   const theme = useTheme();
   const [actions, setActions] = useState<PetAction[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  const load = useCallback(
+    () =>
+      apiFetch<{ actions: PetAction[] }>('/api/me/pet-actions')
+        .then((r) => setActions(r.actions))
+        .catch(() => setError("Couldn't load your pet's activity.")),
+    [],
+  );
 
   useFocusEffect(
     useCallback(() => {
-      apiFetch<{ actions: PetAction[] }>('/api/me/pet-actions')
-        .then((r) => setActions(r.actions))
-        .catch(() => setError("Couldn't load your pet's activity."));
-    }, []),
+      load();
+    }, [load]),
   );
+
+  const decide = async (action: PetAction, decision: 'approve' | 'reject') => {
+    setBusyId(action.id);
+    setError(null);
+    try {
+      await apiFetch('/api/me/pet-actions', {
+        method: 'PATCH',
+        body: JSON.stringify({ id: action.id, decision }),
+      });
+      await load();
+    } catch {
+      setError(decision === 'approve' ? "Couldn't do that just now." : "Couldn't dismiss that.");
+    }
+    setBusyId(null);
+  };
 
   const pending = actions?.filter((a) => a.status === 'pending') ?? [];
 
@@ -64,7 +87,7 @@ export default function ActivityTab() {
         <Card style={[styles.pending, { borderColor: theme.primaryPress, backgroundColor: theme.primarySoft }]}>
           <Icon name="bell" color={theme.primaryInk} />
           <ThemedText type="small" style={{ flex: 1 }}>
-            {pending.length} action{pending.length === 1 ? '' : 's'} waiting for your approval. Approving them comes next.
+            {pending.length} thing{pending.length === 1 ? '' : 's'} your pet wants to do. Say yes or skip below.
           </ThemedText>
         </Card>
       )}
@@ -101,8 +124,36 @@ export default function ActivityTab() {
                   <Badge label="Waiting" tone="brand" />
                 ) : action.status === 'failed' ? (
                   <Badge label="Failed" />
+                ) : action.status === 'rejected' ? (
+                  <Badge label="Skipped" />
                 ) : null}
               </View>
+
+              {action.status === 'pending' && (
+                <View style={styles.ask}>
+                  {/* What it actually wants to say, so a yes isn't blind. */}
+                  {typeof action.payload?.content === 'string' && (
+                    <View style={[styles.draft, { backgroundColor: theme.backgroundElement }]}>
+                      <ThemedText type="small">{action.payload.content as string}</ThemedText>
+                    </View>
+                  )}
+                  <View style={styles.askButtons}>
+                    <Button
+                      label="Let them"
+                      onPress={() => decide(action, 'approve')}
+                      disabled={busyId === action.id}
+                      style={{ flex: 1 }}
+                    />
+                    <Button
+                      variant="secondary"
+                      label="Skip"
+                      onPress={() => decide(action, 'reject')}
+                      disabled={busyId === action.id}
+                      style={{ flex: 1 }}
+                    />
+                  </View>
+                </View>
+              )}
             </View>
           ))}
         </Card>
@@ -115,4 +166,7 @@ const styles = StyleSheet.create({
   pending: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: Spacing.lg },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: Spacing.lg, paddingVertical: 14 },
   rowText: { flex: 1, minWidth: 0, gap: 2 },
+  ask: { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.lg, gap: Spacing.sm },
+  draft: { padding: Spacing.md, borderRadius: 14 },
+  askButtons: { flexDirection: 'row', gap: Spacing.sm },
 });

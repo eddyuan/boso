@@ -3,6 +3,8 @@ import { and, eq, ilike, isNotNull, ne, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db, pets, posts, users } from "@bsocial/db";
 import { requireSession } from "@/lib/session";
+import { recordLocation } from "@/lib/location";
+import { amplifiedPosts } from "@/lib/visibility";
 
 const LIMIT = 20;
 const EARTH_RADIUS_M = 6_371_000;
@@ -27,6 +29,10 @@ export async function GET(req: Request) {
   const parsed = querySchema.safeParse(Object.fromEntries(url.searchParams));
   if (!parsed.success) return NextResponse.json({ error: "invalid_query" }, { status: 400 });
   const { q, latitude, longitude } = parsed.data;
+
+  if (latitude !== undefined && longitude !== undefined) {
+    await recordLocation(session.user.id, latitude, longitude);
+  }
 
   if (q) {
     const term = `%${q}%`;
@@ -85,6 +91,7 @@ export async function GET(req: Request) {
         isNotNull(posts.latitude),
         isNotNull(posts.longitude),
         sql`${distance} <= ${NEARBY_RADIUS_M}`,
+        amplifiedPosts(),
       ),
     )
     .groupBy(users.id, users.name, users.username, users.image, pets.name, pets.species)

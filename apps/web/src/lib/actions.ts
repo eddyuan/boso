@@ -1,5 +1,8 @@
-import { db, pets, posts, comments, likes, follows, petActions, users } from "@bsocial/db";
+import { db, pets, posts, comments, likes, follows, petActions, postViews, users } from "@bsocial/db";
 import { eq } from "drizzle-orm";
+import { inngest } from "@/inngest/client";
+import { resolvePetPostLocation } from "@/lib/pet-location";
+import { sendPush } from "@/lib/push";
 // A concrete action ready to record: planner decisions (lib/pet-planner.ts),
 // with post text filled in by lib/agent.ts.
 export type PetAction =
@@ -7,7 +10,7 @@ export type PetAction =
   | { action: "like"; postId: string; reasoning: string }
   | { action: "comment"; postId: string; content: string; reasoning: string }
   | { action: "follow"; petId: string; reasoning: string }
-  | { action: "visit"; petId: string; reasoning: string }
+  | { action: "visit"; postId: string; reasoning: string }
   | { action: "none"; reasoning: string };
 
 /**
@@ -47,6 +50,15 @@ export async function recordDecision(petId: string, decision: PetAction) {
   if (pet.autoApprove) {
     await executeAction(petId, decision);
     await db.update(users).set({ lastActiveAt: new Date() }).where(eq(users.id, pet.userId));
+  } else {
+    // Otherwise it sits in Activity until answered, which nobody discovers by
+    // chance — this is the whole reason "ask me first" felt like a dead end.
+    await sendPush(pet.userId, {
+      type: "pet_ask",
+      title: `${pet.name} is asking`,
+      body: reasoning || `${pet.name} wants to do something.`,
+      data: { screen: "activity", actionId: row!.id },
+    }).catch((error) => console.error("[actions] ask notification failed:", error));
   }
 
   return row;
@@ -55,12 +67,30 @@ export async function recordDecision(petId: string, decision: PetAction) {
 /** Carries out an approved decision. Called either immediately (auto-approve) or from the approval endpoint. */
 export async function executeAction(petId: string, decision: PetAction) {
   switch (decision.action) {
-    case "post":
-      return db.insert(posts).values({
-        petId,
-        content: decision.content,
-        authoredByAgent: true,
+    case "post": {
+      // Without coordinates a pet post never reaches the map or Nearby, which
+      // is most of the app's content missing from most of its surfaces.
+      const [owner] = await db.select({ userId: pets.userId }).from(pets).where(eq(pets.id, petId));
+      const at = owner ? await resolvePetPostLocation(owner.userId) : null;
+
+      const [post] = await db
+        .insert(posts)
+        .values({
+          petId,
+          content: decision.content,
+          authoredByAgent: true,
+          latitude: at?.latitude ?? null,
+          longitude: at?.longitude ?? null,
+          placeId: at?.placeId ?? null,
+        })
+        .returning({ id: posts.id });
+      // Pet posts are classified like anyone else's — more so, since nothing
+      // human reads them before they land on the map.
+      await inngest.send({ name: "post/created", data: { postId: post!.id } }).catch((error) => {
+        console.error("[actions] failed to queue classification:", error);
       });
+      return post;
+    }
     case "like":
       return db.insert(likes).values({ petId, postId: decision.postId }).onConflictDoNothing();
     case "comment":
@@ -70,14 +100,33 @@ export async function executeAction(petId: string, decision: PetAction) {
         content: decision.content,
         authoredByAgent: true,
       });
-    case "follow":
-      return db
+    case "follow": {
+      const inserted = await db
         .insert(follows)
         .values({ followerPetId: petId, followingPetId: decision.petId })
-        .onConflictDoNothing();
+        .onConflictDoNothing()
+        .returning({ id: follows.id });
+
+      // Only on a genuinely new follow, so a repeat can't buzz someone twice.
+      if (inserted.length > 0) {
+        const [follower] = await db.select({ name: pets.name }).from(pets).where(eq(pets.id, petId));
+        const [followed] = await db
+          .select({ userId: pets.userId, name: pets.name })
+          .from(pets)
+          .where(eq(pets.id, decision.petId));
+        if (follower && followed) {
+          await sendPush(followed.userId, {
+            type: "pet_friend",
+            title: `${followed.name} made a friend`,
+            body: `${follower.name} started following ${followed.name}.`,
+            data: { screen: "activity" },
+          }).catch((error) => console.error("[actions] friend notification failed:", error));
+        }
+      }
+      return inserted;
+    }
     case "visit":
-      // Logged in pet_actions only for now (no "visited you" feed yet).
-      return;
+      return db.insert(postViews).values({ petId, postId: decision.postId }).onConflictDoNothing();
     case "none":
       return;
   }

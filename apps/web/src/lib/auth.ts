@@ -135,6 +135,9 @@ export const auth = betterAuth({
       // Read-only on the session so the apps can show what the pet is into.
       interests: { type: "string[]", required: false, input: false },
       ageGateFailedAt: { type: "date", required: false, input: false },
+      // Whether to drop the tap-to-reveal cover on `sensitive` posts. On the
+      // session because every feed render needs it. Written by /api/me/account.
+      showSensitiveContent: { type: "boolean", required: false, defaultValue: false, input: false },
     },
   },
 

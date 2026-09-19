@@ -1,4 +1,4 @@
-import { getPetSpecies } from '@bsocial/shared';
+import { categoryLabel, getPetSpecies, shouldBlur } from '@bsocial/shared';
 import { Image } from 'expo-image';
 import * as Location from 'expo-location';
 import { useFocusEffect } from 'expo-router';
@@ -11,6 +11,7 @@ import { MapView } from '@/components/map/map-view';
 import type { LatLng, MapPost, MapViewHandle } from '@/components/map/types';
 import { CompanionArt } from '@/components/mascot/companions';
 import { MediaGallery } from '@/components/media-gallery';
+import { SensitiveCover } from '@/components/sensitive-cover';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/button';
@@ -35,9 +36,14 @@ export default function MapTab() {
   const [permission, setPermission] = useState<Location.PermissionStatus | null>(null);
   const [posts, setPosts] = useState<MapPost[]>([]);
   const [selected, setSelected] = useState<MapPost | null>(null);
+  // Revealed for this session only — never persisted, so the cover comes back.
+  const [revealed, setRevealed] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [petAway, setPetAway] = useState<string | null>(null);
   const { data: session } = authClient.useSession();
+  const showSensitive = session?.user?.showSensitiveContent ?? false;
+  const sheetCovered =
+    selected !== null && shouldBlur(selected.moderationStatus, showSensitive) && !revealed.has(selected.id);
   const lastBounds = useRef<string>('');
   const mapRef = useRef<MapViewHandle>(null);
 
@@ -234,7 +240,17 @@ export default function MapTab() {
               </View>
             )}
             <ThemedText>{selected.content}</ThemedText>
-            <MediaGallery media={selected.media} height={220} />
+            {selected.media.length > 0 && (
+              <View>
+                <MediaGallery media={selected.media} height={220} blurred={sheetCovered} />
+                {sheetCovered && (
+                  <SensitiveCover
+                    categories={selected.sensitiveCategories.map(categoryLabel)}
+                    onReveal={() => setRevealed((prev) => new Set(prev).add(selected.id))}
+                  />
+                )}
+              </View>
+            )}
           </>
         )}
       </BottomSheet>

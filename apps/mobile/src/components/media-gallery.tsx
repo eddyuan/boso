@@ -5,14 +5,29 @@ import { ScrollView, StyleSheet, View, type LayoutChangeEvent, type NativeSynthe
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-export type PostMedia = { url: string; thumbUrl: string | null; kind: 'image' | 'video' };
+export type PostMedia = { url: string; thumbUrl: string | null; kind: 'image' | 'video'; blurred?: boolean };
+
+/** Strong enough that nothing is readable through it, short of the shape. */
+const BLUR_RADIUS = 60;
 
 /**
  * A post's photos — one image, or a swipeable, paged gallery with dots when
  * there's more than one. Videos aren't playable yet, so a video item just
  * shows its poster frame (thumbUrl).
+ *
+ * `blurred` blurs the whole gallery (the post is `sensitive` and the reader
+ * hasn't revealed it); an individual item's own `blurred` flag covers the case
+ * where one photo in an otherwise fine gallery was flagged.
  */
-export function MediaGallery({ media, height = 180 }: { media: PostMedia[]; height?: number }) {
+export function MediaGallery({
+  media,
+  height = 180,
+  blurred = false,
+}: {
+  media: PostMedia[];
+  height?: number;
+  blurred?: boolean;
+}) {
   const theme = useTheme();
   const [width, setWidth] = useState(0);
   const [page, setPage] = useState(0);
@@ -30,6 +45,7 @@ export function MediaGallery({ media, height = 180 }: { media: PostMedia[]; heig
         source={{ uri: media[0]!.url ?? media[0]!.thumbUrl ?? undefined }}
         style={[styles.single, { height, borderRadius: Radius.field }]}
         contentFit="cover"
+        blurRadius={blurred || media[0]!.blurred ? BLUR_RADIUS : 0}
       />
     );
   }
@@ -49,6 +65,7 @@ export function MediaGallery({ media, height = 180 }: { media: PostMedia[]; heig
             source={{ uri: m.url ?? m.thumbUrl ?? undefined }}
             style={{ width, height, borderRadius: Radius.field }}
             contentFit="cover"
+            blurRadius={blurred || m.blurred ? BLUR_RADIUS : 0}
           />
         ))}
       </ScrollView>

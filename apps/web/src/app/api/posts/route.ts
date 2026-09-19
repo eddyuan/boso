@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db, pets, places, posts } from "@bsocial/db";
 import { requireSession } from "@/lib/session";
+import { inngest } from "@/inngest/client";
 import { attachPostMedia, MAX_POST_MEDIA } from "@/lib/post-media";
 
 export const MAX_POST_LENGTH = 500;
@@ -73,6 +74,12 @@ export async function POST(req: Request) {
     .returning();
 
   await attachPostMedia(post!.id, media);
+
+  // Classification runs out of band (see inngest/classify-post.ts): the post is
+  // already live, and a slow model must never be able to fail a write.
+  await inngest.send({ name: "post/created", data: { postId: post!.id } }).catch((error) => {
+    console.error("[posts] failed to queue classification:", error);
+  });
 
   return NextResponse.json({ post: { ...post, media } }, { status: 201 });
 }

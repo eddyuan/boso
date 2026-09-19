@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import { and, arrayOverlaps, desc, eq, inArray, isNotNull, lt, notInArray, sql, type SQL } from "drizzle-orm";
 import { z } from "zod";
-import { db, follows, likes, pets, posts, users } from "@bsocial/db";
+import { comments, db, follows, likes, pets, posts, users } from "@bsocial/db";
 import { mediaByPostId } from "@/lib/post-media";
 import { requireSession } from "@/lib/session";
+import { recordLocation } from "@/lib/location";
+import { effectiveInterests, topicsByPostId } from "@/lib/topics";
+import { amplifiedPosts, followedPosts, ownOrVisible } from "@/lib/visibility";
 
 const PAGE_SIZE = 20;
 /** Tielo is a local app: the feed reaches as far as the pet does. */
@@ -41,6 +44,9 @@ export async function GET(req: Request) {
   if (!myPet) return NextResponse.json({ posts: [], nextCursor: null });
 
   const located = latitude !== undefined && longitude !== undefined;
+  // Every authenticated request that already carries a position updates it, so
+  // the apps never have to report location separately (lib/location.ts).
+  if (located) await recordLocation(session.user.id, latitude!, longitude!);
   if ((scope === "nearby" || scope === "discover") && !located) {
     return NextResponse.json({ error: "location_required" }, { status: 400 });
   }
@@ -56,7 +62,12 @@ export async function GET(req: Request) {
       )`.mapWith(Number)
     : sql<number | null>`null`;
 
-  const filters: (SQL | undefined)[] = [before ? lt(posts.createdAt, new Date(before)) : undefined];
+  const filters: (SQL | undefined)[] = [
+    before ? lt(posts.createdAt, new Date(before)) : undefined,
+    // Following is the one surface that may show `restricted` posts, since the
+    // reader already chose to follow the author (lib/visibility.ts).
+    ownOrVisible(myPet.id, scope === "following" ? followedPosts() : amplifiedPosts()),
+  ];
 
   if (scope === "following") {
     const following = await db
@@ -84,7 +95,9 @@ export async function GET(req: Request) {
         .where(eq(follows.followerPetId, myPet.id));
       const seen = [myPet.id, ...following.map((f) => f.id)];
       filters.push(notInArray(posts.petId, seen));
-      const mine = session.user.interests ?? [];
+      // Declared interests ∪ the ones behind what they actually post about,
+      // so Discover follows real behaviour and still works on day one.
+      const mine = await effectiveInterests(session.user.id, session.user.interests ?? []);
       if (mine.length > 0) filters.push(arrayOverlaps(users.interests, mine));
     }
   }
@@ -95,6 +108,8 @@ export async function GET(req: Request) {
       content: posts.content,
       createdAt: posts.createdAt,
       authoredByAgent: posts.authoredByAgent,
+      moderationStatus: posts.moderationStatus,
+      sensitiveCategories: posts.sensitiveCategories,
       latitude: posts.latitude,
       longitude: posts.longitude,
       distanceM: distance,
@@ -107,6 +122,7 @@ export async function GET(req: Request) {
       ownerImage: users.image,
       likeCount: sql<number>`(select count(*) from ${likes} where ${likes.postId} = ${posts.id})`.mapWith(Number),
       likedByMe: sql<boolean>`exists (select 1 from ${likes} where ${likes.postId} = ${posts.id} and ${likes.petId} = ${myPet.id})`,
+      commentCount: sql<number>`(select count(*) from ${comments} where ${comments.postId} = ${posts.id})`.mapWith(Number),
     })
     .from(posts)
     .innerJoin(pets, eq(pets.id, posts.petId))
@@ -117,8 +133,12 @@ export async function GET(req: Request) {
 
   const media = await mediaByPostId(rows.map((r) => r.id));
 
+  const topics = await topicsByPostId(rows.map((r) => r.id));
+
   return NextResponse.json({
-    posts: rows.map((r) => ({ ...r, media: media.get(r.id) ?? [] })),
+    posts: rows.map((r) => ({ ...r, media: media.get(r.id) ?? [], topics: topics.get(r.id) ?? [] })),
+    // The client needs this to decide whether a `sensitive` post gets a cover.
+    showSensitiveContent: session.user.showSensitiveContent,
     nextCursor: rows.length === limit ? rows[rows.length - 1]!.createdAt.toISOString() : null,
   });
 }

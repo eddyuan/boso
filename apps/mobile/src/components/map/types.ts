@@ -1,9 +1,9 @@
-import type { PetSpecies } from '@bsocial/shared';
+import type { ModerationStatus, PetSpecies } from '@bsocial/shared';
 import type { Ref } from 'react';
 
 export type LatLng = { latitude: number; longitude: number };
 
-export type MapPostMedia = { url: string; thumbUrl: string | null; kind: 'image' | 'video' };
+export type MapPostMedia = { url: string; thumbUrl: string | null; kind: 'image' | 'video'; blurred?: boolean };
 
 export type MapPost = {
   id: string;
@@ -14,6 +14,8 @@ export type MapPost = {
   longitude: number;
   createdAt: string;
   authoredByAgent: boolean;
+  moderationStatus: ModerationStatus;
+  sensitiveCategories: string[];
   petName: string;
   species: string;
   ownerName: string | null;

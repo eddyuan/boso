@@ -28,6 +28,7 @@ export const authClient = createAuthClient({
         ageGateFailedAt: { type: 'date', required: false, input: false },
         isAdmin: { type: 'boolean', required: false, input: false },
         interests: { type: 'string[]', required: false, input: false },
+        showSensitiveContent: { type: 'boolean', required: false, input: false },
       },
     }),
     emailOTPClient(),

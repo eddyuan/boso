@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { and, desc, eq, ne } from "drizzle-orm";
 import { db, petActions, pets } from "@bsocial/db";
+import { z } from "zod";
+import { executeAction, type PetAction } from "@/lib/actions";
 import { requireSession } from "@/lib/session";
 
 // What your pet has been up to: the activity tab and the approvals queue.
@@ -32,4 +34,63 @@ export async function GET(req: Request) {
     actions,
     pendingCount: actions.filter((a) => a.status === "pending").length,
   });
+}
+
+const patchSchema = z.object({
+  id: z.string().uuid(),
+  decision: z.enum(["approve", "reject"]),
+});
+
+/**
+ * Answering what your pet asked. "Ask me first" has been a dead end until now:
+ * pending decisions accumulated and counted against the daily budget with no
+ * way to say yes.
+ *
+ * Mirrors the admin handler, with one difference that matters — it only ever
+ * touches decisions belonging to the caller's own pet.
+ */
+export async function PATCH(req: Request) {
+  const { session, response } = await requireSession();
+  if (response) return response;
+
+  const body = await req.json().catch(() => null);
+  const parsed = patchSchema.safeParse(body);
+  if (!parsed.success) return NextResponse.json({ error: "invalid_body" }, { status: 400 });
+  const { id, decision } = parsed.data;
+
+  const [pet] = await db.select({ id: pets.id }).from(pets).where(eq(pets.userId, session.user.id));
+  if (!pet) return NextResponse.json({ error: "no_pet" }, { status: 400 });
+
+  // Scoped to this pet, so one account can never answer another's decisions.
+  const [action] = await db
+    .select()
+    .from(petActions)
+    .where(and(eq(petActions.id, id), eq(petActions.petId, pet.id)));
+  if (!action) return NextResponse.json({ error: "not_found" }, { status: 404 });
+  if (action.status !== "pending") {
+    return NextResponse.json({ error: "not_pending", status: action.status }, { status: 409 });
+  }
+
+  if (decision === "reject") {
+    await db.update(petActions).set({ status: "rejected" }).where(eq(petActions.id, id));
+    return NextResponse.json({ ok: true, status: "rejected" });
+  }
+
+  // The row stores the decision minus its discriminator, so rebuild it.
+  const petAction = {
+    action: action.type,
+    reasoning: action.reasoning ?? "",
+    ...(action.payload as Record<string, unknown>),
+  } as PetAction;
+
+  try {
+    await executeAction(pet.id, petAction);
+  } catch (error) {
+    await db.update(petActions).set({ status: "failed" }).where(eq(petActions.id, id));
+    console.error("[me/pet-actions] execute failed:", error);
+    return NextResponse.json({ error: "execute_failed" }, { status: 500 });
+  }
+
+  await db.update(petActions).set({ status: "executed", executedAt: new Date() }).where(eq(petActions.id, id));
+  return NextResponse.json({ ok: true, status: "executed" });
 }

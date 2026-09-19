@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
-import { and, desc, eq, gte, isNotNull, lte } from "drizzle-orm";
+import { and, desc, eq, gte, isNotNull, lte, sql } from "drizzle-orm";
 import { z } from "zod";
-import { db, pets, places, posts, users } from "@bsocial/db";
+import { comments, db, likes, pets, places, posts, users } from "@bsocial/db";
 import { mediaByPostId } from "@/lib/post-media";
 import { requireSession } from "@/lib/session";
+import { amplifiedPosts } from "@/lib/visibility";
 
 const MAX_POSTS = 120;
 
@@ -34,6 +35,10 @@ export async function GET(req: Request) {
       longitude: posts.longitude,
       createdAt: posts.createdAt,
       authoredByAgent: posts.authoredByAgent,
+      moderationStatus: posts.moderationStatus,
+      sensitiveCategories: posts.sensitiveCategories,
+      likeCount: sql<number>`(select count(*) from ${likes} where ${likes.postId} = ${posts.id})`.mapWith(Number),
+      commentCount: sql<number>`(select count(*) from ${comments} where ${comments.postId} = ${posts.id})`.mapWith(Number),
       petId: pets.id,
       petName: pets.name,
       species: pets.species,
@@ -56,6 +61,7 @@ export async function GET(req: Request) {
         gte(posts.longitude, west),
         lte(posts.longitude, east),
         isNotNull(users.onboardingCompletedAt),
+        amplifiedPosts(),
       ),
     )
     .orderBy(desc(posts.createdAt))

@@ -6,6 +6,7 @@ import { describePersonality, generateComment, generatePost } from "../lib/agent
 import { recordDecision } from "../lib/actions";
 import { getActionBudget } from "../lib/action-budget";
 import { loadPlannerCandidates, planAction } from "../lib/pet-planner";
+import { isPetsPaused } from "../lib/settings";
 
 // Pets act only for owners who are onboarded, not age-restricted, and were
 // active in the app within PET_OWNER_INACTIVE_DAYS.
@@ -27,6 +28,10 @@ export const schedulePetTicks = inngest.createFunction(
   { id: "schedule-pet-ticks" },
   { cron: "0 * * * *" },
   async ({ step }) => {
+    // Admin kill switch (Settings on the dashboard). Checked here so pausing
+    // stops the whole fan-out rather than 8000 ticks each deciding to no-op.
+    if (await step.run("check-paused", () => isPetsPaused())) return { fanned: 0, paused: true };
+
     const eligiblePets = await step.run("load-pets", () =>
       db
         .select({ id: pets.id })
@@ -62,6 +67,10 @@ export const runPetTick = inngest.createFunction(
   { event: "pet/tick" },
   async ({ event, step }) => {
     const petId = event.data.petId;
+
+    // Re-checked per tick, not just at fan-out: ticks queued before the pause
+    // would otherwise still run after an admin hit the switch.
+    if (await step.run("check-paused", () => isPetsPaused())) return { skipped: "pets paused" };
 
     const pet = await step.run("load-pet", async () => {
       const [row] = await db

@@ -1,0 +1,112 @@
+/**
+ * How the pet is feeling, and — the part that matters — why.
+ *
+ * Mood is the tug that makes someone open the app without being a demand. Two
+ * rules keep it on the right side of that line:
+ *
+ *  1. It never gates anything. A sad pet still does everything a happy one
+ *     does; the only consequence is that you can see it's sad.
+ *  2. It always comes with a reason in plain words. A drooping face with no
+ *     explanation is a guilt mechanic; "nobody's replied to Kiwi in a while"
+ *     is information.
+ *
+ * Derived on read from signals already recorded, so there's no mood column to
+ * drift out of step with reality.
+ */
+
+export const CARE_KINDS = ["feed", "groom", "play"] as const;
+export type CareKind = (typeof CARE_KINDS)[number];
+
+export const CARE_LABEL: Record<CareKind, { verb: string; done: string }> = {
+  feed: { verb: "Feed", done: "Fed" },
+  groom: { verb: "Groom", done: "Groomed" },
+  play: { verb: "Play", done: "Played" },
+};
+
+/** Signals that feed the calculation. All are already stored for other reasons. */
+export type MoodSignals = {
+  /** Distinct care actions done today, 0–3. */
+  careToday: number;
+  /** Likes + replies the pet's posts received in the last 48h. */
+  socialWins: number;
+  /** Hours since the owner last opened the app. */
+  hoursSinceOwnerActive: number;
+  /** Decisions waiting on an answer. */
+  pendingAsks: number;
+  /** Whether the pet did anything at all in the last 24h. */
+  actedRecently: boolean;
+};
+
+export type MoodName = "excited" | "love" | "happy" | "thinking" | "shy" | "sleepy" | "sad";
+
+export type Mood = {
+  name: MoodName;
+  /** 0–100. Exposed so the app can show a bar without re-deriving the rules. */
+  score: number;
+  /** Plain-language causes, strongest first. Never empty. */
+  reasons: string[];
+};
+
+const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
+
+export function computeMood(signals: MoodSignals, petName = "Your pet"): Mood {
+  const { careToday, socialWins, hoursSinceOwnerActive, pendingAsks, actedRecently } = signals;
+
+  let score = 55; // Contented by default: a pet nobody has touched isn't miserable.
+  const up: string[] = [];
+  const down: string[] = [];
+
+  if (careToday > 0) {
+    score += careToday * 8;
+    up.push(careToday >= 3 ? `You did everything with ${petName} today` : `You spent time with ${petName} today`);
+  }
+
+  if (socialWins > 0) {
+    score += clamp(socialWins * 4, 0, 20);
+    up.push(socialWins === 1 ? "Someone reacted to a post" : `${socialWins} people reacted to ${petName}'s posts`);
+  }
+
+  // The dominant signal, because being forgotten is the thing a companion
+  // notices. Stops falling after a few days — permanently miserable is just
+  // punishment, and the pet stops acting by then anyway.
+  if (hoursSinceOwnerActive >= 12) {
+    const days = hoursSinceOwnerActive / 24;
+    score -= clamp(Math.round(days * 14), 0, 40);
+    down.push(
+      days < 1
+        ? `${petName} hasn't seen you today`
+        : days < 2
+          ? `${petName} hasn't seen you since yesterday`
+          : `${petName} hasn't seen you in ${Math.floor(days)} days`,
+    );
+  }
+
+  if (pendingAsks > 0) {
+    score -= clamp(pendingAsks * 5, 0, 15);
+    down.push(pendingAsks === 1 ? `${petName} is waiting on an answer` : `${petName} is waiting on ${pendingAsks} answers`);
+  }
+
+  if (!actedRecently) {
+    score -= 5;
+    down.push("It's been quiet around here");
+  }
+
+  score = clamp(Math.round(score), 0, 100);
+
+  // Ordered so the strongest cause leads; a pet that's both fed and forgotten
+  // should say the forgotten part first.
+  const reasons = [...down, ...up];
+  if (reasons.length === 0) reasons.push(`${petName} is pottering about happily`);
+
+  return { name: nameFor(score, signals), score, reasons };
+}
+
+function nameFor(score: number, { careToday, socialWins, hoursSinceOwnerActive }: MoodSignals): MoodName {
+  if (hoursSinceOwnerActive >= 72) return "sad";
+  if (score >= 85) return socialWins >= 3 ? "excited" : "love";
+  if (score >= 70) return careToday > 0 ? "love" : "happy";
+  if (score >= 55) return "happy";
+  if (score >= 40) return "thinking";
+  if (score >= 25) return "shy";
+  return hoursSinceOwnerActive >= 36 ? "sleepy" : "sad";
+}
