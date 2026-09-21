@@ -169,7 +169,7 @@ export default function PetTab() {
               {/* The name itself is the affordance — a rename buried in settings
                   is a rename nobody finds. */}
               <Pressable
-                onPress={() => router.push({ pathname: '/rename-pet', params: { current: pet.name } })}
+                onPress={() => router.push({ pathname: '/pet/rename', params: { current: pet.name } })}
                 accessibilityRole="button"
                 accessibilityLabel={t('pet.a11y.rename', { name: pet.name })}
                 hitSlop={6}

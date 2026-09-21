@@ -865,8 +865,8 @@ They look similar and behave oppositely, so which one a screen reaches for is a 
 | Backdrop | **None** | Yes, tap to dismiss |
 | Behind it | Live and interactive | Inert, but still mounted and visible |
 | Height | Fixed 86%, drags between peek and full | Sizes to content, up to 86% |
-| What it is | A view in the page | **Its own route**, `presentation: 'transparentModal'` |
-| Used by | **The map, and only the map** | `language`, `rename-pet`, `viewers/[postId]` |
+| What it is | A view in the page | **A nested route**, `presentation: 'transparentModal'` |
+| Used by | **The map, and only the map** | `/profile/language`, `/pet/rename`, `/feed/viewers/[id]`, `/post/[id]/viewers` |
 
 The map's sheet has no backdrop on purpose: it's a detail panel over a live map, as in Google Maps,
 and selecting another marker swaps its contents rather than stacking. Everywhere else wants the
@@ -881,6 +881,15 @@ from the screen with the sheet notionally still open. Verified both ways.
 
 `transparentModal` is the presentation because it keeps the screen below mounted and visible, which
 is what makes the backdrop read as a dim over the page rather than as a new page.
+
+**They're nested under the page that owns them**, so the URL says whose sheet it is and a cold link
+lands with the right page behind — a top-level `/language` rendered the backdrop over nothing at all.
+The who-looked sheet is owned by two pages and has a thin route under each, both rendering one
+`ViewersBody`, so dismissing returns you to whichever you opened it from.
+
+Nesting costs one thing: the floating tab bar is rendered by the *tabs* navigator, outside a tab's
+own stack, so a modal inside that stack draws beneath it. It slides away instead, through the same
+`useTabBarVisibility` context the map's sheet uses.
 
 **Why the third tab is the pet.** It was "Activity", which held three unrelated jobs — an inbox
 (asks, invites), a goals board (missions, the event) and a log (diary, history) — and read as thin

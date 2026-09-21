@@ -278,7 +278,7 @@ export default function FeedTab() {
                   not a read receipt anyone else is owed. */}
               {post.mine && (
                 <Pressable
-                  onPress={() => router.push(`/viewers/${post.id}`)}
+                  onPress={() => router.push(`/feed/viewers/${post.id}`)}
                   hitSlop={8}
                   style={styles.metric}
                   accessibilityRole="button"

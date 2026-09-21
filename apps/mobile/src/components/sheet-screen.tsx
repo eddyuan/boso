@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { type ReactNode, useCallback, useEffect } from 'react';
 import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
   runOnJS,
   useAnimatedStyle,
@@ -10,6 +10,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useTabBarVisibility } from '@/components/tab-bar-visibility';
 import { ThemedText } from '@/components/themed-text';
 import { Icon } from '@/components/ui/icon';
 import { Radius, Spacing } from '@/constants/theme';
@@ -41,6 +42,16 @@ const OUT_MS = 170;
  *
  * Declared with `presentation: 'transparentModal'` so the screen underneath stays
  * mounted and visible through the backdrop.
+ *
+ * These live **nested under the screen they belong to** — `/profile/language`, not
+ * `/language` — so the URL says whose sheet it is, and a cold link lands with the
+ * right page behind rather than whatever the stack's anchor happens to be.
+ *
+ * Nesting costs one thing: the floating tab bar is rendered by the *tabs*
+ * navigator, outside the tab's own stack, so a modal inside that stack draws
+ * beneath it — the bar would sit undimmed and tappable over the backdrop. It slides
+ * away instead, through the same `useTabBarVisibility` context the map's sheet uses
+ * for the same reason.
  */
 export function SheetScreen({
   title,
@@ -57,12 +68,19 @@ export function SheetScreen({
   const { height } = useWindowDimensions();
   const { t } = useT();
 
+  const { setHidden } = useTabBarVisibility();
   const progress = useSharedValue(0);
   const drag = useSharedValue(0);
 
   useEffect(() => {
     progress.value = withTiming(1, { duration: IN_MS });
   }, [progress]);
+
+  // The bar is outside this stack, so it would otherwise draw over the backdrop.
+  useEffect(() => {
+    setHidden(true);
+    return () => setHidden(false);
+  }, [setHidden]);
 
   /**
    * Plays the exit, then pops.
@@ -93,7 +111,12 @@ export function SheetScreen({
   }));
 
   return (
-    <View style={styles.fill}>
+    // Its own gesture root. `transparentModal` is a *native* presentation on iOS
+    // (`UIModalPresentationOverFullScreen` via react-native-screens), so this
+    // screen's views sit in a view controller presented outside the root
+    // `GestureHandlerRootView` — without a root of its own the drag-to-dismiss
+    // would silently do nothing on device while working fine on web.
+    <GestureHandlerRootView style={styles.fill}>
       <Animated.View style={[styles.backdrop, backdropStyle]}>
         <Pressable
           style={styles.fill}
@@ -144,7 +167,7 @@ export function SheetScreen({
           )}
         </Animated.View>
       </GestureDetector>
-    </View>
+    </GestureHandlerRootView>
   );
 }
 

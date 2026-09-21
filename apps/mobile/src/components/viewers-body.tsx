@@ -1,5 +1,4 @@
 import { Image } from 'expo-image';
-import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
@@ -26,9 +25,12 @@ type Viewer = {
  * Only ever shown to the author — the endpoint enforces that too. It's a
  * curiosity about your own post rather than a public read receipt, which is why
  * there's no equivalent view of "posts you looked at".
+ *
+ * The body rather than the route, because two pages own a copy of this sheet: the
+ * feed and the post screen. Nesting it under both is what makes dismissing return
+ * you to the one you opened it from.
  */
-export default function ViewersScreen() {
-  const { postId } = useLocalSearchParams<{ postId: string }>();
+export function ViewersBody({ postId }: { postId: string }) {
   const theme = useTheme();
   const { t, n, timeAgo } = useT();
   const [viewers, setViewers] = useState<Viewer[] | null>(null);

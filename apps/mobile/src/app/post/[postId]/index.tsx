@@ -199,7 +199,7 @@ export default function PostScreen() {
                   </View>
                   {post.mine && (
                     <Pressable
-                      onPress={() => router.push(`/viewers/${post.id}`)}
+                      onPress={() => router.push(`/post/${post.id}/viewers`)}
                       hitSlop={8}
                       style={styles.metric}
                       accessibilityRole="button">

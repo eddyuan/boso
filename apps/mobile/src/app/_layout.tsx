@@ -74,25 +74,6 @@ export default function RootLayout() {
               <Stack.Screen name="pet-log" />
               <Stack.Screen name="account" />
               <Stack.Screen name="devices" />
-              {/* The backdropped sheets. `transparentModal` keeps the screen
-                  below mounted and visible, which is what makes the backdrop read
-                  as a dim over the page rather than a new page. They're routes so
-                  that closing is popping a history entry — which is what gets
-                  Android back, browser back and the swipe gesture all behaving the
-                  same way without a per-platform shim. The map's sheet is not one
-                  of these: it has no backdrop and the map stays live behind it. */}
-              <Stack.Screen
-                name="language"
-                options={{ presentation: 'transparentModal', animation: 'fade' }}
-              />
-              <Stack.Screen
-                name="rename-pet"
-                options={{ presentation: 'transparentModal', animation: 'fade' }}
-              />
-              <Stack.Screen
-                name="viewers/[postId]"
-                options={{ presentation: 'transparentModal', animation: 'fade' }}
-              />
             </Stack.Protected>
             <Stack.Protected guard={verified && !onboarded}>
               <Stack.Screen name="onboarding" />

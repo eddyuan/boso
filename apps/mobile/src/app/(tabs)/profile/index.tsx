@@ -130,7 +130,7 @@ export default function ProfileTab() {
           title={t('profile.language')}
           subtitle={chosen ? languageName(locale) : t('profile.languageSystem')}
           trailing={<Icon name="chevron" size={20} color={theme.textSecondary} />}
-          onPress={() => router.push('/language')}
+          onPress={() => router.push('/profile/language')}
         />
         <Divider />
         <ListRow
