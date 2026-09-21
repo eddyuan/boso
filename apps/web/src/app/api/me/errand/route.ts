@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { and, desc, eq, gt, isNotNull, sql } from "drizzle-orm";
 import { z } from "zod";
-import { comments, db, likes, pets, posts, users } from "@bsocial/db";
-import { awardXpQuietly } from "@/lib/bond";
+import { bondEvents, comments, db, likes, pets, posts, users } from "@bsocial/db";
+import { capabilitiesAt, progressFor } from "@bsocial/shared";
+import { awardXp } from "@/lib/bond";
+import { errandTuning, getConfig } from "@/lib/config";
 import { mediaByPostId } from "@/lib/post-media";
 import { recordInteraction } from "@/lib/relationships";
 import { requireSession } from "@/lib/session";
@@ -20,9 +22,7 @@ import { amplifiedPosts } from "@/lib/visibility";
  * relationship ledger everything else does.
  */
 
-const ERRAND_RADIUS_M = 800;
 const LOOKBACK_HOURS = 72;
-const BUNDLE_SIZE = 4;
 const EARTH_RADIUS_M = 6_371_000;
 
 const bodySchema = z.object({
@@ -38,11 +38,42 @@ export async function POST(req: Request) {
   if (!parsed.success) return NextResponse.json({ error: "invalid_body" }, { status: 400 });
   const { latitude, longitude } = parsed.data;
 
-  const [myPet] = await db.select({ id: pets.id }).from(pets).where(eq(pets.userId, session.user.id));
+  const [myPet] = await db
+    .select({ id: pets.id, bondXp: pets.bondXp })
+    .from(pets)
+    .where(eq(pets.userId, session.user.id));
   if (!myPet) return NextResponse.json({ error: "no_pet" }, { status: 400 });
 
+  // How far, how many and how often are all the bond ladder's levels 1-10, with
+  // the floors and ceilings coming from live config rather than constants.
+  const { values } = await getConfig();
+  const caps = capabilitiesAt(progressFor(myPet.bondXp).level, errandTuning(values));
+
+  // A daily cap, which this endpoint never had. Without one, each press paid 12
+  // XP with nothing to stop repeats — level 20 was about ten minutes of tapping.
+  // Counted from the ledger rather than a column, so the cap can't disagree with
+  // what was actually paid out, and only trips that found something count.
+  const dayStart = new Date();
+  dayStart.setUTCHours(0, 0, 0, 0);
+  const [{ used }] = await db
+    .select({ used: sql<number>`count(*)`.mapWith(Number) })
+    .from(bondEvents)
+    .where(
+      and(
+        eq(bondEvents.petId, myPet.id),
+        eq(bondEvents.event, "errand_returned"),
+        gt(bondEvents.createdAt, dayStart),
+      ),
+    );
+  if (used >= caps.errandsPerDay) {
+    return NextResponse.json(
+      { error: "errand_limit", used, perDay: caps.errandsPerDay },
+      { status: 429 },
+    );
+  }
+
   const since = new Date(Date.now() - LOOKBACK_HOURS * 3600 * 1000);
-  const latDelta = (ERRAND_RADIUS_M / EARTH_RADIUS_M) * (180 / Math.PI);
+  const latDelta = (caps.errandRadiusM / EARTH_RADIUS_M) * (180 / Math.PI);
   const lngDelta = latDelta / Math.max(Math.cos((latitude * Math.PI) / 180), 0.01);
 
   const mine = await effectiveInterests(session.user.id, session.user.interests ?? []);
@@ -84,7 +115,7 @@ export async function POST(req: Request) {
       ),
     )
     .orderBy(desc(sql`overlap`), desc(posts.createdAt))
-    .limit(BUNDLE_SIZE);
+    .limit(caps.errandBundle);
 
   const [media, topics] = await Promise.all([
     mediaByPostId(rows.map((r) => r.id)),
@@ -98,12 +129,20 @@ export async function POST(req: Request) {
     ),
   );
 
-  if (rows.length > 0) awardXpQuietly(myPet.id, "errand_returned");
+  // Awaited, not fire-and-forget: the ledger row *is* the daily counter above, so
+  // two quick presses would both pass the cap check while the write was in flight.
+  // Still swallowed — XP must never be the reason a real action fails.
+  const counted = rows.length > 0;
+  if (counted) await awardXp(myPet.id, "errand_returned").catch(() => {});
 
   return NextResponse.json({
     posts: rows.map((r) => ({ ...r, media: media.get(r.id) ?? [], topics: topics.get(r.id) ?? [] })),
     // Empty is a real outcome: the pet went and there was nothing there.
     foundNothing: rows.length === 0,
+    // So the app can say how many trips are left today. A trip that found nothing
+    // doesn't burn one — the pet went, and an empty neighbourhood isn't your fault.
+    errandsPerDay: caps.errandsPerDay,
+    errandsUsed: used + (counted ? 1 : 0),
     showSensitiveContent: session.user.showSensitiveContent,
   });
 }

@@ -143,3 +143,82 @@ export function leveledUp(before: number, after: number): LevelRow | null {
   const to = progressFor(after).level;
   return to > from ? (LEVELS.find((l) => l.level === to) ?? null) : null;
 }
+
+// ---------------------------------------------------------------------------
+// What a level actually gives you
+//
+// Levels 1–10 are the capability ladder, and each step is one of these numbers.
+// Kept here beside `LEVELS` rather than at the four call sites, so the table and
+// the thing it promises can't drift apart — the previous ladder's whole problem.
+// ---------------------------------------------------------------------------
+
+/** Rarity a pet can find at all, by level. Below the threshold it isn't rolled. */
+export const RARITY_UNLOCKED_AT = {
+  common: 1,
+  uncommon: 2,
+  rare: 5,
+  legendary: 9,
+} as const;
+
+/**
+ * The levels at which each errand number steps up.
+ *
+ * Only the levels live here. The *values* come from config — a floor and a
+ * ceiling per track, with the middle step halfway between — so retuning how far a
+ * pet ranges is an admin field rather than a deploy, and the ladder's copy stays
+ * true because none of it promises a specific number.
+ */
+export const ERRAND_STEP_LEVELS = {
+  radiusM: [1, 3, 7],
+  bundle: [1, 4, 8],
+  perDay: [1, 6, 10],
+} as const;
+
+/** Floor and ceiling per track. Defaults are the constants these replaced. */
+export type ErrandTuning = {
+  radiusStartM: number;
+  radiusMaxM: number;
+  bundleStart: number;
+  bundleMax: number;
+  perDayStart: number;
+  perDayMax: number;
+};
+
+export const ERRAND_TUNING_DEFAULTS: ErrandTuning = {
+  radiusStartM: 800,
+  radiusMaxM: 3000,
+  bundleStart: 4,
+  bundleMax: 8,
+  perDayStart: 2,
+  perDayMax: 4,
+};
+
+/**
+ * The value in force at `level` for one track.
+ *
+ * Three steps: the floor, the midpoint, the ceiling. A level between steps keeps
+ * the previous value, and a ceiling below the floor simply never rises — nonsense
+ * config degrades to a flat line rather than to later levels being worse.
+ */
+function trackValue(levels: readonly [number, number, number], from: number, to: number, level: number): number {
+  const mid = Math.round((from + to) / 2);
+  const values = [from, Math.max(from, mid), Math.max(from, to)];
+  let value = values[0]!;
+  for (let i = 0; i < levels.length; i++) if (level >= levels[i]!) value = values[i]!;
+  return value;
+}
+
+/** Everything the capability ladder grants at a level, in one place. */
+export function capabilitiesAt(level: number, tuning: ErrandTuning = ERRAND_TUNING_DEFAULTS) {
+  return {
+    errandRadiusM: trackValue(ERRAND_STEP_LEVELS.radiusM, tuning.radiusStartM, tuning.radiusMaxM, level),
+    errandBundle: trackValue(ERRAND_STEP_LEVELS.bundle, tuning.bundleStart, tuning.bundleMax, level),
+    errandsPerDay: trackValue(ERRAND_STEP_LEVELS.perDay, tuning.perDayStart, tuning.perDayMax, level),
+    /** Rarities this pet can roll, commonest first. */
+    rarities: (Object.keys(RARITY_UNLOCKED_AT) as (keyof typeof RARITY_UNLOCKED_AT)[]).filter(
+      (r) => level >= RARITY_UNLOCKED_AT[r],
+    ),
+    /** Level 10's second half: the pet's own allowance goes up by this much. */
+    bonusActionsPerDay: level >= LAST_CAPABILITY_LEVEL ? 2 : 0,
+  };
+}

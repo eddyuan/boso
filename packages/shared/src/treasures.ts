@@ -52,20 +52,31 @@ export function rarityLabel(rarity: string): string {
  * Picks a find for a wander that ended near `placeCategory`, or null.
  * Candidates matching the place are preferred, so a beach turns up sea glass
  * rather than a cinema ticket.
+ *
+ * `rarities` is the bond ladder's half of this: levels 2, 5 and 9 widen what a pet
+ * can find at all. Filtering the pool rather than re-weighting it keeps the odds
+ * *within* what you've unlocked unchanged — reaching level 9 adds legendary finds
+ * without quietly making pebbles rarer.
  */
 export function rollTreasure(
   placeCategory: string | null,
   rng: () => number = Math.random,
   /** Live-tunable; defaults to the shipped constant. */
   findChance: number = FIND_CHANCE,
+  /** Rarities unlocked at the pet's bond level. Defaults to all of them. */
+  rarities: readonly TreasureRarity[] = TREASURE_RARITIES.map((r) => r.id),
 ): TreasureKind | null {
   if (rng() > findChance) return null;
 
+  const allowed = (t: TreasureKind) => rarities.includes(t.rarity);
   const local = placeCategory
-    ? TREASURES.filter((t) => t.near.includes(placeCategory))
+    ? TREASURES.filter((t) => t.near.includes(placeCategory) && allowed(t))
     : [];
-  const anywhere = TREASURES.filter((t) => t.near.length === 0);
+  const anywhere = TREASURES.filter((t) => t.near.length === 0 && allowed(t));
   const pool = local.length > 0 && rng() < 0.6 ? local : anywhere;
+  // A level that has unlocked nothing findable here comes home empty, which is
+  // already the common outcome and needs no special case downstream.
+  if (pool.length === 0) return null;
 
   const weights = pool.map((t) => TREASURE_RARITIES.find((r) => r.id === t.rarity)!.weight);
   let roll = rng() * weights.reduce((a, b) => a + b, 0);

@@ -75,6 +75,7 @@ export const zhHans: Record<TranslationKey, string> = {
   "map.sendingOut": "出发啦……",
   "map.error.location": "无法获取你的位置。",
   "map.error.errand": "暂时派不出去。",
+  "map.error.errandLimit": "今天的跑腿次数用完了。羁绊更深，出门的次数也更多。",
   "map.a11y.centreOnYou": "把地图移回你的位置",
   "map.a11y.showPet": "在地图上找到{name}",
   "map.a11y.openPlace": "看看{place}那边在聊什么",

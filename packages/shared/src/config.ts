@@ -77,6 +77,25 @@ export const CONFIG_FIELDS: ConfigField[] = [
     help: "Drawn from the seven in the catalogue, stable for the day. Above about four it stops reading as a suggestion and starts reading as a chore list.",
   },
 
+  // ---------------------------------------------------------------- errands
+  //
+  // The bond ladder's levels 1-10 step these three between the floor and the
+  // ceiling below (see ERRAND_STEPS in bond.ts). Tuning the ends retunes the whole
+  // ladder without touching the table — which is the point of the ladder being
+  // numbers rather than features.
+  { key: "errands.radiusStartM", label: "Errand radius at level 1", group: "economy", type: "int", default: 800, min: 100, max: 20000,
+    help: "How far a level-1 errand searches. Wide enough and \"a few streets away\" stops being true.", unit: "m" },
+  { key: "errands.radiusMaxM", label: "Errand radius at level 7", group: "economy", type: "int", default: 3000, min: 100, max: 50000,
+    help: "The ceiling the ladder reaches. Below the level-1 value the steps invert and later levels search less.", unit: "m" },
+  { key: "errands.bundleStart", label: "Errand bundle at level 1", group: "economy", type: "int", default: 4, min: 1, max: 20,
+    help: "Posts brought home at level 1. More than a handful and the sheet stops being a peek." },
+  { key: "errands.bundleMax", label: "Errand bundle at level 8", group: "economy", type: "int", default: 8, min: 1, max: 40,
+    help: "The ceiling the ladder reaches." },
+  { key: "errands.perDayStart", label: "Errands per day at level 1", group: "economy", type: "int", default: 2, min: 1, max: 50,
+    help: "Also the cap on errand XP: without it each press paid out again with nothing to stop repeats." },
+  { key: "errands.perDayMax", label: "Errands per day at level 10", group: "economy", type: "int", default: 4, min: 1, max: 100,
+    help: "The ceiling the ladder reaches." },
+
   // ------------------------------------------------------------------- pets
   { key: "pets.maxActionsPerDay", label: "Pet actions per day", group: "pets", type: "int", default: 5, min: 0, max: 48,
     help: "The whole rolling-24h allowance. 0 stops pets acting without pausing the loop." },

@@ -4,7 +4,7 @@ import { inngest } from "@/inngest/client";
 import { resolvePetPostLocation } from "@/lib/pet-location";
 import { sendPush } from "@/lib/push";
 import { recordInteraction } from "@/lib/relationships";
-import { rollTreasure } from "@bsocial/shared";
+import { capabilitiesAt, progressFor, rollTreasure } from "@bsocial/shared";
 import { getConfig } from "./config";
 import { translatorForUser } from "./locale";
 // A concrete action ready to record: planner decisions (lib/pet-planner.ts),
@@ -79,7 +79,10 @@ export async function executeAction(petId: string, decision: PetAction) {
     case "post": {
       // Without coordinates a pet post never reaches the map or Nearby, which
       // is most of the app's content missing from most of its surfaces.
-      const [owner] = await db.select({ userId: pets.userId }).from(pets).where(eq(pets.id, petId));
+      const [owner] = await db
+        .select({ userId: pets.userId, bondXp: pets.bondXp })
+        .from(pets)
+        .where(eq(pets.id, petId));
       const at = owner ? await resolvePetPostLocation(owner.userId) : null;
 
       const [post] = await db
@@ -97,7 +100,10 @@ export async function executeAction(petId: string, decision: PetAction) {
       // A trip out is also a chance to bring something home. Most find nothing,
       // which is what makes finding something feel like anything.
       if (at) {
-        const found = rollTreasure(at.placeCategory ?? null, Math.random, findChance);
+        // Which rarities are even on the table is the bond ladder's levels 2, 5
+        // and 9 — the same rule the user-pressed errand uses.
+        const { rarities } = capabilitiesAt(progressFor(owner?.bondXp ?? 0).level);
+        const found = rollTreasure(at.placeCategory ?? null, Math.random, findChance, rarities);
         if (found) {
           await db
             .insert(petTreasures)

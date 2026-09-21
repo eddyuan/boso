@@ -1,3 +1,4 @@
+import type { ErrandTuning } from "@bsocial/shared";
 import { desc, eq } from "drizzle-orm";
 import { appSettings, configAudit, db, users } from "@bsocial/db";
 import {
@@ -145,4 +146,16 @@ export async function configHistory(limit = 60): Promise<AuditRow[]> {
     .orderBy(desc(configAudit.createdAt))
     .limit(limit);
   return rows;
+}
+
+/** The errand floors and ceilings, shaped for `capabilitiesAt`. */
+export function errandTuning(values: Record<string, number>): ErrandTuning {
+  return {
+    radiusStartM: values["errands.radiusStartM"]!,
+    radiusMaxM: values["errands.radiusMaxM"]!,
+    bundleStart: values["errands.bundleStart"]!,
+    bundleMax: values["errands.bundleMax"]!,
+    perDayStart: values["errands.perDayStart"]!,
+    perDayMax: values["errands.perDayMax"]!,
+  };
 }

@@ -609,27 +609,57 @@ rather than a number in a table.
 
 ## 5d5. Bond level
 
-One permanent number that unlocks **expression**
-([`packages/shared/src/bond.ts`](packages/shared/src/bond.ts)). Two constraints, both load-bearing:
+One permanent number, in two halves
+([`packages/shared/src/bond.ts`](packages/shared/src/bond.ts)).
 
-**It gates expression, never reach.** Levels lock cosmetics, treasure tiers, errand range and
-titles — never who you can see, meet or talk to. An earlier draft locked playdates until day 3–4 and
-local gossip until day 16, which charges a new user days of grinding for exactly the social access
-that would have kept them. Every unlock in the table is something the pet *wears, carries, collects
-or is called* — a rule held by review, not by a check. (An earlier version of this section claimed
-a test asserted it. There are no test files and no test runner in the repo.)
+**Levels 1–10 decide what the pet can *do*. 11–20 are cosmetic and nothing else.** Once the
+capability ladder finishes at 10 there is nothing functional left to earn, so the long tail is
+entirely what the pet wears, carries and is called. `LAST_CAPABILITY_LEVEL` is the boundary.
+
+**It gates expression, never reach.** Everything social — the map, posting, replies, friendships,
+playdates, errands, the diary, the shelf — works from the first minute at every level. What 1–10
+change is how deep the pet's own wandering goes, on four tracks telling one story: it **ranges
+further**, **goes out more often**, **brings back more**, and **finds rarer things**.
+
+| L | XP | Unlock | The number behind it |
+|---|---|---|---|
+| 1 | 0 | Everything social, and the name | — |
+| 2 | 40 | Uncommon finds | `RARITY_UNLOCKED_AT` |
+| 3 | 100 | Errands reach further | `errands.radius*` |
+| 4 | 190 | Errands bring back more | `errands.bundle*` |
+| 5 | 320 | Rare finds | `RARITY_UNLOCKED_AT` |
+| 6 | 490 | A third errand each day | `errands.perDay*` |
+| 7 | 700 | Reach the whole neighbourhood | `errands.radius*` |
+| 8 | 960 | A full bundle | `errands.bundle*` |
+| 9 | 1270 | Legendary finds | `RARITY_UNLOCKED_AT` |
+| 10 | 1640 | A fourth errand, and the pet acts more often | `errands.perDay*` + `bonusActionsPerDay` |
+| 11–20 | 2100–11400 | Collars, scarves, hats, patterns, titles, frames, the crown | 3D art |
+
+Every unlock in 1–10 is a **number the code already had**, which is what makes the table buildable
+rather than aspirational — the ladder this replaced had eleven unlocks describing features that
+existed in no form, and not one of the twenty was enforced anywhere. `capabilitiesAt(level, tuning)`
+is the single place that answers "what does this level give", and the four call sites read from it.
+
+**The floors and ceilings are live-tunable.** Config sets a floor and a ceiling per errand track and
+the middle step sits halfway between, so retuning how far a pet ranges is an admin field rather than
+a deploy. None of the copy promises a specific number, which is what lets that be true. A ceiling set
+below its floor degrades to a flat line rather than making later levels worse.
+
+**Errands are capped per day**, which they never were: each press paid 12 XP with nothing to stop
+repeats, so level 20 was about ten minutes of tapping. The cap counts `errand_returned` rows in the
+bond ledger rather than a column of its own, so it can't disagree with what was actually paid — and a
+trip that found nothing doesn't burn one.
 
 **XP pays for the behaviour we want to be true.** The two largest awards are making a new friend (30)
-and answering what your pet asked (25) — the second being the trust ritual and the most distinctive
-interaction in the product, where rejecting counts as much as approving, since paying only for "yes"
-would be buying consent. Daily care is the smallest at 4, a floor rather than the engine. Measured over 90 days: care-only grinding reaches level 7, engaged play 13, social play
-16 — the chore floor can't carry you.
+and answering what your pet asked (25) — the second being the trust ritual, where rejecting counts as
+much as approving, since paying only for "yes" would be buying consent. Daily care is the smallest at
+4, a floor rather than the engine. An engaged player finishes the functional ladder in about 32 days
+and the cosmetic one in 220; care-only grinding takes 137 days to reach level 10, so the chore floor
+still can't carry you.
 
 Levels never decay. A fortnight away costs nothing; mood is the thing that droops and recovers, so
 the tug to return never takes something away. Every award is logged in `bond_events`, so a level can
 be explained rather than just shown.
-
----
 
 ## 5d6. Playdates
 
@@ -1530,7 +1560,7 @@ Worth stating plainly, because "built" reads like "working":
 - [ ] Contact matching can be used to enumerate users; capped at 2000 hashes/request, needs per-user rate limiting.
 - [ ] No step-up verification (fresh code) before unlinking providers or changing contact info.
 - [ ] Phone-only users can't set a password; no password reset UI yet.
-- [ ] **None of the 20 bond unlocks are enforced anywhere.** `LEVELS[].unlock` is displayed on the bond screen as a reward ladder, but the shelf isn't gated on level, `ERRAND_RADIUS_M` is a constant (so levels 6 and 16 do nothing), `rollTreasure` takes no bond level (so 8, 12 and 17 do nothing) and diary retention is a query limit (level 11). The screen is a roadmap presented as earned rewards. Renaming — advertised at level 2 — has been cut from the ladder and built as an always-available feature instead; the rest need the same treatment, either built or marked as upcoming.
+- [ ] **Levels 11–20 are blocked on 3D art.** The capability half (1–10) is built and enforced; the cosmetic half is collars, scarves, hats, patterns and frames, none of which exist. Reaching level 11 currently grants nothing visible. Tracked under *Cosmetics · Needs you*.
 - [ ] Terms/Privacy URLs are placeholders; legal pages don't exist.
 - [ ] **Neither Chinese translation has been read by a native speaker.** Both are structurally verified (complete key coverage, consistent character conversion, placeholders intact) but the register — warm and casual rather than stiff — is a judgement a reviewer should make. Traditional targets Taiwan usage; a Hong Kong reader may want different wording in places.
 - [ ] **Topic labels aren't localised.** Topics are database rows with a slug and one label; the slug is the canonical identity, so the shape is right, but a label per locale needs a `topic_labels` table. Feed chips show whatever the row says.
@@ -1645,3 +1675,4 @@ a person can supply, which is why `/admin/roadmap` now marks them **Needs you** 
 | 2026-09-19 | Distance is always `m` / `km`, in every language. `Intl`'s `style: "unit"` localises the unit name along with the number, which gave `2.4 公里` and `140 呎`; a unit symbol is notation rather than vocabulary. The imperial branch, `measurementFor` and `MeasurementSystem` are gone — only the number is still locale-formatted, for the decimal separator |
 | 2026-09-19 | Stated the authoring rule the catalogue already enforced: Tielo is English-native, every locale is a translation of `en.ts`, and nothing is authored in a translation. Verified the compiler catches drift in both directions — a translation-only key and an untranslated English key each fail the build |
 | 2026-09-21 | Renaming the pet is available from the first minute — `PATCH /api/pets`, reached by tapping the name on the pet tab. It was advertised as a level-2 bond unlock and was never implemented or enforced; making someone earn the right to fix a typo was the wrong call twice over. Cut from the ladder; level 1 now says the name is yours from the start |
+| 2026-09-21 | Bond ladder rebuilt and, for the first time, enforced. Levels 1–10 are capability (errand range, haul, frequency, treasure rarity, the pet's own allowance), 11–20 are cosmetic only. Every unlock is a number the code already had, read through one `capabilitiesAt()`, with floors and ceilings live-tunable from `/admin/config`. Errands gained the daily cap they never had — the uncapped 12 XP per press is closed |

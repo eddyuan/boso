@@ -1,6 +1,6 @@
 import { and, desc, eq, gt, isNotNull, isNull } from "drizzle-orm";
 import { db, pets, posts, users } from "@bsocial/db";
-import { PET_OWNER_INACTIVE_DAYS, resolveLocale } from "@bsocial/shared";
+import { PET_OWNER_INACTIVE_DAYS, capabilitiesAt, progressFor, resolveLocale } from "@bsocial/shared";
 import { inngest } from "./client";
 import { describePersonality, generateComment, generatePost } from "../lib/agent";
 import { recordDecision } from "../lib/actions";
@@ -88,8 +88,13 @@ export const runPetTick = inngest.createFunction(
     });
     if (!pet) return { skipped: "pet not found or owner inactive" };
 
+    // Level 10's second half — "your pet acts more often" — is the only place the
+    // bond ladder touches the pet's own allowance.
     const budget = await step.run("check-budget", () =>
-      getActionBudget(petId, pet.pet.maxActionsPerDay),
+      getActionBudget(
+        petId,
+        pet.pet.maxActionsPerDay + capabilitiesAt(progressFor(pet.pet.bondXp).level).bonusActionsPerDay,
+      ),
     );
     if (budget.remaining === 0) return { skipped: "daily action limit reached", budget };
 

@@ -80,6 +80,7 @@ export const en = {
   "map.sendingOut": "Off they go…",
   "map.error.location": "Couldn’t get your location.",
   "map.error.errand": "Couldn’t send them out just now.",
+  "map.error.errandLimit": "That\u2019s every errand for today. More trips come with a higher bond.",
   "map.a11y.centreOnYou": "Centre the map on you",
   "map.a11y.showPet": "Show {name} on the map",
   "map.a11y.openPlace": "See what’s happening at {place}",

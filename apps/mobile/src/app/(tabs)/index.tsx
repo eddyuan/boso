@@ -22,7 +22,7 @@ import { Icon } from '@/components/ui/icon';
 import { Radius, Spacing, TabBar } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useT } from '@/lib/i18n';
-import { apiFetch } from '@/lib/api';
+import { ApiError, apiFetch } from '@/lib/api';
 import { authClient } from '@/lib/auth-client';
 import { FontFamily } from '@/constants/theme';
 
@@ -105,8 +105,13 @@ export default function MapTab() {
         body: JSON.stringify(location),
       });
       setErrand(r);
-    } catch {
-      setError(t('map.error.errand'));
+    } catch (e) {
+      // Out of trips is a rule, not a failure — say which, and say when it resets.
+      setError(
+        e instanceof ApiError && e.code === 'errand_limit'
+          ? t('map.error.errandLimit')
+          : t('map.error.errand'),
+      );
     }
     setSending(false);
   }
