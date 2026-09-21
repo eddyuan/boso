@@ -10,7 +10,6 @@ import { CompanionArt } from '@/components/mascot/companions';
 import { MediaGallery, type PostMedia } from '@/components/media-gallery';
 import { SensitiveCover } from '@/components/sensitive-cover';
 import { ThemedText } from '@/components/themed-text';
-import { ViewersSheet } from '@/components/viewers-sheet';
 import { Badge, Card, Chip, ChipGroup, ErrorText, RoundButton, Segmented } from '@/components/ui/controls';
 import { Icon } from '@/components/ui/icon';
 import { FontFamily, Spacing } from '@/constants/theme';
@@ -63,7 +62,6 @@ export default function FeedTab() {
   const [scope, setScope] = useState<Scope>('nearby');
   const [posts, setPosts] = useState<FeedPost[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [viewersFor, setViewersFor] = useState<string | null>(null);
   // The reader's standing preference, and the posts they've revealed this session.
   const [showSensitive, setShowSensitive] = useState(false);
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
@@ -280,7 +278,7 @@ export default function FeedTab() {
                   not a read receipt anyone else is owed. */}
               {post.mine && (
                 <Pressable
-                  onPress={() => setViewersFor(post.id)}
+                  onPress={() => router.push(`/viewers/${post.id}`)}
                   hitSlop={8}
                   style={styles.metric}
                   accessibilityRole="button"
@@ -296,7 +294,6 @@ export default function FeedTab() {
         );
       })}
 
-      <ViewersSheet postId={viewersFor} open={viewersFor !== null} onClose={() => setViewersFor(null)} />
     </Screen>
   );
 }

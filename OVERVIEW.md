@@ -860,37 +860,27 @@ way in. Two ways to reach the same conversation is how an app stops feeling like
 
 They look similar and behave oppositely, so which one a screen reaches for is a real decision.
 
-| | [`BottomSheet`](apps/mobile/src/components/bottom-sheet.tsx) | [`ModalSheet`](apps/mobile/src/components/modal-sheet.tsx) |
+| | [`BottomSheet`](apps/mobile/src/components/bottom-sheet.tsx) | [`SheetScreen`](apps/mobile/src/components/sheet-screen.tsx) |
 |---|---|---|
 | Backdrop | **None** | Yes, tap to dismiss |
-| Behind it | Live and interactive | Inert |
+| Behind it | Live and interactive | Inert, but still mounted and visible |
 | Height | Fixed 86%, drags between peek and full | Sizes to content, up to 86% |
-| Rendered | In the page's view tree | Through `Modal`, outside it |
-| Used by | **The map, and only the map** | Everything else |
+| What it is | A view in the page | **Its own route**, `presentation: 'transparentModal'` |
+| Used by | **The map, and only the map** | `language`, `rename-pet`, `viewers/[postId]` |
 
 The map's sheet has no backdrop on purpose: it's a detail panel over a live map, as in Google Maps,
 and selecting another marker swaps its contents rather than stacking. Everywhere else wants the
 opposite — picking a language or renaming a pet is one question, asked and dismissed, with the rest
 of the screen unavailable meanwhile.
 
-They're separate components rather than a flag because almost nothing is shared, and the `Modal`
-underneath the second one earns two things that are awkward in-tree: it draws above the floating tab
-bar, and it can't affect the layout of the page behind it. That second one was a real bug — an
-in-tree sheet on the profile, pet and feed tabs added **726px of empty scroll**, because a closed
-sheet sits `translateY(sheetHeight)` below the content and CSS counts a transformed
-absolutely-positioned descendant in its scroll container's overflow.
+**The backdropped ones are routes, and that's what makes back work.** Closing is popping a history
+entry, so Android back, browser back and the iOS swipe all do the same thing with no per-platform
+shim. The alternative — an in-place `Modal` — handles Android via `onRequestClose` but not web:
+`react-native-web` wires that hook to the Escape key and nothing else, so browser back navigated away
+from the screen with the sheet notionally still open. Verified both ways.
 
-**Dismissing with back.** `Modal`'s `onRequestClose` is the hook, and what fires it is per-platform:
-
-| | Fires on | Result |
-|---|---|---|
-| Android | hardware/gesture back | The modal consumes the press: the sheet closes, the route underneath is untouched. This is why these don't need to be routes. |
-| iOS | nothing by default | The sheet covers the screen, so the navigator's swipe-back isn't reachable. Backdrop, close button or drag down. |
-| Web | **Escape only** | `react-native-web` wires no history handling, so **browser back leaves the screen** instead of closing the sheet. |
-
-The web row is a known gap rather than a decision. Closing on browser back would mean pushing a
-history entry on open and popping it on close — which is the one thing making these routes would
-give for free.
+`transparentModal` is the presentation because it keeps the screen below mounted and visible, which
+is what makes the backdrop read as a dim over the page rather than as a new page.
 
 **Why the third tab is the pet.** It was "Activity", which held three unrelated jobs — an inbox
 (asks, invites), a goals board (missions, the event) and a log (diary, history) — and read as thin
@@ -1713,3 +1703,4 @@ a person can supply, which is why `/admin/roadmap` now marks them **Needs you** 
 | 2026-09-21 | Renaming the pet is available from the first minute — `PATCH /api/pets`, reached by tapping the name on the pet tab. It was advertised as a level-2 bond unlock and was never implemented or enforced; making someone earn the right to fix a typo was the wrong call twice over. Cut from the ladder; level 1 now says the name is yours from the start |
 | 2026-09-21 | Bond ladder rebuilt and, for the first time, enforced. Levels 1–10 are capability (errand range, haul, frequency, treasure rarity, the pet's own allowance), 11–20 are cosmetic only. Every unlock is a number the code already had, read through one `capabilitiesAt()`, with floors and ceilings live-tunable from `/admin/config`. Errands gained the daily cap they never had — the uncapped 12 XP per press is closed |
 | 2026-09-21 | Two sheets, not one. `BottomSheet` keeps its no-backdrop behaviour and is **map only** — the map stays live behind it. Everywhere else uses the new `ModalSheet`: a backdrop, inert content behind, sized to its content, built on `Modal`. That also settles the phantom-scroll bug found the same day (a closed in-tree sheet added 726px of empty scroll), since a `Modal` isn't in the page's view tree at all; the interim `overlay` slot on `Screen` is gone |
+| 2026-09-21 | The backdropped sheets became routes (`language`, `rename-pet`, `viewers/[postId]`, all `transparentModal`), so closing is popping a history entry and back behaves the same on Android, web and iOS. The map's transparent sheet is unchanged and stays a plain view |

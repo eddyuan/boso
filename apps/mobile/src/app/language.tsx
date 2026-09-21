@@ -1,8 +1,9 @@
 import { LOCALES, type Locale } from '@bsocial/shared';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { ModalSheet } from '@/components/modal-sheet';
+import { SheetScreen } from '@/components/sheet-screen';
 import { ThemedText } from '@/components/themed-text';
 import { Icon } from '@/components/ui/icon';
 import { Spacing } from '@/constants/theme';
@@ -23,7 +24,7 @@ import { useT } from '@/lib/i18n';
  * Each language is listed in itself, not in yours. Somebody looking for their
  * language is looking for the word they'd recognise.
  */
-export function LanguageSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+export default function LanguageScreen() {
   const theme = useTheme();
   const { t, locale, chosen } = useT();
   const [saving, setSaving] = useState(false);
@@ -39,7 +40,7 @@ export function LanguageSheet({ open, onClose }: { open: boolean; onClose: () =>
       // landed, the column changed, and the app carried on in the old language.
       // Notifying `$sessionSignal` is what actually triggers the refetch.
       refreshSession();
-      onClose();
+      router.back();
     } catch {
       // Left open on failure: the row the person tapped is still unselected,
       // which says more than an error would.
@@ -63,7 +64,7 @@ export function LanguageSheet({ open, onClose }: { open: boolean; onClose: () =>
   ];
 
   return (
-    <ModalSheet open={open} onClose={onClose} title={t('profile.language')}>
+    <SheetScreen title={t('profile.language')}>
       {rows.map((row) => (
         <Pressable
           key={row.key}
@@ -79,7 +80,7 @@ export function LanguageSheet({ open, onClose }: { open: boolean; onClose: () =>
       <ThemedText type="small" themeColor="textSecondary" style={styles.note}>
         {t('profile.languageNote')}
       </ThemedText>
-    </ModalSheet>
+    </SheetScreen>
   );
 }
 

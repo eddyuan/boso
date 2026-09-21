@@ -1,8 +1,9 @@
 import { PET_NAME_MAX } from '@bsocial/shared';
-import { useEffect, useState } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { ModalSheet } from '@/components/modal-sheet';
+import { SheetScreen } from '@/components/sheet-screen';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
 import { ErrorText } from '@/components/ui/controls';
@@ -23,30 +24,18 @@ import { useT } from '@/lib/i18n';
  * entry, the pet's reasoning on a past decision — because that would be falsifying
  * a record of what was written. The copy says so rather than leaving it to be
  * found out.
+ *
+ * The current name arrives as a param rather than being fetched again: the pet tab
+ * already has it, and this screen is opened from there. The tab refetches on focus,
+ * so returning with a new name is enough to update it — no callback to thread back.
  */
-export function RenamePetSheet({
-  open,
-  currentName,
-  onClose,
-  onRenamed,
-}: {
-  open: boolean;
-  currentName: string;
-  onClose: () => void;
-  onRenamed: (name: string) => void;
-}) {
+export default function RenamePetScreen() {
   const { t } = useT();
+  const { current } = useLocalSearchParams<{ current?: string }>();
+  const currentName = current ?? '';
   const [name, setName] = useState(currentName);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Reopening after a cancel should start from the real name, not the abandoned edit.
-  useEffect(() => {
-    if (open) {
-      setName(currentName);
-      setError(null);
-    }
-  }, [open, currentName]);
 
   const trimmed = name.trim();
   const unchanged = trimmed === currentName;
@@ -56,20 +45,16 @@ export function RenamePetSheet({
     setSaving(true);
     setError(null);
     try {
-      const r = await apiFetch<{ pet: { name: string } }>('/api/pets', {
-        method: 'PATCH',
-        body: JSON.stringify({ name: trimmed }),
-      });
-      onRenamed(r.pet.name);
-      onClose();
+      await apiFetch('/api/pets', { method: 'PATCH', body: JSON.stringify({ name: trimmed }) });
+      router.back();
     } catch {
       setError(t('pet.rename.error'));
+      setSaving(false);
     }
-    setSaving(false);
   }
 
   return (
-    <ModalSheet open={open} onClose={onClose} title={t('pet.rename.title')}>
+    <SheetScreen title={t('pet.rename.title')}>
       <View style={styles.body}>
         <Field
           value={name}
@@ -91,7 +76,7 @@ export function RenamePetSheet({
           disabled={!trimmed || unchanged || saving}
         />
       </View>
-    </ModalSheet>
+    </SheetScreen>
   );
 }
 

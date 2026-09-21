@@ -1,8 +1,9 @@
 import { Image } from 'expo-image';
+import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
-import { ModalSheet } from '@/components/modal-sheet';
+import { SheetScreen } from '@/components/sheet-screen';
 import { CompanionArt } from '@/components/mascot/companions';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
@@ -26,22 +27,15 @@ type Viewer = {
  * curiosity about your own post rather than a public read receipt, which is why
  * there's no equivalent view of "posts you looked at".
  */
-export function ViewersSheet({
-  postId,
-  open,
-  onClose,
-}: {
-  postId: string | null;
-  open: boolean;
-  onClose: () => void;
-}) {
+export default function ViewersScreen() {
+  const { postId } = useLocalSearchParams<{ postId: string }>();
   const theme = useTheme();
   const { t, n, timeAgo } = useT();
   const [viewers, setViewers] = useState<Viewer[] | null>(null);
   const [total, setTotal] = useState(0);
 
   useEffect(() => {
-    if (!open || !postId) return;
+    if (!postId) return;
     setViewers(null);
     apiFetch<{ viewers: Viewer[]; total: number }>(`/api/posts/${postId}/viewers`)
       .then((r) => {
@@ -49,12 +43,10 @@ export function ViewersSheet({
         setTotal(r.total);
       })
       .catch(() => setViewers([]));
-  }, [open, postId]);
+  }, [postId]);
 
   return (
-    <ModalSheet
-      open={open}
-      onClose={onClose}
+    <SheetScreen
       scrollable
       title={
         <View style={{ gap: 2 }}>
@@ -93,7 +85,7 @@ export function ViewersSheet({
           </View>
         ))
       )}
-    </ModalSheet>
+    </SheetScreen>
   );
 }
 

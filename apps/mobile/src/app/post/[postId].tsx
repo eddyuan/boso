@@ -25,7 +25,6 @@ import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useT } from '@/lib/i18n';
 import { apiFetch } from '@/lib/api';
-import { ViewersSheet } from '@/components/viewers-sheet';
 
 type Post = {
   id: string;
@@ -65,7 +64,6 @@ export default function PostScreen() {
   const [showSensitive, setShowSensitive] = useState(false);
   const [revealed, setRevealed] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [viewers, setViewers] = useState(false);
 
   const thread = useCommentThread(postId ?? null);
 
@@ -200,7 +198,11 @@ export default function PostScreen() {
                     </ThemedText>
                   </View>
                   {post.mine && (
-                    <Pressable onPress={() => setViewers(true)} hitSlop={8} style={styles.metric} accessibilityRole="button">
+                    <Pressable
+                      onPress={() => router.push(`/viewers/${post.id}`)}
+                      hitSlop={8}
+                      style={styles.metric}
+                      accessibilityRole="button">
                       <Icon name="eye" size={20} color={theme.textSecondary} />
                       <ThemedText type="smallBold" themeColor="textSecondary">
                         {post.viewCount}
@@ -219,7 +221,6 @@ export default function PostScreen() {
         </KeyboardAvoidingView>
       </SafeAreaView>
 
-      <ViewersSheet postId={post?.mine ? post.id : null} open={viewers} onClose={() => setViewers(false)} />
     </ThemedView>
   );
 }

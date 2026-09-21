@@ -23,7 +23,6 @@ import { CompanionArt } from '@/components/mascot/companions';
 import { MissionsCard, type Mission } from '@/components/missions-card';
 import { usePetSummary } from '@/components/pet-summary';
 import { PlaydatesCard, type Playdates } from '@/components/playdates-card';
-import { RenamePetSheet } from '@/components/rename-pet-sheet';
 import { ThemedText } from '@/components/themed-text';
 import { TreasureShelf, type Treasure } from '@/components/treasure-shelf';
 import { Button } from '@/components/ui/button';
@@ -83,7 +82,6 @@ export default function PetTab() {
   const [treasures, setTreasures] = useState<{ treasures: Treasure[]; counts: Record<string, number> } | null>(null);
   const [friends, setFriends] = useState<Relationship[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [renaming, setRenaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadActions = useCallback(
@@ -171,7 +169,7 @@ export default function PetTab() {
               {/* The name itself is the affordance — a rename buried in settings
                   is a rename nobody finds. */}
               <Pressable
-                onPress={() => setRenaming(true)}
+                onPress={() => router.push({ pathname: '/rename-pet', params: { current: pet.name } })}
                 accessibilityRole="button"
                 accessibilityLabel={t('pet.a11y.rename', { name: pet.name })}
                 hitSlop={6}
@@ -393,13 +391,6 @@ export default function PetTab() {
               ))}
             </Card>
           )}
-
-          <RenamePetSheet
-            open={renaming}
-            currentName={pet.name}
-            onClose={() => setRenaming(false)}
-            onRenamed={(name) => setPet((p) => (p ? { ...p, name } : p))}
-          />
 
           <Pressable onPress={() => router.push('/pet-log')} accessibilityRole="button">
             <Card style={styles.logRow}>

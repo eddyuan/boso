@@ -5,7 +5,6 @@ import { useState } from 'react';
 import { StyleSheet, Switch, View } from 'react-native';
 
 import { Screen } from '@/components/auth-form';
-import { LanguageSheet } from '@/components/language-sheet';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
 import { Card, ChipGroup, Divider, IconTile, ListRow } from '@/components/ui/controls';
@@ -32,7 +31,6 @@ export default function ProfileTab() {
   const { data: session } = authClient.useSession();
   const [showSensitive, setShowSensitive] = useState(false);
   const [savingSensitive, setSavingSensitive] = useState(false);
-  const [languageOpen, setLanguageOpen] = useState(false);
 
   const user = session?.user;
   // Session is the source of truth; local state only covers the in-flight toggle.
@@ -132,7 +130,7 @@ export default function ProfileTab() {
           title={t('profile.language')}
           subtitle={chosen ? languageName(locale) : t('profile.languageSystem')}
           trailing={<Icon name="chevron" size={20} color={theme.textSecondary} />}
-          onPress={() => setLanguageOpen(true)}
+          onPress={() => router.push('/language')}
         />
         <Divider />
         <ListRow
@@ -166,7 +164,6 @@ export default function ProfileTab() {
         onPress={() => authClient.signOut()}
       />
 
-      <LanguageSheet open={languageOpen} onClose={() => setLanguageOpen(false)} />
     </Screen>
   );
 }
