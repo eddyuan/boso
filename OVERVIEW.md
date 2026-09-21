@@ -616,7 +616,8 @@ One permanent number that unlocks **expression**
 titles — never who you can see, meet or talk to. An earlier draft locked playdates until day 3–4 and
 local gossip until day 16, which charges a new user days of grinding for exactly the social access
 that would have kept them. Every unlock in the table is something the pet *wears, carries, collects
-or is called*, and there's a test asserting it.
+or is called* — a rule held by review, not by a check. (An earlier version of this section claimed
+a test asserted it. There are no test files and no test runner in the repo.)
 
 **XP pays for the behaviour we want to be true.** The two largest awards are making a new friend (30)
 and answering what your pet asked (25) — the second being the trust ritual and the most distinctive
