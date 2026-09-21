@@ -21,7 +21,17 @@ import { useT } from '@/lib/i18n';
 const MAX_HEIGHT = 0.86;
 /** Drag this far down and it closes instead of springing back. */
 const CLOSE_THRESHOLD = 90;
-const IN_MS = 220;
+/**
+ * Entrance duration, exported because a sheet with a text input has to wait for it.
+ *
+ * `autoFocus` fires the moment the screen mounts, while the sheet is still
+ * translated a full sheet-height below the viewport. The browser then scrolls every
+ * scrollable ancestor to bring the input into view — including the page behind —
+ * and unwinds as the sheet animates up. That reads as the page lurching to the
+ * bottom and back. Focus after the entrance instead; see `SHEET_ENTER_MS` in use.
+ */
+export const SHEET_ENTER_MS = 220;
+const IN_MS = SHEET_ENTER_MS;
 const OUT_MS = 170;
 
 /**

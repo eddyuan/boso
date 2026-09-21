@@ -277,9 +277,27 @@ export function formatTimeAgo(iso: string | Date, tag = "en"): string {
   return rtf.format(-Math.round(minutes / 1440), "day");
 }
 
-/** "Today", "Yesterday", then the locale's own day name or date. */
+/** A bare calendar day, `YYYY-MM-DD`, as opposed to a full timestamp. */
+const BARE_DAY = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * "Today", "Yesterday", then the locale's own day name or date.
+ *
+ * Takes either a bare `YYYY-MM-DD` (what `pet_diary.day` stores) or a full
+ * timestamp (what `foundAt`, `createdAt` and friends store). The distinction
+ * matters: a bare day is pinned to noon UTC so a timezone can't shift it onto the
+ * day before, while doing that to a timestamp produces `...ZT12:00:00Z` — an
+ * invalid date, which `Intl.DateTimeFormat` throws a `RangeError` on rather than
+ * degrading. That threw on four screens: the shelf, the pet tab's shelf card, the
+ * device list and the friendship detail.
+ *
+ * An unparseable value returns empty rather than throwing. A missing date should
+ * cost a line of text, never the screen it was on.
+ */
 export function formatDay(day: string | Date, locale: Locale, tag = "en"): string {
-  const date = typeof day === "string" ? new Date(`${day}T12:00:00Z`) : day;
+  const date =
+    typeof day === "string" ? new Date(BARE_DAY.test(day) ? `${day}T12:00:00Z` : day) : day;
+  if (Number.isNaN(date.getTime())) return "";
   const days = Math.round((Date.now() - date.getTime()) / 86_400_000);
   if (days <= 0) return translate(locale, "common.today");
   if (days === 1) return translate(locale, "common.yesterday");

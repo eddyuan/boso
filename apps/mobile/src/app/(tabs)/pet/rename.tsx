@@ -1,8 +1,9 @@
 import { PET_NAME_MAX } from '@bsocial/shared';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { StyleSheet, View, type TextInput } from 'react-native';
 
+import { SHEET_ENTER_MS } from '@/components/sheet-screen';
 import { SheetScreen } from '@/components/sheet-screen';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
@@ -36,6 +37,15 @@ export default function RenamePetScreen() {
   const [name, setName] = useState(currentName);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const field = useRef<TextInput>(null);
+
+  // Not `autoFocus`. Focusing while the sheet is still animating up makes the
+  // browser scroll every ancestor to chase the input and then unwind — the page
+  // behind visibly lurches. Wait for the entrance, then focus.
+  useEffect(() => {
+    const id = setTimeout(() => field.current?.focus(), SHEET_ENTER_MS + 30);
+    return () => clearTimeout(id);
+  }, []);
 
   const trimmed = name.trim();
   const unchanged = trimmed === currentName;
@@ -57,11 +67,11 @@ export default function RenamePetScreen() {
     <SheetScreen title={t('pet.rename.title')}>
       <View style={styles.body}>
         <Field
+          ref={field}
           value={name}
           onChangeText={setName}
           maxLength={PET_NAME_MAX}
           autoCapitalize="words"
-          autoFocus
           onSubmitEditing={save}
           style={{ fontSize: 18 }}
         />
