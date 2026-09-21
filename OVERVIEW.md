@@ -882,6 +882,23 @@ from the screen with the sheet notionally still open. Verified both ways.
 `transparentModal` is the presentation because it keeps the screen below mounted and visible, which
 is what makes the backdrop read as a dim over the page rather than as a new page.
 
+### Confirmations
+
+A third thing again, and deliberately not a sheet:
+[`ConfirmProvider`](apps/mobile/src/components/confirm-dialog.tsx) — a centred dialog, asked for as
+`const ok = await confirm({ title, message, action, destructive })`.
+
+It replaced four copies of the same `Platform.OS === 'web' ? window.confirm(…) : Alert.alert(…)`
+helper, in devices, account, the birthday step and the admin restart button. Both halves of that were
+wrong: `window.confirm` is browser chrome that ignores the app's typography and can't mark a
+destructive action, and `Alert.alert` is the OS dialog, unstyleable on Android. A confirmation is
+often the last thing somebody sees before losing data, so it should look like the app that's about
+to do it.
+
+Not a route, unlike the sheets: a confirmation isn't a place you navigate to, and back cancelling it
+is the safe default rather than a gap. Every exit that isn't the affirmative button — cancel, the
+backdrop, Android back — resolves `false`.
+
 **They're nested under the page that owns them**, so the URL says whose sheet it is and a cold link
 lands with the right page behind — a top-level `/language` rendered the backdrop over nothing at all.
 The who-looked sheet is owned by two pages and has a thin route under each, both rendering one
@@ -1723,3 +1740,4 @@ a person can supply, which is why `/admin/roadmap` now marks them **Needs you** 
 | 2026-09-21 | Two sheets, not one. `BottomSheet` keeps its no-backdrop behaviour and is **map only** — the map stays live behind it. Everywhere else uses the new `ModalSheet`: a backdrop, inert content behind, sized to its content, built on `Modal`. That also settles the phantom-scroll bug found the same day (a closed in-tree sheet added 726px of empty scroll), since a `Modal` isn't in the page's view tree at all; the interim `overlay` slot on `Screen` is gone |
 | 2026-09-21 | The backdropped sheets became routes (`language`, `rename-pet`, `viewers/[postId]`, all `transparentModal`), so closing is popping a history entry and back behaves the same on Android, web and iOS. The map's transparent sheet is unchanged and stays a plain view |
 | 2026-09-21 | The language picker trials the platform's own sheet on native (`formSheet`), keeping the drawn one on web where react-navigation's fallback renders flush to the top with no backdrop |
+| 2026-09-21 | One themed confirmation dialog replaces four copies of the `window.confirm` / `Alert.alert` split. Promise-based (`await confirm({…})`), destructive actions marked, and back/backdrop/cancel all resolve to no |

@@ -1,26 +1,16 @@
-import { MIN_AGE, type Translator } from '@bsocial/shared';
+import { MIN_AGE } from '@bsocial/shared';
 import { useMemo, useState } from 'react';
-import { Alert, Platform } from 'react-native';
 
 import { BirthdayPicker } from '@/components/birthday-picker';
+import { useConfirm } from '@/components/confirm-dialog';
 import { OnboardingScreen } from '@/components/onboarding-screen';
 import { useT } from '@/lib/i18n';
 import { formatBirthday, toIsoDate, yearsAgo } from '@/lib/birthday';
 import { submitStep } from '@/lib/onboarding';
 
-function confirmBirthday(t: Translator['t'], date: Date): Promise<boolean> {
-  const message = t('onboarding.birthday.check', { date: formatBirthday(date) });
-  if (Platform.OS === 'web') return Promise.resolve(window.confirm(message));
-  return new Promise((resolve) =>
-    Alert.alert(t('onboarding.birthday.title'), message, [
-      { text: t('onboarding.birthday.edit'), style: 'cancel', onPress: () => resolve(false) },
-      { text: t('onboarding.birthday.confirm'), onPress: () => resolve(true) },
-    ]),
-  );
-}
-
 export default function BirthdayStep() {
   const { t } = useT();
+  const confirm = useConfirm();
   const [birthday, setBirthday] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -38,7 +28,14 @@ export default function BirthdayStep() {
 
   async function onContinue() {
     if (!birthday) return;
-    if (!(await confirmBirthday(t, birthday))) return;
+    // The one thing in onboarding that can't be changed later, so it's asked
+    // plainly rather than buried in a toast.
+    const ok = await confirm({
+      title: t('onboarding.birthday.title'),
+      message: t('onboarding.birthday.check', { date: formatBirthday(birthday) }),
+      action: t('onboarding.birthday.confirm'),
+    });
+    if (!ok) return;
 
     setError(null);
     setLoading(true);

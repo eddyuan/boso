@@ -1,10 +1,11 @@
-import { getDisplayName, type TranslationKey, type Translator } from '@bsocial/shared';
+import { getDisplayName, type TranslationKey } from '@bsocial/shared';
 import { Image } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Alert, Platform, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { Screen } from '@/components/auth-form';
+import { useConfirm } from '@/components/confirm-dialog';
 import { PageHeader } from '@/components/page-header';
 import { RestartProfileButton } from '@/components/restart-profile-button';
 import { ThemedText } from '@/components/themed-text';
@@ -33,26 +34,11 @@ const ERROR_MESSAGES: Record<string, TranslationKey> = {
   last_sign_in_method: 'account.error.lastMethod',
 };
 
-function confirm(
-  t: Translator['t'],
-  title: string,
-  message: string,
-  action: string,
-  onConfirm: () => void,
-) {
-  if (Platform.OS === 'web') {
-    if (window.confirm(`${title}\n\n${message}`)) onConfirm();
-    return;
-  }
-  Alert.alert(title, message, [
-    { text: t('dialog.cancel'), style: 'cancel' },
-    { text: action, style: 'destructive', onPress: onConfirm },
-  ]);
-}
 
 export default function AccountScreen() {
   const theme = useTheme();
   const { t } = useT();
+  const confirm = useConfirm();
   const { data: session } = authClient.useSession();
   const [account, setAccount] = useState<AccountOverview | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -111,15 +97,15 @@ export default function AccountScreen() {
             <RowAction
               tone="danger"
               label={t('account.unlink')}
-              onPress={() =>
-                confirm(
-                  t,
-                  t('account.unlinkConfirm.title', { provider: label }),
-                  t('account.unlinkConfirm.body', { provider: label }),
-                  t('account.unlink'),
-                  () => unlink(provider),
-                )
-              }
+              onPress={async () => {
+                const ok = await confirm({
+                  title: t('account.unlinkConfirm.title', { provider: label }),
+                  message: t('account.unlinkConfirm.body', { provider: label }),
+                  action: t('account.unlink'),
+                  destructive: true,
+                });
+                if (ok) unlink(provider);
+              }}
             />
           ) : (
             <RowAction label={t('account.link')} onPress={() => link(provider)} />

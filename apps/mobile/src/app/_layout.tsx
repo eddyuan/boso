@@ -12,6 +12,7 @@ import { Colors, FontFamily } from '@/constants/theme';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { authClient } from '@/lib/auth-client';
+import { ConfirmProvider } from '@/components/confirm-dialog';
 import { I18nProvider } from '@/lib/i18n';
 
 SplashScreen.preventAutoHideAsync();
@@ -61,6 +62,8 @@ export default function RootLayout() {
           locale — ThemedText does, which is nearly every line of text in the app. */}
       <I18nProvider>
         <ThemeProvider value={navigationTheme(colorScheme === 'dark')}>
+          {/* Inside the theme and the catalogue, because the dialog reads both. */}
+          <ConfirmProvider>
           <AnimatedSplashOverlay />
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Protected guard={onboarded}>
@@ -92,6 +95,7 @@ export default function RootLayout() {
             <Stack.Screen name="phone" />
             <Stack.Screen name="email" />
           </Stack>
+          </ConfirmProvider>
         </ThemeProvider>
       </I18nProvider>
     </GestureHandlerRootView>

@@ -557,6 +557,7 @@ export const zhHant: Record<TranslationKey, string> = {
 
   "dialog.areYouSure": "確定嗎？",
   "dialog.cancel": "取消",
+  "dialog.confirmAction": "確定",
   "dialog.signOut": "登出",
 
   "push.ask.title": "{name}在等你點頭",

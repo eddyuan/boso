@@ -556,6 +556,7 @@ export const zhHans: Record<TranslationKey, string> = {
 
   "dialog.areYouSure": "确定吗？",
   "dialog.cancel": "取消",
+  "dialog.confirmAction": "确定",
   "dialog.signOut": "退出登录",
 
   "push.ask.title": "{name}在等你点头",

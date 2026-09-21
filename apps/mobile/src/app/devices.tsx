@@ -1,8 +1,8 @@
-import type { Translator } from '@bsocial/shared';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
 import { Screen } from '@/components/auth-form';
+import { useConfirm } from '@/components/confirm-dialog';
 import { PageHeader } from '@/components/page-header';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
@@ -25,22 +25,12 @@ type DeviceSession = {
   current: boolean;
 };
 
-function confirm(t: Translator['t'], message: string, onConfirm: () => void) {
-  if (Platform.OS === 'web') {
-    if (window.confirm(message)) onConfirm();
-    return;
-  }
-  Alert.alert(t('dialog.areYouSure'), message, [
-    { text: t('dialog.cancel'), style: 'cancel' },
-    { text: t('dialog.signOut'), style: 'destructive', onPress: onConfirm },
-  ]);
-}
-
 const looksLikeComputer = (s: DeviceSession) => /mac|windows|linux|chrome os/i.test(`${s.deviceName} ${s.userAgent}`);
 
 export default function DevicesScreen() {
   const theme = useTheme();
   const { t, n, timeAgo, day } = useT();
+  const confirm = useConfirm();
   const [sessions, setSessions] = useState<DeviceSession[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -92,7 +82,14 @@ export default function DevicesScreen() {
           <Button
             variant="danger"
             label={n('devices.signOutOtherCount', others)}
-            onPress={() => confirm(t, t('devices.signOutOthers'), revokeOthers)}
+            onPress={async () => {
+              const ok = await confirm({
+                title: t('devices.signOutOthers'),
+                action: t('dialog.signOut'),
+                destructive: true,
+              });
+              if (ok) revokeOthers();
+            }}
           />
         ) : undefined
       }>
@@ -126,15 +123,16 @@ export default function DevicesScreen() {
             </ThemedText>
           </View>
           <Pressable
-            onPress={() =>
-              confirm(
-                t,
-                s.current
+            onPress={async () => {
+              const ok = await confirm({
+                title: s.current
                   ? t('devices.signOutThis')
                   : t('devices.signOutNamed', { name: s.deviceName ?? t('devices.unknown') }),
-                () => revoke(s),
-              )
-            }
+                action: t('dialog.signOut'),
+                destructive: true,
+              });
+              if (ok) revoke(s);
+            }}
             accessibilityRole="button"
             hitSlop={10}>
             <ThemedText type="linkPrimary" style={{ color: theme.red, fontSize: 15 }}>

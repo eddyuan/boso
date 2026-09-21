@@ -597,6 +597,7 @@ export const en = {
   // --------------------------------------------------------- shared dialogs
   "dialog.areYouSure": "Are you sure?",
   "dialog.cancel": "Cancel",
+  "dialog.confirmAction": "Confirm",
   "dialog.signOut": "Sign out",
 
   // ------------------------------------------------------------ push (server)
