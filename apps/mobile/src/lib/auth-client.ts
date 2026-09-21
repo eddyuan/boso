@@ -29,6 +29,7 @@ export const authClient = createAuthClient({
         isAdmin: { type: 'boolean', required: false, input: false },
         interests: { type: 'string[]', required: false, input: false },
         showSensitiveContent: { type: 'boolean', required: false, input: false },
+        locale: { type: 'string', required: false, input: false },
       },
     }),
     emailOTPClient(),

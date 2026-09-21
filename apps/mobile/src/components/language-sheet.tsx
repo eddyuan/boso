@@ -8,7 +8,7 @@ import { Icon } from '@/components/ui/icon';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { apiFetch } from '@/lib/api';
-import { authClient } from '@/lib/auth-client';
+import { refreshSession } from '@/lib/auth-client';
 import { useT } from '@/lib/i18n';
 
 /**
@@ -32,9 +32,13 @@ export function LanguageSheet({ open, onClose }: { open: boolean; onClose: () =>
     setSaving(true);
     try {
       await apiFetch('/api/me/account', { method: 'PATCH', body: JSON.stringify({ locale: next }) });
-      // The provider reads the locale off the session, so it has to be re-read
-      // before anything re-renders in the new language.
-      await authClient.getSession({ query: { disableCookieCache: true } });
+      // `refreshSession()`, not `getSession()`. The latter fetches and returns the
+      // session but never touches the atom `useSession` reads from — better-auth
+      // only refills that atom for a fixed list of paths (`/update-user`,
+      // `/sign-in/email`…) and `/get-session` isn't one of them. So the PATCH
+      // landed, the column changed, and the app carried on in the old language.
+      // Notifying `$sessionSignal` is what actually triggers the refetch.
+      refreshSession();
       onClose();
     } catch {
       // Left open on failure: the row the person tapped is still unselected,

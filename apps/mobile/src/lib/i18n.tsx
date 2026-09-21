@@ -74,9 +74,10 @@ const I18nContext = createContext<I18n | null>(null);
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   const { data: session } = authClient.useSession();
-  // `locale` is declared on the session (see auth.ts additionalFields) precisely
-  // so the first screen renders in the right language instead of switching.
-  const stored = (session?.user as { locale?: string | null } | undefined)?.locale ?? null;
+  // `locale` is declared on the session (see auth.ts additionalFields, and the
+  // client's own inferAdditionalFields) precisely so the first screen renders in
+  // the right language instead of visibly switching.
+  const stored = session?.user?.locale ?? null;
 
   const value = useMemo<I18n>(() => {
     const device = getLocales()[0];

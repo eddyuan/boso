@@ -13,7 +13,7 @@ import { Icon } from '@/components/ui/icon';
 import { FontFamily, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { apiFetch } from '@/lib/api';
-import { authClient } from '@/lib/auth-client';
+import { authClient, refreshSession } from '@/lib/auth-client';
 import { useT } from '@/lib/i18n';
 
 /** The chosen language, named in itself — that's the word someone recognises. */
@@ -46,8 +46,12 @@ export default function ProfileTab() {
         method: 'PATCH',
         body: JSON.stringify({ showSensitiveContent: next }),
       });
-      // Re-read the session so the feed and map see the new preference.
-      await authClient.getSession({ query: { disableCookieCache: true } });
+      // Re-read the session so the feed and map see the new preference. Same
+      // reason as the language row: `getSession()` doesn't update the atom
+      // `useSession` reads. This one looked fine only because the optimistic
+      // local state below covers the gap on this screen — the feed and map,
+      // which read the session directly, were still seeing the old value.
+      refreshSession();
     } catch {
       setShowSensitive(!next);
     }
