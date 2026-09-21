@@ -160,6 +160,11 @@ export const en = {
   "pet.together_other": "{count} together",
   "pet.reacted_one": "{count} reacted",
   "pet.reacted_other": "{count} reacted",
+  "pet.rename.title": "Rename your pet",
+  "pet.rename.save": "Save",
+  "pet.rename.note": "Yours to change whenever you like. The new name appears everywhere your pet is named. A diary entry already written keeps the words it used.",
+  "pet.rename.error": "Couldn’t rename your pet just now.",
+  "pet.a11y.rename": "Rename {name}",
   "pet.a11y.bond": "Bond level and unlocks",
   "pet.a11y.shelf": "The whole shelf",
   "pet.a11y.friend": "{name} — how they got here",
@@ -701,8 +706,8 @@ export const en = {
   "mission.meet_someone.hint": "Meet a pet you haven’t before",
 
   // --------------------------------------------------- content: bond unlocks
-  "unlock.1": "Everything social, from the first minute",
-  "unlock.2": "Give your pet a nickname",
+  "unlock.1": "Everything social, and your pet’s name, from the first minute",
+  "unlock.2": "A first collar",
   "unlock.3": "Treasure shelf — finds start coming home",
   "unlock.4": "Two starter collars",
   "unlock.5": "Diary share cards",

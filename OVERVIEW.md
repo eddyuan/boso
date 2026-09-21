@@ -1180,6 +1180,7 @@ All under `apps/web/src/app/api`. Guard: `requireSession()` in [`lib/session.ts`
 | `POST /api/me/push-tokens` | verified contact | Register Expo push token |
 | `POST /api/contacts/match` | verified contact | Find friends from hashed contacts |
 | `GET /api/me/account` | signed in | Contact status + linked sign-in methods |
+| `PATCH /api/pets` | onboarded | Rename the pet. Open from day one — trimmed, 1–30 chars |
 | `PATCH /api/me/account` | onboarded | Preferences: `showSensitiveContent` and/or `locale`. Either alone is fine; only the keys sent are written, and an empty body is rejected rather than silently doing nothing |
 | `DELETE /api/me/account/providers/:providerId` | signed in | Unlink Google/Apple |
 | `GET /api/me/sessions` | signed in | Signed-in devices |
@@ -1528,6 +1529,7 @@ Worth stating plainly, because "built" reads like "working":
 - [ ] Contact matching can be used to enumerate users; capped at 2000 hashes/request, needs per-user rate limiting.
 - [ ] No step-up verification (fresh code) before unlinking providers or changing contact info.
 - [ ] Phone-only users can't set a password; no password reset UI yet.
+- [ ] **None of the 20 bond unlocks are enforced anywhere.** `LEVELS[].unlock` is displayed on the bond screen as a reward ladder, but the shelf isn't gated on level, `ERRAND_RADIUS_M` is a constant (so levels 6 and 16 do nothing), `rollTreasure` takes no bond level (so 8, 12 and 17 do nothing) and diary retention is a query limit (level 11). The screen is a roadmap presented as earned rewards. Renaming — advertised at level 2 — has been cut from the ladder and built as an always-available feature instead; the rest need the same treatment, either built or marked as upcoming.
 - [ ] Terms/Privacy URLs are placeholders; legal pages don't exist.
 - [ ] **Neither Chinese translation has been read by a native speaker.** Both are structurally verified (complete key coverage, consistent character conversion, placeholders intact) but the register — warm and casual rather than stiff — is a judgement a reviewer should make. Traditional targets Taiwan usage; a Hong Kong reader may want different wording in places.
 - [ ] **Topic labels aren't localised.** Topics are database rows with a slug and one label; the slug is the canonical identity, so the shape is right, but a label per locale needs a `topic_labels` table. Feed chips show whatever the row says.
@@ -1641,3 +1643,4 @@ a person can supply, which is why `/admin/roadmap` now marks them **Needs you** 
 | 2026-09-19 | Traditional Chinese (`zh-Hant`), written out in full rather than spread over Simplified — 269 character forms converted plus genuine vocabulary differences (貼文, 追蹤, 按讚, 設定, 行事曆, 大頭貼, 國碼), targeting Taiwan usage. `zh-TW`/`zh-HK`/`zh-MO` now route to it by region alone |
 | 2026-09-19 | Distance is always `m` / `km`, in every language. `Intl`'s `style: "unit"` localises the unit name along with the number, which gave `2.4 公里` and `140 呎`; a unit symbol is notation rather than vocabulary. The imperial branch, `measurementFor` and `MeasurementSystem` are gone — only the number is still locale-formatted, for the decimal separator |
 | 2026-09-19 | Stated the authoring rule the catalogue already enforced: Tielo is English-native, every locale is a translation of `en.ts`, and nothing is authored in a translation. Verified the compiler catches drift in both directions — a translation-only key and an untranslated English key each fail the build |
+| 2026-09-21 | Renaming the pet is available from the first minute — `PATCH /api/pets`, reached by tapping the name on the pet tab. It was advertised as a level-2 bond unlock and was never implemented or enforced; making someone earn the right to fix a typo was the wrong call twice over. Cut from the ladder; level 1 now says the name is yours from the start |

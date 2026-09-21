@@ -23,6 +23,7 @@ import { CompanionArt } from '@/components/mascot/companions';
 import { MissionsCard, type Mission } from '@/components/missions-card';
 import { usePetSummary } from '@/components/pet-summary';
 import { PlaydatesCard, type Playdates } from '@/components/playdates-card';
+import { RenamePetSheet } from '@/components/rename-pet-sheet';
 import { ThemedText } from '@/components/themed-text';
 import { TreasureShelf, type Treasure } from '@/components/treasure-shelf';
 import { Button } from '@/components/ui/button';
@@ -82,6 +83,7 @@ export default function PetTab() {
   const [treasures, setTreasures] = useState<{ treasures: Treasure[]; counts: Record<string, number> } | null>(null);
   const [friends, setFriends] = useState<Relationship[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [renaming, setRenaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadActions = useCallback(
@@ -166,7 +168,17 @@ export default function PetTab() {
               <CompanionArt species={pet.species} size={84} />
             </View>
             <View style={{ flex: 1, gap: 4 }}>
-              <ThemedText type="title">{pet.name}</ThemedText>
+              {/* The name itself is the affordance — a rename buried in settings
+                  is a rename nobody finds. */}
+              <Pressable
+                onPress={() => setRenaming(true)}
+                accessibilityRole="button"
+                accessibilityLabel={t('pet.a11y.rename', { name: pet.name })}
+                hitSlop={6}
+                style={({ pressed }) => [styles.nameRow, { opacity: pressed ? 0.7 : 1 }]}>
+                <ThemedText type="title">{pet.name}</ThemedText>
+                <Icon name="edit" size={16} color={theme.textSecondary} />
+              </Pressable>
               <ThemedText type="small" themeColor="textSecondary">
                 {t('pet.yourSpecies', {
                   species: t(speciesLabelKey(species.value)).toLowerCase(),
@@ -382,6 +394,13 @@ export default function PetTab() {
             </Card>
           )}
 
+          <RenamePetSheet
+            open={renaming}
+            currentName={pet.name}
+            onClose={() => setRenaming(false)}
+            onRenamed={(name) => setPet((p) => (p ? { ...p, name } : p))}
+          />
+
           <Pressable onPress={() => router.push('/pet-log')} accessibilityRole="button">
             <Card style={styles.logRow}>
               <View style={[styles.logIcon, { backgroundColor: theme.backgroundElement }]}>
@@ -404,6 +423,7 @@ export default function PetTab() {
 
 const styles = StyleSheet.create({
   hero: { flexDirection: 'row', alignItems: 'center', gap: Spacing.lg },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   halo: { width: 108, height: 108, borderRadius: 54, alignItems: 'center', justifyContent: 'center' },
   section: { paddingHorizontal: 4, paddingTop: Spacing.xs },
   sectionRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingHorizontal: 4, paddingTop: Spacing.xs },

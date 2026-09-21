@@ -57,8 +57,8 @@ export type LevelRow = {
  * is called* — deliberately nothing that changes who the owner can reach.
  */
 export const LEVELS: LevelRow[] = [
-  { level: 1, cum: 0, unlock: "Everything social, from the first minute", kind: "expression", ceremony: true },
-  { level: 2, cum: 60, unlock: "Give your pet a nickname", kind: "expression" },
+  { level: 1, cum: 0, unlock: "Everything social, and your pet's name, from the first minute", kind: "expression", ceremony: true },
+  { level: 2, cum: 60, unlock: "A first collar", kind: "cosmetic" },
   { level: 3, cum: 180, unlock: "Treasure shelf — finds start coming home", kind: "collection", ceremony: true },
   { level: 4, cum: 330, unlock: "Two starter collars", kind: "cosmetic" },
   { level: 5, cum: 520, unlock: "Diary share cards", kind: "expression", ceremony: true },
