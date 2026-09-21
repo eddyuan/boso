@@ -17,12 +17,25 @@ export function Screen({
   header,
   children,
   footer,
+  overlay,
   centered = false,
   underTabBar = false,
 }: {
   header?: ReactNode;
   children: ReactNode;
   footer?: ReactNode;
+  /**
+   * Anything absolutely positioned over the whole screen — a bottom sheet.
+   *
+   * **Not `children`.** Children go inside the ScrollView, and a closed
+   * `BottomSheet` is `position: absolute; bottom: 0` with a `translateY` of its
+   * own height, so as a child it sits that far *below* the content. CSS counts a
+   * transformed absolutely-positioned descendant in its scroll container's
+   * overflow area, so the page gained several hundred pixels of empty scroll with
+   * the sheet parked at the end of it — measured at 470px on a 390×844 viewport.
+   * Rendered here it's a sibling of the scroller and contributes nothing to it.
+   */
+  overlay?: ReactNode;
   centered?: boolean;
   /** Set on tab screens: the floating bar sits over the content, so the last row needs room. */
   underTabBar?: boolean;
@@ -45,6 +58,9 @@ export function Screen({
           {footer && <View style={styles.footer}>{footer}</View>}
         </KeyboardAvoidingView>
       </SafeAreaView>
+      {/* Outside the safe area as well as the scroller: a sheet anchors to the
+          bottom of the window, not to the inset. */}
+      {overlay}
     </ThemedView>
   );
 }

@@ -156,7 +156,18 @@ export default function PetTab() {
   const species = pet ? getPetSpecies(pet.species) : null;
 
   return (
-    <Screen underTabBar>
+    <Screen
+      underTabBar
+      overlay={
+        pet && (
+          <RenamePetSheet
+            open={renaming}
+            currentName={pet.name}
+            onClose={() => setRenaming(false)}
+            onRenamed={(name) => setPet((p) => (p ? { ...p, name } : p))}
+          />
+        )
+      }>
       <ErrorText message={error} />
       {!pet && !error && <ActivityIndicator color={theme.primaryPress} />}
 
@@ -393,13 +404,6 @@ export default function PetTab() {
               ))}
             </Card>
           )}
-
-          <RenamePetSheet
-            open={renaming}
-            currentName={pet.name}
-            onClose={() => setRenaming(false)}
-            onRenamed={(name) => setPet((p) => (p ? { ...p, name } : p))}
-          />
 
           <Pressable onPress={() => router.push('/pet-log')} accessibilityRole="button">
             <Card style={styles.logRow}>

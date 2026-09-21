@@ -136,6 +136,9 @@ export default function FeedTab() {
   return (
     <Screen
       underTabBar
+      overlay={
+        <ViewersSheet postId={viewersFor} open={viewersFor !== null} onClose={() => setViewersFor(null)} />
+      }
       header={
         <View style={styles.header}>
           <ThemedText type="title" style={{ flex: 1 }}>
@@ -296,7 +299,6 @@ export default function FeedTab() {
         );
       })}
 
-      <ViewersSheet postId={viewersFor} open={viewersFor !== null} onClose={() => setViewersFor(null)} />
     </Screen>
   );
 }
