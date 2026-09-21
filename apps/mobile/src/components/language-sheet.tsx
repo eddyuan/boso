@@ -2,7 +2,7 @@ import { LOCALES, type Locale } from '@bsocial/shared';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { BottomSheet } from '@/components/bottom-sheet';
+import { ModalSheet } from '@/components/modal-sheet';
 import { ThemedText } from '@/components/themed-text';
 import { Icon } from '@/components/ui/icon';
 import { Spacing } from '@/constants/theme';
@@ -63,7 +63,7 @@ export function LanguageSheet({ open, onClose }: { open: boolean; onClose: () =>
   ];
 
   return (
-    <BottomSheet open={open} onClose={onClose} header={<ThemedText type="label">{t('profile.language')}</ThemedText>}>
+    <ModalSheet open={open} onClose={onClose} title={t('profile.language')}>
       {rows.map((row) => (
         <Pressable
           key={row.key}
@@ -79,7 +79,7 @@ export function LanguageSheet({ open, onClose }: { open: boolean; onClose: () =>
       <ThemedText type="small" themeColor="textSecondary" style={styles.note}>
         {t('profile.languageNote')}
       </ThemedText>
-    </BottomSheet>
+    </ModalSheet>
   );
 }
 

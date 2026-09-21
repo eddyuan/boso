@@ -856,6 +856,30 @@ way in. Two ways to reach the same conversation is how an app stops feeling like
 | **Your pet** | The companion | `bond`, `shelf`, `friend/[petId]`, `diary`, `event`, `pet-log` |
 | **You** | Identity | `account`, `devices`, the sensitive-content switch |
 
+### Two kinds of sheet
+
+They look similar and behave oppositely, so which one a screen reaches for is a real decision.
+
+| | [`BottomSheet`](apps/mobile/src/components/bottom-sheet.tsx) | [`ModalSheet`](apps/mobile/src/components/modal-sheet.tsx) |
+|---|---|---|
+| Backdrop | **None** | Yes, tap to dismiss |
+| Behind it | Live and interactive | Inert |
+| Height | Fixed 86%, drags between peek and full | Sizes to content, up to 86% |
+| Rendered | In the page's view tree | Through `Modal`, outside it |
+| Used by | **The map, and only the map** | Everything else |
+
+The map's sheet has no backdrop on purpose: it's a detail panel over a live map, as in Google Maps,
+and selecting another marker swaps its contents rather than stacking. Everywhere else wants the
+opposite — picking a language or renaming a pet is one question, asked and dismissed, with the rest
+of the screen unavailable meanwhile.
+
+They're separate components rather than a flag because almost nothing is shared, and the `Modal`
+underneath the second one earns three things that are awkward in-tree: it draws above the floating
+tab bar, the Android back button dismisses it, and it can't affect the layout of the page behind it.
+That last one was a real bug — an in-tree sheet on the profile, pet and feed tabs added **726px of
+empty scroll**, because a closed sheet sits `translateY(sheetHeight)` below the content and CSS
+counts a transformed absolutely-positioned descendant in its scroll container's overflow.
+
 **Why the third tab is the pet.** It was "Activity", which held three unrelated jobs — an inbox
 (asks, invites), a goals board (missions, the event) and a log (diary, history) — and read as thin
 however full it was. The problem wasn't the amount of content but that it was several *subjects*; the
@@ -1676,4 +1700,4 @@ a person can supply, which is why `/admin/roadmap` now marks them **Needs you** 
 | 2026-09-19 | Stated the authoring rule the catalogue already enforced: Tielo is English-native, every locale is a translation of `en.ts`, and nothing is authored in a translation. Verified the compiler catches drift in both directions — a translation-only key and an untranslated English key each fail the build |
 | 2026-09-21 | Renaming the pet is available from the first minute — `PATCH /api/pets`, reached by tapping the name on the pet tab. It was advertised as a level-2 bond unlock and was never implemented or enforced; making someone earn the right to fix a typo was the wrong call twice over. Cut from the ladder; level 1 now says the name is yours from the start |
 | 2026-09-21 | Bond ladder rebuilt and, for the first time, enforced. Levels 1–10 are capability (errand range, haul, frequency, treasure rarity, the pet's own allowance), 11–20 are cosmetic only. Every unlock is a number the code already had, read through one `capabilitiesAt()`, with floors and ceilings live-tunable from `/admin/config`. Errands gained the daily cap they never had — the uncapped 12 XP per press is closed |
-| 2026-09-21 | Fixed phantom scroll on the tab screens: a closed `BottomSheet` rendered as a `Screen` child sits `translateY(sheetHeight)` below the content, and CSS counts a transformed absolutely-positioned descendant in its scroll container's overflow — 726px of empty scroll with the sheet parked at the end. `Screen` gained an `overlay` slot outside the ScrollView; profile, pet and feed use it |
+| 2026-09-21 | Two sheets, not one. `BottomSheet` keeps its no-backdrop behaviour and is **map only** — the map stays live behind it. Everywhere else uses the new `ModalSheet`: a backdrop, inert content behind, sized to its content, built on `Modal`. That also settles the phantom-scroll bug found the same day (a closed in-tree sheet added 726px of empty scroll), since a `Modal` isn't in the page's view tree at all; the interim `overlay` slot on `Screen` is gone |

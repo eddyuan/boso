@@ -2,7 +2,7 @@ import { Image } from 'expo-image';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
-import { BottomSheet } from '@/components/bottom-sheet';
+import { ModalSheet } from '@/components/modal-sheet';
 import { CompanionArt } from '@/components/mascot/companions';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
@@ -52,11 +52,11 @@ export function ViewersSheet({
   }, [open, postId]);
 
   return (
-    <BottomSheet
+    <ModalSheet
       open={open}
       onClose={onClose}
-      contentKey={postId ?? undefined}
-      header={
+      scrollable
+      title={
         <View style={{ gap: 2 }}>
           <ThemedText type="label">{t('viewers.title')}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
@@ -93,7 +93,7 @@ export function ViewersSheet({
           </View>
         ))
       )}
-    </BottomSheet>
+    </ModalSheet>
   );
 }
 

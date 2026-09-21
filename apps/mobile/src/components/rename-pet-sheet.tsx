@@ -2,7 +2,7 @@ import { PET_NAME_MAX } from '@bsocial/shared';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { BottomSheet } from '@/components/bottom-sheet';
+import { ModalSheet } from '@/components/modal-sheet';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
 import { ErrorText } from '@/components/ui/controls';
@@ -69,10 +69,7 @@ export function RenamePetSheet({
   }
 
   return (
-    <BottomSheet
-      open={open}
-      onClose={onClose}
-      header={<ThemedText type="label">{t('pet.rename.title')}</ThemedText>}>
+    <ModalSheet open={open} onClose={onClose} title={t('pet.rename.title')}>
       <View style={styles.body}>
         <Field
           value={name}
@@ -94,7 +91,7 @@ export function RenamePetSheet({
           disabled={!trimmed || unchanged || saving}
         />
       </View>
-    </BottomSheet>
+    </ModalSheet>
   );
 }
 

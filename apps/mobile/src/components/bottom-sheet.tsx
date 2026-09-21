@@ -41,13 +41,25 @@ type Props = {
 };
 
 /**
- * Detail panel for whatever is selected on the map.
+ * Detail panel for whatever is selected on the map. **Map only.**
  *
  * On a phone it's a draggable, scrollable bottom sheet; from tablet width up
  * it becomes a card down the side, because a sheet across a wide screen is
  * mostly empty space. Either way there is **no backdrop**: the map stays live
  * and interactive behind it, as it does in Google Maps, and selecting something
  * else swaps the contents rather than stacking another panel.
+ *
+ * That no-backdrop behaviour is the whole point of this component and the reason
+ * it belongs to the map alone. Everywhere else — picking a language, renaming a
+ * pet, seeing who looked at a post — wants the opposite: a modal that says the
+ * rest of the screen is unavailable and gets out of the way once answered. That's
+ * [`ModalSheet`](./modal-sheet.tsx), which is a different component rather than a
+ * flag on this one, because almost nothing about them is shared: no backdrop
+ * versus a backdrop, live content behind versus inert, a fixed resting height
+ * versus sizing to content, and in-tree versus rendered through `Modal`.
+ *
+ * If you are reaching for this outside `app/(tabs)/index.tsx`, you want the other
+ * one.
  */
 export function BottomSheet({ open, onClose, header, children, contentKey }: Props) {
   const { width } = useWindowDimensions();

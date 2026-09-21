@@ -61,9 +61,7 @@ export default function ProfileTab() {
   const interests = user?.interests ?? [];
 
   return (
-    <Screen
-      underTabBar
-      overlay={<LanguageSheet open={languageOpen} onClose={() => setLanguageOpen(false)} />}>
+    <Screen underTabBar>
       <View style={styles.profile}>
         {user?.image ? (
           <Image source={{ uri: user.image }} style={styles.avatar} />
@@ -168,6 +166,7 @@ export default function ProfileTab() {
         onPress={() => authClient.signOut()}
       />
 
+      <LanguageSheet open={languageOpen} onClose={() => setLanguageOpen(false)} />
     </Screen>
   );
 }
