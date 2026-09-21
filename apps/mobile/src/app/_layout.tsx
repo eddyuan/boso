@@ -16,6 +16,19 @@ import { I18nProvider } from '@/lib/i18n';
 
 SplashScreen.preventAutoHideAsync();
 
+/**
+ * What sits underneath a screen someone deep-links straight to.
+ *
+ * Without this, a cold load of a sheet route renders the sheet over nothing — a
+ * backdrop dimming an empty screen, with no page behind and nowhere for back to
+ * go. Anchoring the stack to the tabs means the sheet always has a page under it.
+ *
+ * Unverified locally: an unauthenticated cold load is sent to sign-in by the
+ * guards, so there is never a tab screen to anchor to and the case can't be
+ * observed without a session.
+ */
+export const unstable_settings = { anchor: '(tabs)' };
+
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const { data: session, isPending } = authClient.useSession();
