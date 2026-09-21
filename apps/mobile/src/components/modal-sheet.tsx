@@ -45,11 +45,24 @@ type Props = {
  * renaming a pet wants — a decision to make and then be done with.
  *
  * Built on React Native's `Modal` rather than an absolutely-positioned overlay,
- * which buys three things that are awkward otherwise: it renders above
- * everything including the floating tab bar, the Android back button dismisses
- * it, and — since it isn't part of the page's view tree at all — it can't inflate
- * the scroll height of whatever is behind it, which is exactly the bug an
- * in-tree sheet caused on the tab screens.
+ * which buys three things that are awkward otherwise: it renders above everything
+ * including the floating tab bar, it can't inflate the scroll height of the page
+ * behind it (since it isn't in that view tree at all — exactly the bug an in-tree
+ * sheet caused on the tab screens), and it gets a dismiss hook per platform.
+ *
+ * That hook is `onRequestClose`, and what fires it differs:
+ *
+ *  - **Android** — the hardware/gesture back button. The modal consumes the press,
+ *    so the sheet closes and the route underneath is untouched. This is why these
+ *    don't need to be routes to behave correctly with back.
+ *  - **iOS** — nothing by default; the sheet covers the screen, so the navigator's
+ *    swipe-back isn't reachable while it's up. Dismissal is the backdrop, the close
+ *    button or dragging down.
+ *  - **Web** — the Escape key only. `react-native-web` wires no history handling,
+ *    so **browser back navigates away from the screen** rather than closing the
+ *    sheet. Verified. Making it close instead would mean pushing a history entry on
+ *    open and popping it on close, which is the one thing a route would give for
+ *    free.
  *
  * It sizes to its content up to `MAX_HEIGHT`, because these are short; the map's
  * sheet is a fixed 86% because a detail panel wants a predictable resting height.
@@ -65,17 +78,19 @@ export function ModalSheet({ open, onClose, title, children, scrollable }: Props
   const progress = useSharedValue(0);
   const drag = useSharedValue(0);
 
+  // Deliberately keyed on `open` alone. Including `mounted` re-ran this the moment
+  // the modal mounted, restarting the entrance timing from wherever it had got to.
   useEffect(() => {
     if (open) {
       setMounted(true);
       drag.value = 0;
       progress.value = withTiming(1, { duration: IN_MS });
-    } else if (mounted) {
+    } else {
       progress.value = withTiming(0, { duration: OUT_MS }, (done) => {
         if (done) runOnJS(setMounted)(false);
       });
     }
-  }, [open, mounted, progress, drag]);
+  }, [open, progress, drag]);
 
   const dismiss = useCallback(() => {
     progress.value = withTiming(0, { duration: OUT_MS }, (done) => {

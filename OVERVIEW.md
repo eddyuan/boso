@@ -874,11 +874,23 @@ opposite — picking a language or renaming a pet is one question, asked and dis
 of the screen unavailable meanwhile.
 
 They're separate components rather than a flag because almost nothing is shared, and the `Modal`
-underneath the second one earns three things that are awkward in-tree: it draws above the floating
-tab bar, the Android back button dismisses it, and it can't affect the layout of the page behind it.
-That last one was a real bug — an in-tree sheet on the profile, pet and feed tabs added **726px of
-empty scroll**, because a closed sheet sits `translateY(sheetHeight)` below the content and CSS
-counts a transformed absolutely-positioned descendant in its scroll container's overflow.
+underneath the second one earns two things that are awkward in-tree: it draws above the floating tab
+bar, and it can't affect the layout of the page behind it. That second one was a real bug — an
+in-tree sheet on the profile, pet and feed tabs added **726px of empty scroll**, because a closed
+sheet sits `translateY(sheetHeight)` below the content and CSS counts a transformed
+absolutely-positioned descendant in its scroll container's overflow.
+
+**Dismissing with back.** `Modal`'s `onRequestClose` is the hook, and what fires it is per-platform:
+
+| | Fires on | Result |
+|---|---|---|
+| Android | hardware/gesture back | The modal consumes the press: the sheet closes, the route underneath is untouched. This is why these don't need to be routes. |
+| iOS | nothing by default | The sheet covers the screen, so the navigator's swipe-back isn't reachable. Backdrop, close button or drag down. |
+| Web | **Escape only** | `react-native-web` wires no history handling, so **browser back leaves the screen** instead of closing the sheet. |
+
+The web row is a known gap rather than a decision. Closing on browser back would mean pushing a
+history entry on open and popping it on close — which is the one thing making these routes would
+give for free.
 
 **Why the third tab is the pet.** It was "Activity", which held three unrelated jobs — an inbox
 (asks, invites), a goals board (missions, the event) and a log (diary, history) — and read as thin
