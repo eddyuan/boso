@@ -891,6 +891,15 @@ Nesting costs one thing: the floating tab bar is rendered by the *tabs* navigato
 own stack, so a modal inside that stack draws beneath it. It slides away instead, through the same
 `useTabBarVisibility` context the map's sheet uses.
 
+**The language picker uses the platform's own sheet on native** (`presentation: 'formSheet'` —
+`UISheetPresentationController` on iOS, a Material bottom sheet on Android), so its backdrop,
+grabber, corner radius and swipe-to-dismiss come from the OS and match every other sheet on the
+device. Web keeps `SheetScreen`, because react-navigation's web fallback for `formSheet` renders the
+content flush to the *top* of the window with no backdrop and the page behind blanked. The split
+lives in [`platform-sheet.tsx`](apps/mobile/src/components/platform-sheet.tsx), which exports both
+the wrapper and the matching screen options so the two can't disagree. It's one screen so far — a
+deliberate trial before moving the others.
+
 **Why the third tab is the pet.** It was "Activity", which held three unrelated jobs — an inbox
 (asks, invites), a goals board (missions, the event) and a log (diary, history) — and read as thin
 however full it was. The problem wasn't the amount of content but that it was several *subjects*; the
@@ -1713,3 +1722,4 @@ a person can supply, which is why `/admin/roadmap` now marks them **Needs you** 
 | 2026-09-21 | Bond ladder rebuilt and, for the first time, enforced. Levels 1–10 are capability (errand range, haul, frequency, treasure rarity, the pet's own allowance), 11–20 are cosmetic only. Every unlock is a number the code already had, read through one `capabilitiesAt()`, with floors and ceilings live-tunable from `/admin/config`. Errands gained the daily cap they never had — the uncapped 12 XP per press is closed |
 | 2026-09-21 | Two sheets, not one. `BottomSheet` keeps its no-backdrop behaviour and is **map only** — the map stays live behind it. Everywhere else uses the new `ModalSheet`: a backdrop, inert content behind, sized to its content, built on `Modal`. That also settles the phantom-scroll bug found the same day (a closed in-tree sheet added 726px of empty scroll), since a `Modal` isn't in the page's view tree at all; the interim `overlay` slot on `Screen` is gone |
 | 2026-09-21 | The backdropped sheets became routes (`language`, `rename-pet`, `viewers/[postId]`, all `transparentModal`), so closing is popping a history entry and back behaves the same on Android, web and iOS. The map's transparent sheet is unchanged and stays a plain view |
+| 2026-09-21 | The language picker trials the platform's own sheet on native (`formSheet`), keeping the drawn one on web where react-navigation's fallback renders flush to the top with no backdrop |

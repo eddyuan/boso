@@ -2,8 +2,7 @@ import { LOCALES, type Locale } from '@bsocial/shared';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-
-import { SheetScreen } from '@/components/sheet-screen';
+import { PlatformSheet } from '@/components/platform-sheet';
 import { ThemedText } from '@/components/themed-text';
 import { Icon } from '@/components/ui/icon';
 import { Spacing } from '@/constants/theme';
@@ -64,7 +63,7 @@ export default function LanguageScreen() {
   ];
 
   return (
-    <SheetScreen title={t('profile.language')}>
+    <PlatformSheet title={t('profile.language')}>
       {rows.map((row) => (
         <Pressable
           key={row.key}
@@ -80,7 +79,7 @@ export default function LanguageScreen() {
       <ThemedText type="small" themeColor="textSecondary" style={styles.note}>
         {t('profile.languageNote')}
       </ThemedText>
-    </SheetScreen>
+    </PlatformSheet>
   );
 }
 
